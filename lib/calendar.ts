@@ -15,10 +15,14 @@ export function doorState(n: number): DoorState {
   return DEMO_MISSED.includes(n) ? 'missed' : 'opened';
 }
 
+/** The special ornament behind each daily door, cycling through the Advent runners. */
+const DOOR_ORNAMENTS = ['fox', 'penguin', 'reindeer', 'gingerbread-runner', 'running-shoe', 'finish-medal', 'stopwatch', 'santa-shoe'];
+export const doorOrnament = (n: number) => DOOR_ORNAMENTS[(n + 1) % DOOR_ORNAMENTS.length];
+
 export const WEEKLY = [
-  { week: 1, range: 'Dec 1–7', title: 'Run 3 times', reward: 'star-gold' },
+  { week: 1, range: 'Dec 1–7', title: 'Run 3 times', reward: 'snow-globe' },
   { week: 2, range: 'Dec 8–14', title: 'Run 10 km this week', reward: 'bell-gold', progress: 7.4, goal: 10 },
-  { week: 3, range: 'Dec 15–21', title: '[Week 3 challenge]', reward: 'star-gold' },
+  { week: 3, range: 'Dec 15–21', title: '[Week 3 challenge]', reward: 'snow-globe' },
   { week: 4, range: 'Dec 22–24', title: '[Week 4 challenge]', reward: 'bell-gold' },
 ];
 
@@ -35,4 +39,15 @@ export function untilChristmas(now = new Date()) {
   const h = Math.floor((ms % 86400000) / 3600000);
   const m = Math.floor((ms % 3600000) / 60000);
   return { d, h, m, done: ms === 0 };
+}
+
+/**
+ * Ornaments the demo runner has found so far: free ones, every door they opened and
+ * the weekly prizes they won. Anything else stays a mystery in the directory.
+ */
+export function demoFound(extra: string[] = []): Set<string> {
+  const found = new Set<string>(extra);
+  for (let n = 1; n <= 24; n++) if (doorState(n) === 'opened') found.add(doorOrnament(n));
+  found.add(WEEKLY[0].reward); // week 1 is done
+  return found;
 }

@@ -33,7 +33,7 @@ const SEED: Record<string, Tree> = {
     nickname: 'demo',
     displayName: 'You',
     ornaments: [
-      h('star-gold', 'Mina', 'Cheer', 'You got this. See you at the Sunday long run!'),
+      h('snow-globe', 'Mina', 'Cheer', 'You got this. See you at the Sunday long run!'),
       h('fox', 'Jonas', 'Thanks', 'Thanks for pacing me in October. Merry Christmas!'),
       h('finish-medal', 'Aiko', 'Love', 'Proud of you for running through the dark mornings.'),
       h('penguin', 'Leo', 'Funny', 'Slipped on ice twice this week. Worth it.'),

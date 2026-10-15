@@ -1,0 +1,106 @@
+import type { Metadata } from 'next';
+import Link from 'next/link';
+import BackLink from '@/components/BackLink';
+import { ChevronIcon } from '@/components/Icons';
+import { MusicButton } from '@/components/MusicToggle';
+import Sprite from '@/components/Sprite';
+
+export const metadata: Metadata = { title: 'About' };
+
+const STEPS = [
+  {
+    sprite: 'star-gold',
+    title: 'Get a tree',
+    text: 'Connect Strava and you get your own pixel tree with a link to share.',
+  },
+  {
+    sprite: 'bauble-snow',
+    title: 'Friends hang ornaments',
+    text: 'Anyone with your link can hang an ornament with a message. Every message stays sealed.',
+  },
+  {
+    sprite: 'gift-box',
+    title: 'Run to unwrap',
+    text: 'Each day of Advent has a door. Run that day to unwrap a special ornament, then hang it on a friend’s tree.',
+  },
+  {
+    sprite: 'lock',
+    title: 'Read it all on Christmas',
+    text: 'At midnight on December 25 your tree opens and you can read every message.',
+  },
+];
+
+const RULES = [
+  ['What counts', 'Outdoor, trail and treadmill runs synced from Strava. Manual entries don’t.'],
+  ['Daily doors', '1 km opens the day’s door. Doors close at 23:59 in your time zone.'],
+  ['Catch-ups', 'Missed a day? Run double the next day to open both. One catch-up per week.'],
+  ['Weekly challenges', 'Finish a week’s goal to win a rare ornament. What it is stays a surprise.'],
+  ['Giving', 'Hold up to 3 earned ornaments. Give them by December 24, or keep them for your own tree.'],
+];
+
+export default function About() {
+  return (
+    <main className="screen no-nav">
+      <div className="topbar">
+        <BackLink fallback="/" />
+        <MusicButton />
+      </div>
+
+      <div className="center">
+        <Sprite id="star-gold" px={4} style={{ margin: '0 auto' }} />
+        <p className="brand-mark mt12">About</p>
+        <h1 className="h1 mt4">Advent of Running</h1>
+        <p className="soft mt8">
+          A cozy running challenge for December. Friends fill your tree with sealed messages, and you
+          run every day of Advent to unwrap ornaments of your own.
+        </p>
+      </div>
+
+      <h2 className="h2 mt32">How it works</h2>
+      <ol className="stack mt12" style={{ listStyle: 'none', padding: 0, margin: '12px 0 0', gap: 8 }}>
+        {STEPS.map((s, i) => (
+          <li key={s.title} className="panel quiet row" style={{ alignItems: 'flex-start', padding: '14px 16px' }}>
+            <Sprite id={s.sprite} px={2} style={{ flexShrink: 0 }} />
+            <div className="grow">
+              <p className="eyebrow">Step {i + 1}</p>
+              <p style={{ fontWeight: 800 }} className="mt4">{s.title}</p>
+              <p className="small soft mt4">{s.text}</p>
+            </div>
+          </li>
+        ))}
+      </ol>
+
+      <h2 className="h2 mt32">The rules</h2>
+      <div className="panel quiet flush mt12">
+        {RULES.map(([k, v]) => (
+          <div key={k} className="list-row small" style={{ alignItems: 'flex-start', flexDirection: 'column', gap: 2, padding: '12px 0', justifyContent: 'center' }}>
+            <span style={{ fontWeight: 800 }}>{k}</span>
+            <span className="soft" style={{ fontWeight: 500 }}>{v}</span>
+          </div>
+        ))}
+      </div>
+
+      <h2 className="h2 mt32">Your runs stay private</h2>
+      <div className="panel hint small mt12">
+        <Sprite id="lock" px={2} style={{ flexShrink: 0 }} />
+        <span>
+          Friends only ever see ornaments. Your distances, doors and calendar are visible to you alone.
+          Disconnecting Strava deletes your tree and every synced run.
+        </span>
+      </div>
+
+      <Link href="/ornaments" className="panel quiet row mt24" style={{ color: 'var(--snow)', padding: '12px 16px' }}>
+        <Sprite id="snow-globe" px={2} />
+        <span className="grow small" style={{ fontWeight: 700 }}>Browse the ornament directory</span>
+        <ChevronIcon />
+      </Link>
+
+      <Link href="/onboarding" className="btn block mt24">Start with Strava</Link>
+
+      <p className="center tiny muted mt24">
+        Pixel art drawn in code · “Jingle Bells” (J. L. Pierpont, 1857, public domain) played as chiptune
+      </p>
+      <p className="center tiny muted mt4">This is a prototype with demo data.</p>
+    </main>
+  );
+}

@@ -18,7 +18,7 @@ export function CountdownTiles() {
     <div className="row" style={{ gap: 6 }} aria-label={t ? `Messages open in ${t.d} days ${t.h} hours` : undefined}>
       {parts.map(([v, l]) => (
         <div key={l} className="center" style={{ minWidth: 44 }}>
-          <div className="num" style={{ fontSize: 22, lineHeight: 1, color: 'var(--gold)' }}>{v}</div>
+          <div className="pix" style={{ color: 'var(--gold)' }}>{v}</div>
           <div style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 700 }}>{l}</div>
         </div>
       ))}

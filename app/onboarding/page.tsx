@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import Sprite from '@/components/Sprite';
 
 export default function Onboarding() {
   const router = useRouter();
@@ -14,13 +15,13 @@ export default function Onboarding() {
     <main className="screen no-nav">
       <div className="topbar">
         <span className="brand">Advent of Running</span>
-        <span className="small" style={{ color: 'var(--pine)', fontWeight: 800 }}>Strava connected</span>
       </div>
       <div className="row mt8">
-        <img className="px" src="/ornaments/tree.png" alt="" width={64} height={76} />
+        <Sprite id="gift-box" px={4} style={{ flexShrink: 0 }} />
         <div>
-          <h1 className="h1" style={{ fontSize: 32 }}>Set up your tree</h1>
-          <p className="soft">You can change any of this later.</p>
+          <h1 className="title">Set up your tree</h1>
+          <p className="small soft mt4">Three quick choices. You can change them later.</p>
+          <p className="mt8"><span className="badge">Strava connected</span></p>
         </div>
       </div>
 
@@ -41,8 +42,8 @@ export default function Onboarding() {
         <fieldset className="field" style={{ border: 0, padding: 0, margin: 0 }}>
           <legend style={{ padding: 0, marginBottom: 8 }}>Who can hang ornaments?</legend>
           <div className="row">
-            <button type="button" className="pill grow" aria-pressed={anyone} onClick={() => setAnyone(true)}>Anyone with the link</button>
-            <button type="button" className="pill grow" aria-pressed={!anyone} onClick={() => setAnyone(false)}>Signed-in runners</button>
+            <button type="button" className="pill grow" aria-pressed={anyone} onClick={() => setAnyone(true)}>Anyone with link</button>
+            <button type="button" className="pill grow" aria-pressed={!anyone} onClick={() => setAnyone(false)}>Runners only</button>
           </div>
         </fieldset>
 

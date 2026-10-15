@@ -4,7 +4,10 @@ import Link from 'next/link';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import { DEMO_POUCH, hangOrnament } from '@/lib/data';
-import { BASIC, BY_ID, HINTS, TIER_LABEL, type Hint } from '@/lib/ornaments';
+import { BASIC, BY_ID, HINTS, type Hint } from '@/lib/ornaments';
+import Sprite from '@/components/Sprite';
+import SpriteFx from '@/components/SpriteFx';
+import { useBump } from '@/components/useBump';
 
 const MAX = 200;
 
@@ -13,7 +16,8 @@ export default function HangForm() {
   const params = useSearchParams();
   const router = useRouter();
   const preset = params.get('o');
-  const earned = preset && BY_ID[preset] ? Array.from(new Set([preset, ...DEMO_POUCH])) : DEMO_POUCH;
+  // a free ornament picked elsewhere stays under "Free ornaments", not "Earned"
+  const earned = preset && BY_ID[preset] && BY_ID[preset].tier !== 'basic' ? Array.from(new Set([preset, ...DEMO_POUCH])) : DEMO_POUCH;
 
   const [pick, setPick] = useState<string>(preset && BY_ID[preset] ? preset : BASIC[0].id);
   const [message, setMessage] = useState('');
@@ -24,6 +28,20 @@ export default function HangForm() {
   const name = nickname.charAt(0).toUpperCase() + nickname.slice(1);
   const valid = message.trim().length > 0 && from.trim().length > 0;
   const chosen = BY_ID[pick];
+  const { bump, of } = useBump();
+  const choose = (id: string) => {
+    setPick(id);
+    bump(id);
+  };
+  const art = (id: string) => {
+    const b = of(id, id);
+    return (
+      <span key={b.k} className="bump">
+        <span className={b.anim}><Sprite id={id} px={2} /></span>
+        {b.fx && <SpriteFx anim={b.fx} px={2} />}
+      </span>
+    );
+  };
 
   return (
     <main className="screen no-nav">
@@ -33,10 +51,12 @@ export default function HangForm() {
       </div>
 
       <div className="row">
-        <img className="px" src={chosen.img} alt="" width={72} height={72} style={{ flexShrink: 0 }} />
+        <span key={of(chosen.id, chosen.id).k} className="bump" style={{ flexShrink: 0 }}>
+          <span className={of(chosen.id, chosen.id).anim}><Sprite id={chosen.id} px={2} /></span>
+        </span>
         <div>
           <h1 className="title">Hang an ornament</h1>
-          <p className="small soft">{chosen.name}, {TIER_LABEL[chosen.tier].toLowerCase()}</p>
+          <p className="small soft">{chosen.name}</p>
         </div>
       </div>
 
@@ -55,9 +75,9 @@ export default function HangForm() {
           <legend style={{ padding: 0, marginBottom: 8 }}>Earned by your runs</legend>
           <div className="picker">
             {earned.map((id) => (
-              <button key={id} type="button" className="pick" aria-pressed={pick === id} onClick={() => setPick(id)}>
-                <img className="px" src={BY_ID[id].img} alt="" />
-                <span className={`tier-${BY_ID[id].tier}`}>{BY_ID[id].name.replace('Advent Runner: ', '')}</span>
+              <button key={id} type="button" className="pick" aria-pressed={pick === id} onClick={() => choose(id)}>
+                {art(id)}
+                <span>{BY_ID[id].name.replace('Advent Runner: ', '')}</span>
               </button>
             ))}
           </div>
@@ -68,8 +88,8 @@ export default function HangForm() {
           <legend style={{ padding: 0, marginBottom: 8 }}>Free ornaments</legend>
           <div className="picker">
             {BASIC.map((o) => (
-              <button key={o.id} type="button" className="pick" aria-pressed={pick === o.id} onClick={() => setPick(o.id)}>
-                <img className="px" src={o.img} alt="" />
+              <button key={o.id} type="button" className="pick" aria-pressed={pick === o.id} onClick={() => choose(o.id)}>
+                {art(o.id)}
                 <span>{o.name}</span>
               </button>
             ))}

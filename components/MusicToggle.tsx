@@ -138,7 +138,7 @@ export function MusicButton() {
       aria-label={on ? 'Turn music off' : 'Turn music on'}
       title={on ? 'Music on' : 'Music off'}
     >
-      <svg width="22" height="22" viewBox="0 0 12 12" shapeRendering="crispEdges" aria-hidden="true">
+      <svg width="24" height="24" viewBox="0 0 12 12" shapeRendering="crispEdges" aria-hidden="true">
         <path d="M5 1h6v2H7v6H6v1H5v1H2v-1H1V8h1V7h3z" fill="currentColor" />
         {!on && <path d="M1 1h1v1h1v1h1v1h1v1h1v1h1v1h1v1h1v1h1v1h1v1h-1v-1h-1v-1H9V9H8V8H7V7H6V6H5V5H4V4H3V3H2V2H1z" fill="#e8546a" />}
       </svg>

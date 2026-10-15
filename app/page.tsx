@@ -1,9 +1,16 @@
 import Link from 'next/link';
 import { MusicButton } from '@/components/MusicToggle';
 import PixelTree from '@/components/PixelTree';
+import Sprite from '@/components/Sprite';
 import type { Hung } from '@/lib/data';
 
-const PREVIEW: Hung[] = ['star-gold', 'fox', 'bauble-snow', 'penguin', 'hot-cocoa', 'sock', 'finish-medal', 'snowflake', 'reindeer', 'bauble-frost'].map(
+const STEPS = [
+  { n: 1, sprite: 'bauble-snow', text: 'Friends hang sealed messages' },
+  { n: 2, sprite: 'running-shoe', text: 'Run daily to unwrap ornaments' },
+  { n: 3, sprite: 'gift-box', text: 'Open them all on Christmas' },
+];
+
+const PREVIEW: Hung[] = ['snow-globe', 'fox', 'bauble-snow', 'penguin', 'hot-cocoa', 'sock', 'finish-medal', 'snowflake', 'reindeer', 'bauble-frost'].map(
   (ornamentId, i) => ({ id: `p${i}`, ornamentId, from: '', hint: 'Cheer', message: '', createdAt: '' }),
 );
 
@@ -18,23 +25,29 @@ export default function Landing() {
         </div>
       </div>
 
-      <PixelTree ornaments={PREVIEW} owner={{ name: 'You', isYou: true }} label="" decorative scale={4.5} />
+      <PixelTree ornaments={PREVIEW} owner={{ name: 'You', isYou: true }} label="" decorative />
 
-      <h1 className="h1 center mt32" style={{ fontSize: 32 }}>Run all December.<br />Read your tree on Christmas.</h1>
+      <h1 className="h1 center mt24">Run all December.<br />Read your tree on Christmas.</h1>
 
-      <p className="center soft mt12" style={{ maxWidth: 380, marginInline: 'auto' }}>
-        Friends hang ornaments on your tree with a sealed message. Run each day of Advent to unwrap
-        special ornaments you can hang on theirs.
-      </p>
+      <ol className="steps mt16" style={{ listStyle: 'none', padding: 0, margin: '16px 0 0' }}>
+        {STEPS.map((s) => (
+          <li key={s.n} className="step">
+            <Sprite id={s.sprite} px={2} />
+            <span>{s.text}</span>
+          </li>
+        ))}
+      </ol>
 
       <div className="grow" />
 
       <div className="stack mt24">
         {/* Phase 2: Strava's official "Connect with Strava" button + OAuth. */}
-        <Link href="/onboarding" className="btn block">Start my tree with Strava</Link>
+        <Link href="/onboarding" className="btn block">Start with Strava</Link>
         <Link href="/t/mina" className="btn ghost block">See a friend&apos;s tree</Link>
       </div>
-      <p className="center tiny muted mt16">Door 1 opens on December 1. This prototype uses demo data.</p>
+      <p className="center tiny muted mt12">
+        Door 1 opens December 1 · <Link href="/about" style={{ fontWeight: 800 }}>How it works</Link> · <Link href="/ornaments" style={{ fontWeight: 800 }}>Ornaments</Link>
+      </p>
     </main>
   );
 }

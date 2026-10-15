@@ -16,15 +16,12 @@ export default function FriendTree() {
     <main className="screen no-nav">
       <div className="topbar">
         <Link href="/" className="brand">Advent of Running</Link>
-        <div className="topbar-end">
-          <Link href="/onboarding" className="textlink">Get a tree</Link>
-          <MusicButton />
-        </div>
+        <MusicButton />
       </div>
 
       {tree && (
         <>
-          <h1 className="h2 center mt8">
+          <h1 className="title center mt8">
             {tree.ornaments.length === 0 ? `Be the first on ${tree.displayName}'s tree` : `${tree.ornaments.length} sealed ornaments so far`}
           </h1>
           <p className="small muted center mt4">Every message stays hidden until Christmas morning.</p>
@@ -42,6 +39,7 @@ export default function FriendTree() {
         <p className="center tiny muted mt8">
           No sign-up needed. Only {tree?.displayName ?? 'they'} can read it, on December 25.
         </p>
+        <p className="center tiny mt4"><Link href="/onboarding" className="textlink" style={{ fontSize: 13, minHeight: 32 }}>Get a tree of your own</Link></p>
       </div>
     </main>
   );

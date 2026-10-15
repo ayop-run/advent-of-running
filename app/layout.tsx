@@ -8,13 +8,22 @@ import '@fontsource/m-plus-rounded-1c/latin-800.css';
 import './globals.css';
 import { MusicProvider } from '@/components/MusicToggle';
 import Snowfall from '@/components/Snowfall';
+import { SKY_BOOT_SCRIPT } from '@/lib/sky';
+
+const TAGLINE = 'Friends hang ornaments, you run to unwrap them';
 
 export const metadata: Metadata = {
-  title: 'Advent of Running',
-  description: 'Run through December. Friends hang ornaments on your tree, and every message stays sealed until Christmas.',
+  title: {
+    default: `Advent of Running · ${TAGLINE}`,
+    // page titles read "My tree · Advent of Running"
+    template: '%s · Advent of Running',
+  },
+  description:
+    'Run every day of Advent to unwrap pixel ornaments. Friends hang ornaments with sealed messages on your tree, and you read them all on Christmas morning.',
   openGraph: {
-    title: 'Advent of Running',
-    description: 'Hang an ornament on my tree. I read every message on Christmas Day.',
+    siteName: 'Advent of Running',
+    title: `Advent of Running · ${TAGLINE}`,
+    description: 'Run all December. Read your tree on Christmas.',
   },
 };
 
@@ -26,9 +35,10 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
-        <link rel="icon" href="/ornaments/star-gold.png" />
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        <script dangerouslySetInnerHTML={{ __html: SKY_BOOT_SCRIPT }} />
       </head>
       <body>
         <Snowfall />
