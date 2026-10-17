@@ -24,3 +24,12 @@ export function ChevronIcon({ dir = 'right' }: { dir?: 'right' | 'left' }) {
     </svg>
   );
 }
+
+/** Pixel "share" icon: an arrow out of a box, 12×12 grid at 2px per pixel. */
+export function ShareIcon() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 12 12" shapeRendering="crispEdges" aria-hidden="true">
+      <path d="M5 1h2v7H5zM4 2h1v1H4zM3 3h1v1H3zM7 2h1v1H7zM8 3h1v1H8zM1 6h2v1H2v4h8V7H9V6h2v6H1z" fill="currentColor" />
+    </svg>
+  );
+}

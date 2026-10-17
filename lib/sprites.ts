@@ -391,16 +391,16 @@ const BASE: Record<string, string[]> = {
 
 // ---------- the tree ----------
 
-export const TREE_W = 132;
-export const TREE_H = 172;
+export const TREE_W = 160;
+export const TREE_H = 206;
 const MID = TREE_W / 2;
 
 /** [top row, bottom row, half-width at top, half-width at bottom], drawn bottom tier first. */
 const TIERS: [number, number, number, number][] = [
-  [96, 140, 30, 64],
-  [64, 108, 22, 54],
-  [34, 76, 14, 40],
-  [12, 44, 4, 26],
+  [115, 168, 36, 77],
+  [77, 130, 26, 65],
+  [41, 91, 17, 48],
+  [14, 53, 5, 31],
 ];
 /** Stable pseudo-random 0–99 per pixel, so texture looks scattered rather than gridded. */
 const hash = (x: number, y: number) => (((x * 374761393 + y * 668265263) ^ ((x * 374761393 + y * 668265263) >>> 13)) >>> 0) % 100;
@@ -416,20 +416,20 @@ function buildTree(): string[] {
   };
 
   // trunk, with bark streaks
-  for (let y = 136; y < 154; y++)
-    for (let x = 58; x < 74; x++) set(x, y, x === 58 || x === 73 ? 'K' : x > 66 || (x * 3 + y) % 7 === 0 ? 'q' : 'Q');
+  for (let y = 163; y < 185; y++)
+    for (let x = 70; x < 90; x++) set(x, y, x === 70 || x === 89 ? 'K' : x > 80 || (x * 3 + y) % 7 === 0 ? 'q' : 'Q');
 
   // pot: rim, gold band, body narrowing toward the base
-  for (let y = 148; y < TREE_H; y++) {
-    const inset = y < 154 ? 0 : 3 + Math.floor((y - 154) / 4);
-    const l = 42 + inset;
-    const r = 89 - inset;
+  for (let y = 178; y < TREE_H; y++) {
+    const inset = y < 184 ? 0 : 3 + Math.floor((y - 184) / 5);
+    const l = 51 + inset;
+    const r = 108 - inset;
     for (let x = l; x <= r; x++) {
       let c = x < MID + 8 ? 'R' : 'r';
-      if (x === l || x === r || y === 148 || y === 153 || y === TREE_H - 1) c = 'K';
-      else if (y === 149) c = 'W';
-      else if (y === 158) c = 'G';
-      else if (y === 159) c = 'g';
+      if (x === l || x === r || y === 178 || y === 183 || y === TREE_H - 1) c = 'K';
+      else if (y === 179) c = 'W';
+      else if (y === 189) c = 'G';
+      else if (y === 190) c = 'g';
       set(x, y, c);
     }
   }
@@ -540,11 +540,11 @@ SPRITES.tree = colour(buildTree(), false);
  */
 export const TREE_SLOTS: [number, number][] = [
   // filled in this order, so even a few ornaments spread over the whole tree
-  [66, 72],
-  [34, 94], [100, 94],
-  [46, 124], [90, 124],
-  [50, 58], [82, 58],
-  [56, 89], [78, 89],
-  [24, 128], [110, 128], [68, 126],
-  [66, 33],
+  [80, 86],
+  [42, 113], [121, 113],
+  [56, 149], [109, 149],
+  [61, 70], [99, 70],
+  [68, 107], [94, 107],
+  [30, 154], [133, 154], [82, 151],
+  [80, 40],
 ];

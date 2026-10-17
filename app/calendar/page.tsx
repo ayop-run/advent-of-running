@@ -9,27 +9,30 @@ import Sprite from '@/components/Sprite';
 import SpriteFx from '@/components/SpriteFx';
 import { useBump } from '@/components/useBump';
 import { BY_ID } from '@/lib/ornaments';
-import { DEMO_TODAY, DEMO_TODAY_GOAL_KM, DEMO_TODAY_KM, WEEKLY, doorOrnament, doorState, type DoorState } from '@/lib/calendar';
+import { DEMO_GIVEN, DEMO_TODAY, DEMO_TODAY_GOAL_KM, DEMO_TODAY_KM, WEEKLY, doorOrnament, doorState, type DoorState } from '@/lib/calendar';
+
+const STATE_LABEL: Record<DoorState, string> = { opened: 'Given', today: 'Today', missed: 'Missed', locked: 'Coming up' };
 
 /** Only unwrapped doors reveal their ornament; everything else stays a surprise. */
-const STATUS: Record<DoorState, (name: string, n: number) => string> = {
-  opened: (name) => `You unwrapped the ${name}. Give it to a friend or keep it for your own tree.`,
-  today: () => `Run ${DEMO_TODAY_GOAL_KM.toFixed(0)} km today to find out what's inside.`,
-  missed: () => `You missed this one. A catch-up run can still open it.`,
-  locked: (_, n) => `Opens on December ${n}. What's inside is a surprise.`,
-};
 const revealed = (n: number) => doorState(n) === 'opened';
 const shownSprite = (n: number) => (revealed(n) ? doorOrnament(n) : 'gift-box');
 const shownName = (n: number) => (revealed(n) ? BY_ID[doorOrnament(n)].name.replace('Advent Runner: ', '') : 'A wrapped surprise');
-const STATE_LABEL: Record<DoorState, string> = { opened: 'Unwrapped', today: 'Today', missed: 'Missed', locked: 'Coming up' };
+
+function doorStory(n: number) {
+  const s = doorState(n);
+  if (s === 'opened') return DEMO_GIVEN[n] ? `You gave it to ${DEMO_GIVEN[n]}. It hangs on their tree until Christmas.` : 'Unwrapped. Give it to a friend.';
+  if (s === 'today') return 'Finish today’s run to unwrap it and give it to a friend.';
+  if (s === 'missed') return 'No run that day, so this one stays wrapped.';
+  return `Opens on December ${n}.`;
+}
 
 export default function Calendar() {
   const doors = Array.from({ length: 24 }, (_, i) => i + 1);
-  const opened = doors.filter((n) => doorState(n) === 'opened').length;
-  const [picked, setPicked] = useState(DEMO_TODAY);
+  const given = doors.filter((n) => doorState(n) === 'opened').length;
+  const [picked, setPicked] = useState<number | null>(null);
   const { bump, of } = useBump();
-  const pickedState = doorState(picked);
-
+  const left = Math.max(0, DEMO_TODAY_GOAL_KM - DEMO_TODAY_KM);
+  const done = left === 0;
   const week = WEEKLY[1];
 
   return (
@@ -39,17 +42,44 @@ export default function Calendar() {
           <p className="brand-mark">Advent of Running</p>
           <h1 className="title">Calendar</h1>
         </div>
-        <div className="topbar-end">
-          <span className="pix" style={{ color: 'var(--gold)' }}>{opened}/24</span>
-          <MusicButton />
-        </div>
+        <MusicButton />
       </div>
 
-      <p className="small soft">Every door hides a special ornament. Run that day to unwrap it and see what&apos;s inside.</p>
+      {/* 1. today's mission: run → unwrap → give */}
+      <section className="panel gold" aria-labelledby="mission">
+        <div className="panel-head">
+          <p className="eyebrow" style={{ color: 'var(--gold)' }}>Today&apos;s mission</p>
+          <span className="num" style={{ color: 'var(--gold)' }}>{DEMO_TODAY_KM.toFixed(1)} / {DEMO_TODAY_GOAL_KM.toFixed(1)} km</span>
+        </div>
+        <div className="row mt8">
+          <Sprite id="gift-box" px={4} style={{ flexShrink: 0 }} />
+          <div className="grow">
+            <h2 id="mission" className="h2">Run {DEMO_TODAY_GOAL_KM.toFixed(0)} km</h2>
+            <p className="small soft mt4">By 23:59. Door {DEMO_TODAY} opens when you finish, then give the ornament inside to a friend.</p>
+          </div>
+        </div>
+        <div className="mt12"><Meter value={DEMO_TODAY_KM} max={DEMO_TODAY_GOAL_KM} /></div>
+        {done ? (
+          <Link href="/gift" className="btn block mt12">Unwrap and give</Link>
+        ) : (
+          <div className="panel-head mt8">
+            <span className="small soft"><strong style={{ color: 'var(--snow)' }}>{left.toFixed(1)} km</strong> to go</span>
+            <Link href="/gift" className="textlink" style={{ fontSize: 14 }}>Try a demo unwrap <ChevronIcon /></Link>
+          </div>
+        )}
+      </section>
+
+      {/* 2. the Advent doors */}
+      <div className="panel-head mt32">
+        <h2 className="h2">Your Advent</h2>
+        <span className="num muted">{given} given</span>
+      </div>
+      <p className="small soft mt4">Tap a door to see which ornament you gave, and to whom.</p>
 
       <div className="doors mt12" role="group" aria-label="Advent doors">
         {doors.map((n) => {
           const s = doorState(n);
+          const b = of(n, shownSprite(n));
           return (
             <button
               key={n}
@@ -59,67 +89,50 @@ export default function Calendar() {
               aria-label={`Door ${n}, ${STATE_LABEL[s].toLowerCase()}${revealed(n) ? `: ${shownName(n)}` : ''}`}
               onClick={() => {
                 setPicked(n);
-                // unwrapped doors hop; wrapped ones jiggle like a present you can't open yet
+                // unwrapped doors play their ornament's animation; wrapped ones just jiggle
                 bump(n, s === 'opened' || s === 'today' ? 'play' : 'nope');
               }}
             >
               <span className="n">{n}</span>
-              {(() => {
-                const b = of(n, shownSprite(n));
-                return (
-                  <span key={b.k} className="bump">
-                    <span className={b.anim}><Sprite id={shownSprite(n)} px={2} /></span>
-                    {b.fx && <SpriteFx anim={b.fx} px={2} />}
-                  </span>
-                );
-              })()}
+              <span key={b.k} className="bump">
+                <span className={b.anim}><Sprite id={shownSprite(n)} px={2} /></span>
+                {b.fx && <SpriteFx anim={b.fx} px={2} />}
+              </span>
             </button>
           );
         })}
       </div>
 
-      <section className="panel quiet row mt12" aria-live="polite" style={{ alignItems: 'center' }}>
-        <Sprite id={shownSprite(picked)} px={4} style={{ flexShrink: 0, opacity: pickedState === 'missed' ? 0.5 : 1 }} />
-        <div className="grow">
-          <p className="eyebrow">Door {picked} · {STATE_LABEL[pickedState]}</p>
-          <h2 className="h2 mt4">{shownName(picked)}</h2>
-          <p className="small soft mt4">{STATUS[pickedState](shownName(picked), picked)}</p>
-        </div>
-      </section>
+      {picked && (
+        <section className="panel quiet row mt12 fade-in" aria-live="polite">
+          <Sprite id={shownSprite(picked)} px={4} style={{ flexShrink: 0, opacity: doorState(picked) === 'missed' ? 0.5 : 1 }} />
+          <div className="grow">
+            <p className="eyebrow">Door {picked} · {STATE_LABEL[doorState(picked)]}</p>
+            <h2 className="h2 mt4">{shownName(picked)}</h2>
+            <p className="small soft mt4">{doorStory(picked)}</p>
+          </div>
+        </section>
+      )}
       <p className="tiny muted mt8">Only you can see your calendar.</p>
 
-      <section className="panel gold mt24" aria-labelledby="today-title">
+      {/* 3. a small weekly bonus */}
+      <section className="panel quiet mt24" style={{ padding: '14px 16px' }}>
         <div className="panel-head">
-          <p className="eyebrow" style={{ color: 'var(--gold)' }}>Today · until 23:59</p>
-          <span className="num" style={{ color: 'var(--gold)' }}>{DEMO_TODAY_KM.toFixed(1)} / {DEMO_TODAY_GOAL_KM.toFixed(1)} km</span>
+          <p className="eyebrow">Weekly bonus</p>
+          <span className="num muted">{week.progress} / {week.goal} km</span>
         </div>
-        <div className="row mt8">
-          <Sprite id="gift-box" px={2} style={{ flexShrink: 0 }} />
-          <h2 id="today-title" className="h2">Door {DEMO_TODAY}: run 1 km</h2>
-        </div>
-        <div className="mt12"><Meter value={DEMO_TODAY_KM} max={DEMO_TODAY_GOAL_KM} /></div>
-        <p className="small soft mt8">
-          {(DEMO_TODAY_GOAL_KM - DEMO_TODAY_KM).toFixed(1)} km to go to unwrap today&apos;s surprise. Outdoor, trail and treadmill runs count.
-        </p>
-        <Link href="/gift" className="textlink" style={{ fontSize: 14 }}>Try a demo unwrap <ChevronIcon /></Link>
-      </section>
-
-      <div className="panel hint small mt12">
-        <span aria-hidden="true" className="pix" style={{ color: 'var(--frost)' }}>!</span>
-        <span>You missed door 13. Run 2 km today to open doors 13 and 14 together. 1 catch-up left this week.</span>
-      </div>
-
-      <section className="panel mt24">
-        <div className="row" style={{ alignItems: 'flex-start' }}>
-          <Sprite id="gift-box" px={4} style={{ flexShrink: 0 }} />
+        <div className="row mt8" style={{ alignItems: 'center' }}>
+          {/* the prize's shadow: a hint of its shape, revealed when you win it */}
+          <span className="prize-shadow" aria-hidden="true">
+            <span className="silhouette"><Sprite id={week.reward} px={2} /></span>
+            <span className="dir-q pix">?</span>
+          </span>
           <div className="grow">
-            <p className="eyebrow">Week {week.week} challenge · ends today</p>
-            <h2 className="h2 mt4">{week.title}</h2>
-            <p className="small soft mt4">Finish it to win a rare ornament. It&apos;s a surprise until you do.</p>
+            <p className="small" style={{ fontWeight: 800 }}>{week.title} to win this rare ornament</p>
+            <p className="tiny muted mt4">What it is stays a surprise until you do. Ends tonight.</p>
           </div>
         </div>
-        <div className="mt12"><Meter value={week.progress ?? 0} max={week.goal ?? 1} /></div>
-        <p className="small muted mt8"><span className="num" style={{ color: 'var(--snow)' }}>{week.progress} of {week.goal} km</span> · next challenge starts December 15</p>
+        <div className="mt8"><Meter value={week.progress ?? 0} max={week.goal ?? 1} /></div>
       </section>
 
       <BottomNav />

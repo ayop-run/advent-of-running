@@ -1,7 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+import { isLoggedOut, markInApp } from '@/lib/me';
 
 /** Nav icons share one 12×12 grid, drawn at 2px per pixel, in the link's text colour. */
 const ICONS = {
@@ -19,11 +21,18 @@ const TABS = [
 
 export default function BottomNav() {
   const path = usePathname();
+  const router = useRouter();
+  // the nav only appears on member pages: logged-out visitors go to log in first
+  useEffect(() => {
+    if (isLoggedOut()) router.replace('/login');
+    else markInApp();
+  }, [router]);
+  const active = (href: string) => path.startsWith(href);
   return (
     <nav className="nav" aria-label="Main">
       <div className="nav-inner">
         {TABS.map((t) => (
-          <Link key={t.href} href={t.href} aria-current={path.startsWith(t.href) ? 'page' : undefined}>
+          <Link key={t.href} href={t.href} aria-current={active(t.href) ? 'page' : undefined}>
             <svg width="24" height="24" viewBox="0 0 12 12" shapeRendering="crispEdges" aria-hidden="true">
               <path d={t.icon} fill="currentColor" fillRule="evenodd" />
             </svg>

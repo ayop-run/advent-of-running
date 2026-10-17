@@ -1,32 +1,68 @@
 'use client';
 
-import Link from 'next/link';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { useState } from 'react';
-import { DEMO_POUCH, hangOrnament } from '@/lib/data';
-import { BASIC, BY_ID, HINTS, type Hint } from '@/lib/ornaments';
+import { useEffect, useRef, useState } from 'react';
+import BackLink from '@/components/BackLink';
+import { MusicButton } from '@/components/MusicToggle';
 import Sprite from '@/components/Sprite';
 import SpriteFx from '@/components/SpriteFx';
 import { useBump } from '@/components/useBump';
+import Link from 'next/link';
+import { editMyOrnament, hangOrnament, myOrnamentOn, type Hung } from '@/lib/data';
+import { getMe, isMember } from '@/lib/me';
+import { BASIC, BY_ID, HINTS, type Hint } from '@/lib/ornaments';
 
 const MAX = 200;
+const IDEAS = ['See you at the Sunday long run!', 'So proud of every mile you ran.', 'Thanks for all the runs together.'];
+const HINT_NOTE: Record<Hint, string> = {
+  Cheer: 'Something to keep them going',
+  Thanks: 'A thank-you',
+  Funny: 'Something to make them laugh',
+  Love: 'Something warm',
+};
+
+const short = (name: string) => name.replace('Advent Runner: ', '');
 
 export default function HangForm() {
   const { nickname } = useParams<{ nickname: string }>();
   const params = useSearchParams();
   const router = useRouter();
   const preset = params.get('o');
-  // a free ornament picked elsewhere stays under "Free ornaments", not "Earned"
-  const earned = preset && BY_ID[preset] && BY_ID[preset].tier !== 'basic' ? Array.from(new Set([preset, ...DEMO_POUCH])) : DEMO_POUCH;
+  const wantsEdit = params.get('edit') === '1';
 
   const [pick, setPick] = useState<string>(preset && BY_ID[preset] ? preset : BASIC[0].id);
   const [message, setMessage] = useState('');
   const [hint, setHint] = useState<Hint>('Cheer');
   const [from, setFrom] = useState('');
-  const [email, setEmail] = useState('');
   const [tried, setTried] = useState(false);
+  const [already, setAlready] = useState<Hung | null>(null);
+  const messageRef = useRef<HTMLTextAreaElement>(null);
+  const fromRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const mine = myOrnamentOn(nickname);
+    setAlready(mine);
+    if (mine && wantsEdit) {
+      // editing: start from what's already hanging
+      setPick(mine.ornamentId);
+      setMessage(mine.message);
+      setHint(mine.hint);
+      setFrom(mine.from);
+    } else if (isMember()) {
+      // signed-in runners sign with their tree name; guests type theirs
+      const nick = getMe().nickname;
+      setFrom(nick.charAt(0).toUpperCase() + nick.slice(1));
+    }
+  }, [nickname, wantsEdit]);
+
+  const editing = Boolean(already && wantsEdit);
+  // an earned ornament is fixed once given; free ones can be swapped while editing
+  const lockedEarned = editing && already && BY_ID[already.ornamentId]?.tier !== 'basic' ? already.ornamentId : null;
+  // an ornament you just unwrapped comes first and is preselected; free ones are always there
+  const earned = lockedEarned ?? (preset && BY_ID[preset] && BY_ID[preset].tier !== 'basic' ? preset : null);
+  const options = lockedEarned ? [lockedEarned] : earned ? [earned, ...BASIC.map((o) => o.id)] : BASIC.map((o) => o.id);
+
   const name = nickname.charAt(0).toUpperCase() + nickname.slice(1);
-  const valid = message.trim().length > 0 && from.trim().length > 0;
   const chosen = BY_ID[pick];
   const { bump, of } = useBump();
   const choose = (id: string) => {
@@ -42,101 +78,150 @@ export default function HangForm() {
       </span>
     );
   };
+  const preview = of(pick, pick);
+
+  if (already && !editing) {
+    const o = BY_ID[already.ornamentId];
+    return (
+      <main className="screen no-nav">
+        <div className="topbar">
+          <BackLink fallback={`/t/${nickname}`} />
+          <MusicButton />
+        </div>
+        <div className="center mt24">
+          <div className="showcase"><Sprite id={already.ornamentId} px={4} label={o?.name} /></div>
+          <p className="brand-mark mt16">One per tree</p>
+          <h1 className="title mt4">You already hung one on {name}&apos;s tree</h1>
+          <p className="soft mt8">Your {o ? short(o.name) : 'ornament'} is there, sealed until Christmas. Everyone can hang one ornament on each tree.</p>
+        </div>
+        <Link href={`/t/${nickname}/hang?edit=1`} className="btn block mt32">Edit my message</Link>
+        <Link href={`/t/${nickname}`} className="btn ghost block mt8">See {name}&apos;s tree</Link>
+        <Link href="/friends" className="btn ghost block mt8">Find another friend</Link>
+      </main>
+    );
+  }
 
   return (
     <main className="screen no-nav">
       <div className="topbar">
-        <Link href={`/t/${nickname}`} className="textlink">Back</Link>
-        <span className="small muted">for {name}</span>
+        <BackLink fallback={`/t/${nickname}`} />
+        <MusicButton />
       </div>
 
-      <div className="row">
-        <span key={of(chosen.id, chosen.id).k} className="bump" style={{ flexShrink: 0 }}>
-          <span className={of(chosen.id, chosen.id).anim}><Sprite id={chosen.id} px={2} /></span>
-        </span>
-        <div>
-          <h1 className="title">Hang an ornament</h1>
-          <p className="small soft">{chosen.name}</p>
+      <p className="brand-mark">Advent of Running</p>
+      <h1 className="title">{editing ? 'Edit your ornament' : `Hang on ${name}’s tree`}</h1>
+      {editing && <p className="small soft mt4">You can change it until December 24 at 23:59.</p>}
+
+      {/* live preview: the ornament and its gift tag, as it will hang */}
+      <section className="hang-preview mt16" aria-label="Preview">
+        <div className="hang-art">
+          <span key={preview.k} className="bump">
+            <span className={preview.anim}><Sprite id={pick} px={4} label={chosen.name} /></span>
+            {preview.fx && <SpriteFx anim={preview.fx} px={4} />}
+          </span>
         </div>
-      </div>
+        <div className="gift-tag">
+          <p><span className="k">To</span> {name}</p>
+          <p><span className="k">From</span> {from.trim() || 'you'}</p>
+          <p className="mt4"><span className="tag-chip">Hint: {hint}</span></p>
+          <p className="sealed"><Sprite id="lock" px={1} /> Sealed until Dec 25</p>
+        </div>
+      </section>
 
       <form
         className="stack mt24"
-        style={{ gap: 22 }}
+        style={{ gap: 28 }}
         onSubmit={(e) => {
           e.preventDefault();
           setTried(true);
-          if (!valid) return;
+          if (!message.trim()) return messageRef.current?.focus();
+          if (!from.trim()) return fromRef.current?.focus();
+          // Phase 2: Cloudflare Turnstile bot check and a spam filter before saving.
+          if (editing) {
+            editMyOrnament(nickname, { ornamentId: pick, from: from.trim(), hint, message: message.trim() });
+            router.push(`/t/${nickname}?saved=1`);
+            return;
+          }
           const item = hangOrnament(nickname, { ornamentId: pick, from: from.trim(), hint, message: message.trim() });
           router.push(`/t/${nickname}/done?id=${item.id}`);
         }}
       >
         <fieldset className="field" style={{ border: 0, padding: 0, margin: 0 }}>
-          <legend style={{ padding: 0, marginBottom: 8 }}>Earned by your runs</legend>
+          <legend className="step-label"><b>1</b> Pick an ornament</legend>
           <div className="picker">
-            {earned.map((id) => (
+            {options.map((id) => (
               <button key={id} type="button" className="pick" aria-pressed={pick === id} onClick={() => choose(id)}>
+                {id === earned && <span className="pick-tag">{lockedEarned ? 'Earned' : 'Today'}</span>}
                 {art(id)}
-                <span>{BY_ID[id].name.replace('Advent Runner: ', '')}</span>
+                <span>{short(BY_ID[id].name)}</span>
               </button>
             ))}
           </div>
-          <span className="help">Demo pouch. Guests see free ornaments only.</span>
+          {lockedEarned ? (
+            <span className="help">You earned this one from a door, so it stays. You can still change the message.</span>
+          ) : earned ? (
+            <span className="help">“Today” is the ornament you just unwrapped. The rest are free.</span>
+          ) : null}
         </fieldset>
 
-        <fieldset className="field" style={{ border: 0, padding: 0, margin: 0 }}>
-          <legend style={{ padding: 0, marginBottom: 8 }}>Free ornaments</legend>
-          <div className="picker">
-            {BASIC.map((o) => (
-              <button key={o.id} type="button" className="pick" aria-pressed={pick === o.id} onClick={() => choose(o.id)}>
-                {art(o.id)}
-                <span>{o.name}</span>
-              </button>
-            ))}
-          </div>
-        </fieldset>
+        <div className="stack" style={{ gap: 8 }}>
+          <label className="field">
+            <span className="step-label"><b>2</b> Write a message</span>
+            <textarea
+              ref={messageRef}
+              className="textarea"
+              maxLength={MAX}
+              placeholder={`Write something for ${name}…`}
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              aria-invalid={tried && !message.trim()}
+            />
+            <span className="help" style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+              <span className={tried && !message.trim() ? 'bad' : undefined}>
+                {tried && !message.trim() ? 'Write a message to hang your ornament.' : `Only ${name} can read it, on December 25.`}
+              </span>
+              <span className="num">{message.length}/{MAX}</span>
+            </span>
+          </label>
+          {!message && (
+            <div className="row wrap" style={{ gap: 6 }} aria-label="Message ideas">
+              {IDEAS.map((idea) => (
+                <button key={idea} type="button" className="idea" onClick={() => { setMessage(idea); messageRef.current?.focus(); }}>{idea}</button>
+              ))}
+            </div>
+          )}
+        </div>
 
-        <label className="field">
-          Your message
-          <textarea
-            className="textarea"
-            maxLength={MAX}
-            placeholder="See you at the Sunday long run!"
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            aria-invalid={tried && !message.trim()}
-          />
-          <span className="help" style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span>{tried && !message.trim() ? 'Write a message to hang your ornament.' : `${name} reads it on December 25.`}</span>
-            <span>{message.length}/{MAX}</span>
-          </span>
-        </label>
-
         <fieldset className="field" style={{ border: 0, padding: 0, margin: 0 }}>
-          <legend style={{ padding: 0, marginBottom: 8 }}>A hint they can see now</legend>
+          <legend className="step-label"><b>3</b> Add a hint</legend>
           <div className="row wrap" style={{ gap: 8 }}>
             {HINTS.map((x) => (
               <button key={x} type="button" className="pill" aria-pressed={hint === x} onClick={() => setHint(x)}>{x}</button>
             ))}
           </div>
+          <span className="help">{HINT_NOTE[hint]}. {name} sees the hint now, but not the message.</span>
         </fieldset>
 
         <label className="field">
-          Your name
-          <input className="input" value={from} onChange={(e) => setFrom(e.target.value)} placeholder="Shown on the ornament" maxLength={30} aria-invalid={tried && !from.trim()} />
-          {tried && !from.trim() && <span className="help">Add your name so {name} knows who it&apos;s from.</span>}
+          <span className="step-label"><b>4</b> Sign it</span>
+          <input
+            ref={fromRef}
+            className="input"
+            value={from}
+            onChange={(e) => setFrom(e.target.value)}
+            placeholder="Your name"
+            maxLength={30}
+            autoComplete="nickname"
+            aria-invalid={tried && !from.trim()}
+          />
+          <span className={`help${tried && !from.trim() ? ' bad' : ''}`}>
+            {tried && !from.trim() ? `Add your name so ${name} knows who it’s from.` : 'Shown on the ornament.'}
+          </span>
         </label>
-
-        <label className="field">
-          Email, if you want to know when it&apos;s read
-          <input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
-        </label>
-
-        <div className="panel quiet tiny muted center">Bot check goes here (Cloudflare Turnstile, phase 2)</div>
 
         <div className="sticky-cta">
-          <button className="btn block" type="submit">Hang it on {name}&apos;s tree</button>
-          <p className="center tiny muted mt8">Messages are checked for spam. Hanging closes December 24 at 23:59.</p>
+          <button className="btn block" type="submit">{editing ? 'Save changes' : `Hang it on ${name}’s tree`}</button>
+          <p className="center tiny muted mt8">Hanging closes December 24 at 23:59.</p>
         </div>
       </form>
     </main>

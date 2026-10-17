@@ -45,6 +45,7 @@
 :root { transition: --sky-top 3s linear, --sky-mid 3s linear, --sky-bottom 3s linear, --sky-glow 3s linear, --sky-stars 3s linear, --muted 3s linear; }
 
 * { box-sizing: border-box; }
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 html, body { margin: 0; overflow-x: clip; background: var(--sky-top); color: var(--snow); font-family: var(--body); }
 body {
   min-height: 100dvh; -webkit-font-smoothing: antialiased; font-size: 16px; line-height: 1.5; overflow-x: clip;
@@ -81,12 +82,18 @@ p { margin: 0; }
 /* music on/off, pixel button in the top bar */
 .topbar-end { display: flex; align-items: center; gap: 10px; flex-shrink: 0; white-space: nowrap; }
 .topbar > :first-child { min-width: 0; white-space: nowrap; }
-.music {
+/* long tree names shorten with "…" instead of pushing the top bar apart */
+.title.clip { overflow: hidden; text-overflow: ellipsis; }
+.tree-stage { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 12px 0; }
+.countdown-strip { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 16px; clip-path: var(--px4); background: rgba(26,42,79,.6); }
+.music, .icon-btn {
   flex-shrink: 0; width: 44px; height: 44px; padding: 0; border: 0; clip-path: var(--px4); display: flex; align-items: center; justify-content: center;
   background: var(--panel-2); color: var(--soft); box-shadow: inset 0 -4px 0 #142347, inset 0 2px 0 rgba(255,255,255,.12);
 }
 .music[aria-pressed='true'] { background: var(--gold); color: #2b1d07; box-shadow: inset 0 -4px 0 var(--gold-dark), inset 0 2px 0 rgba(255,255,255,.4); }
-.music:focus-visible { outline: none; box-shadow: inset 0 0 0 4px var(--frost); }
+.music:focus-visible, .icon-btn:focus-visible { outline: none; box-shadow: inset 0 0 0 4px var(--frost); }
+.icon-btn:hover { color: var(--snow); }
+.icon-btn:active { transform: translateY(2px); }
 
 /* ---------- layout ---------- */
 .screen {
@@ -124,6 +131,7 @@ p { margin: 0; }
 .panel.hint { display: flex; gap: 12px; align-items: flex-start; border: 2px solid transparent; padding: 14px 16px; background: linear-gradient(#1b3358, #1b3358) padding-box, rgba(143,211,255,.45) border-box; }
 .panel.flush { padding: 0 16px; }
 .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.panel-head > .num, .panel-head > .pix { white-space: nowrap; }
 .brand-mark { font-weight: 800; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--gold); margin-bottom: 2px; }
 .eyebrow { font-weight: 800; font-size: 13px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
 .badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; clip-path: var(--px4); background: rgba(63,181,122,.18); color: #7fe0a6; font-weight: 800; font-size: 13px; white-space: nowrap; }
@@ -146,9 +154,76 @@ p { margin: 0; }
 .dir-card.mystery svg, .silhouette svg { filter: brightness(0); opacity: .4; }
 .dir-card.mystery .dir-name { color: var(--muted); }
 .dir-q { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); line-height: 1; }
+.prize-shadow { position: relative; flex-shrink: 0; width: 56px; height: 56px; display: grid; place-items: center; clip-path: var(--px4); background: var(--night-deep); box-shadow: inset 0 0 0 2px var(--gold); }
+.prize-shadow .silhouette svg { filter: brightness(0) invert(1); opacity: .28; }
+.prize-shadow .dir-q { position: absolute; color: var(--gold); }
 .showcase > .dir-q { position: absolute; color: var(--soft); }
 .silhouette { display: block; line-height: 0; }
 @media (prefers-reduced-motion: reduce) { .dir-card { transition: none; } }
+
+/* ---------- sign up ---------- */
+.stepper { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; list-style: none; padding: 0; margin: 0; }
+.stepper li { display: flex; flex-direction: column; gap: 6px; font-size: 12px; font-weight: 800; color: var(--muted); }
+.stepper i { height: 8px; background: var(--night-deep); box-shadow: inset 0 0 0 2px var(--line); }
+.stepper .done i { background: var(--gold); box-shadow: inset 0 -2px 0 var(--gold-dark); }
+.stepper .now i { background: var(--gold); box-shadow: inset 0 -2px 0 var(--gold-dark); }
+.stepper .now span { color: var(--gold); }
+.stepper .done span { color: var(--soft); }
+.input-prefix { display: flex; align-items: stretch; }
+.input-prefix > span { display: grid; place-items: center; padding: 0 4px 0 14px; clip-path: var(--px4); background: var(--night-deep); color: var(--muted); font-weight: 700; box-shadow: inset 0 0 0 2px var(--line); margin-right: -2px; }
+.input-prefix .input { flex: 1; min-width: 0; padding-left: 8px; }
+.field .help.ok { color: #7fe0a6; }
+.field .help.ok::before { content: '✓ '; }
+.field .help.bad { color: #ff9aa8; }
+/* Strava orange; phase 2 swaps in Strava's official button artwork */
+.btn.strava { background: #fc5200; color: #fff; box-shadow: inset 0 -6px 0 #b83b00, inset 0 4px 0 rgba(255,255,255,.3); }
+.btn.strava:hover { color: #fff; }
+
+/* ---------- settings ---------- */
+.setting { display: block; padding: 14px 0; border-bottom: 2px solid rgba(47,69,115,.6); gap: 12px; }
+.setting:last-child { border-bottom: 0; }
+.setting-title { font-weight: 800; font-size: 15px; }
+.setting-help { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+/* ---------- hang form ---------- */
+.hang-preview { display: flex; align-items: center; gap: 14px; padding: 14px; clip-path: var(--px8); background: rgba(26,42,79,.6); }
+.hang-art { flex-shrink: 0; width: 88px; height: 88px; display: grid; place-items: center; clip-path: var(--px4); background: var(--night-deep); box-shadow: inset 0 0 0 4px var(--gold); }
+/* a paper gift tag, like the name tag under each tree */
+.gift-tag { position: relative; flex: 1; min-width: 0; padding: 10px 12px 10px 18px; clip-path: var(--px4); background: var(--snow); color: var(--night); box-shadow: inset 0 -4px 0 #c7d3f0; font-size: 14px; font-weight: 700; line-height: 1.35; }
+.gift-tag::before { content: ''; position: absolute; left: 6px; top: 50%; width: 6px; height: 6px; margin-top: -3px; background: var(--night); } /* the string hole */
+.gift-tag p { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gift-tag .k { color: #6f7fa6; font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; margin-right: 4px; }
+.gift-tag .tag-chip { display: inline-block; padding: 1px 8px; background: var(--night); color: var(--snow); font-size: 12px; }
+.gift-tag .sealed { display: flex; align-items: center; gap: 6px; margin-top: 6px; font-size: 12px; color: #6f7fa6; }
+.step-label { display: flex; align-items: center; gap: 8px; padding: 0; margin-bottom: 8px; font-weight: 800; font-size: 15px; }
+.step-label b { display: inline-grid; place-items: center; width: 22px; height: 22px; clip-path: var(--px4); background: var(--gold); color: #2b1d07; font-size: 13px; }
+.pick-tag { position: absolute; top: 0; right: 0; padding: 3px 6px; background: var(--gold); color: #2b1d07; font: 800 11px/1 var(--body); }
+.idea { padding: 6px 10px; border: 0; clip-path: var(--px4); background: rgba(143,211,255,.12); color: var(--soft); font-size: 13px; font-weight: 700; text-align: left; }
+.idea:hover { background: rgba(143,211,255,.22); color: var(--snow); }
+.field .help .bad, .field .help.bad { color: #ff9aa8; }
+
+.ask-link { display: inline-flex; align-items: center; min-height: 28px; margin-top: 2px; padding: 0; border: 0; background: none; color: var(--gold); font-weight: 800; font-size: 13px; }
+.ask-link:hover { color: #ffe08f; }
+.ask-done { display: inline-flex; align-items: center; min-height: 28px; margin-top: 2px; color: #7fe0a6; font-weight: 800; font-size: 13px; }
+
+/* ---------- christmas carousel ---------- */
+.carousel {
+  position: relative; display: flex; gap: 12px; overflow-x: auto; overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory; scrollbar-width: none; outline: none;
+}
+.carousel::-webkit-scrollbar { display: none; }
+.carousel:focus-visible { box-shadow: 0 0 0 4px var(--frost); }
+.slide { flex: 0 0 100%; min-height: 340px; display: flex; flex-direction: column; scroll-snap-align: start; scroll-snap-stop: always; }
+.dots { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; max-width: 220px; }
+.dot { width: 12px; height: 12px; padding: 0; border: 0; background: var(--line); cursor: pointer; }
+.dot[aria-current='true'] { width: 24px; background: var(--gold); box-shadow: inset 0 -2px 0 var(--gold-dark); }
+.dot:focus-visible { outline: 3px solid var(--frost); outline-offset: 2px; }
+.icon-btn:disabled { opacity: .35; cursor: not-allowed; }
+
+.message-card { padding: 14px 16px; clip-path: var(--px8); background: var(--snow); color: var(--night); box-shadow: inset 0 -4px 0 #c7d3f0; }
+.message-card .muted { color: #6f7fa6; }
+.badge.demo { background: rgba(255,201,74,.25); color: #8a5a00; }
+.badge.demo::before { background: var(--gold-dark); }
 
 .tag { display: inline-flex; align-items: center; padding: 4px 10px; clip-path: var(--px4); background: var(--panel-2); color: var(--soft); font-weight: 800; font-size: 13px; white-space: nowrap; }
 .badge::before { content: ''; width: 6px; height: 6px; background: currentColor; }
@@ -306,6 +381,7 @@ a.list-row:hover { color: var(--gold); }
 
 .toast { position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%); z-index: 50; background: var(--snow); color: var(--night); clip-path: var(--px4); padding: 10px 18px; font-weight: 800; font-size: 14px; animation: fade .15s ease; }
 
+.sticky-cta.above-nav { bottom: calc(72px + env(safe-area-inset-bottom)); }
 .sticky-cta { position: sticky; bottom: 0; z-index: 5; padding: 14px 0 calc(14px + env(safe-area-inset-bottom)); background: linear-gradient(180deg, transparent, var(--sky-bottom) 30%); }
 
 /* ---------- landing: how it works ---------- */

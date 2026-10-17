@@ -1,3 +1,5 @@
+import { DEMO_GIVEN, doorOrnament } from './calendar';
+import { getMe, isMember } from './me';
 import type { Hint } from './ornaments';
 
 export type Hung = {
@@ -7,6 +9,8 @@ export type Hung = {
   hint: Hint;
   message: string;
   createdAt: string;
+  /** hung by the runner using this browser: one per tree */
+  mine?: boolean;
 };
 
 export type Tree = {
@@ -48,21 +52,44 @@ const SEED: Record<string, Tree> = {
     nickname: 'mina',
     displayName: 'Mina',
     ornaments: [
-      h('reindeer', 'Jonas', 'Cheer', '...'),
-      h('bauble-cranberry', 'Aiko', 'Love', '...'),
-      h('snowflake', 'Leo', 'Thanks', '...'),
-      h('santa-shoe', 'Tom', 'Cheer', '...'),
-      h('bauble-snow', 'Ella', 'Funny', '...'),
+      h('reindeer', 'Jonas', 'Cheer', 'Your Sunday long runs keep me going. Merry Christmas!'),
+      h('bauble-cranberry', 'Aiko', 'Love', 'Thanks for always waiting for me at the turnaround.'),
+      h('snowflake', 'Leo', 'Thanks', 'One day I will beat your 5K. Not this year, though.'),
+      h('santa-shoe', 'Tom', 'Cheer', 'See you at the Christmas Eve fun run!'),
+      h('bauble-snow', 'Ella', 'Funny', 'Hot cocoa after the next icy one? You are buying.'),
     ],
   },
   jonas: {
     nickname: 'jonas',
     displayName: 'Jonas',
-    ornaments: [h('stopwatch', 'Mina', 'Cheer', '...'), h('sock', 'Leo', 'Funny', '...')],
+    ornaments: [h('stopwatch', 'Mina', 'Cheer', 'Fastest friend I know. Go get that PB!'), h('sock', 'Leo', 'Funny', 'Warm socks for cold miles.')],
   },
 };
 
 const key = (nick: string) => `aor:tree:${nick}`;
+
+const myName = () => {
+  const nick = getMe().nickname;
+  return nick.charAt(0).toUpperCase() + nick.slice(1);
+};
+
+const display = (nick: string) => nick.charAt(0).toUpperCase() + nick.slice(1);
+
+/** The demo runner's past door ornaments, shown on the trees of the friends who got them. */
+function demoGiftsTo(nick: string): Hung[] {
+  return Object.entries(DEMO_GIVEN)
+    .filter(([, name]) => name.toLowerCase() === nick)
+    .map(([n]) => ({
+      id: `door-${n}`,
+      ornamentId: doorOrnament(Number(n)),
+      from: myName(),
+      hint: 'Cheer' as Hint,
+      message: `Door ${n} was for you, ${display(nick)}. Keep running!`,
+      createdAt: `2026-12-${String(n).padStart(2, '0')}T08:00:00Z`,
+      // the demo runner's gifts belong to the signed-in runner, not to guests
+      mine: isMember(),
+    }));
+}
 
 export function getTree(nickname: string): Tree {
   const nick = nickname.toLowerCase();
@@ -78,11 +105,52 @@ export function getTree(nickname: string): Tree {
   } catch {
     extra = [];
   }
-  return { ...base, ornaments: [...base.ornaments, ...extra] };
+  // edits you made to the demo door ornaments you gave
+  let edits: Record<string, Partial<Hung>> = {};
+  try {
+    edits = JSON.parse(window.localStorage.getItem(editsKey(nick)) ?? '{}');
+  } catch {
+    edits = {};
+  }
+  const gifts = demoGiftsTo(nick).map((h) => ({ ...h, ...edits[h.id] }));
+  return { ...base, ornaments: [...base.ornaments, ...gifts, ...extra] };
 }
 
-export function hangOrnament(nickname: string, input: Omit<Hung, 'id' | 'createdAt'>): Hung {
-  const item: Hung = { ...input, id: `local-${Date.now()}`, createdAt: new Date().toISOString() };
+const editsKey = (nick: string) => `aor:edits:${nick}`;
+
+export type HungEdit = Pick<Hung, 'message' | 'hint' | 'from'> & { ornamentId?: string };
+
+/** Change the ornament you hung on this tree (open until hanging closes on Dec 24). */
+export function editMyOrnament(nickname: string, patch: HungEdit): Hung | null {
+  const nick = nickname.toLowerCase();
+  const mine = myOrnamentOn(nick);
+  if (!mine) return null;
+  try {
+    if (mine.id.startsWith('local-')) {
+      const list: Hung[] = JSON.parse(window.localStorage.getItem(key(nick)) ?? '[]');
+      window.localStorage.setItem(key(nick), JSON.stringify(list.map((h) => (h.id === mine.id ? { ...h, ...patch } : h))));
+    } else {
+      // demo door gifts aren't stored, so keep the edit alongside them
+      const edits = JSON.parse(window.localStorage.getItem(editsKey(nick)) ?? '{}');
+      edits[mine.id] = { ...edits[mine.id], ...patch };
+      window.localStorage.setItem(editsKey(nick), JSON.stringify(edits));
+    }
+  } catch {
+    /* storage unavailable */
+  }
+  return { ...mine, ...patch };
+}
+
+/** The ornament you hung on this tree, if any. Everyone gets one per tree. */
+export function myOrnamentOn(nickname: string): Hung | null {
+  return getTree(nickname).ornaments.find((h) => h.mine) ?? null;
+}
+
+export function hangOrnament(nickname: string, input: Omit<Hung, 'id' | 'createdAt' | 'mine'>): Hung {
+  // one per tree: hanging again just returns the ornament already there
+  const existing = myOrnamentOn(nickname);
+  if (existing) return existing;
+  const item: Hung = { ...input, id: `local-${Date.now()}`, createdAt: new Date().toISOString(), mine: true };
   try {
     const raw = window.localStorage.getItem(key(nickname.toLowerCase()));
     const list: Hung[] = raw ? JSON.parse(raw) : [];
@@ -93,12 +161,3 @@ export function hangOrnament(nickname: string, input: Omit<Hung, 'id' | 'created
   }
   return item;
 }
-
-/** Ornaments the demo runner has earned and can give away (max 3). */
-export const DEMO_POUCH = ['finish-medal', 'gingerbread-runner'];
-
-export const FRIENDS = [
-  { nickname: 'mina', name: 'Mina', note: 'Hung an ornament on your tree' },
-  { nickname: 'jonas', name: 'Jonas', note: 'Visited your tree yesterday' },
-  { nickname: 'aiko', name: 'Aiko', note: 'From your saved trees' },
-];

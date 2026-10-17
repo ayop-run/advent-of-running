@@ -33,9 +33,10 @@ const STEPS = [
 const RULES = [
   ['What counts', 'Outdoor, trail and treadmill runs synced from Strava. Manual entries don’t.'],
   ['Daily doors', '1 km opens the day’s door. Doors close at 23:59 in your time zone.'],
-  ['Catch-ups', 'Missed a day? Run double the next day to open both. One catch-up per week.'],
   ['Weekly challenges', 'Finish a week’s goal to win a rare ornament. What it is stays a surprise.'],
-  ['Giving', 'Hold up to 3 earned ornaments. Give them by December 24, or keep them for your own tree.'],
+  ['Giving', 'When you unwrap an ornament, give it straight to a friend. It goes on their tree right away.'],
+  ['One per tree', 'You can hang one ornament on each friend’s tree, so spread them around.'],
+  ['Missed days', 'No run, no ornament that day. The door stays wrapped.'],
 ];
 
 export default function About() {
@@ -95,7 +96,7 @@ export default function About() {
         <ChevronIcon />
       </Link>
 
-      <Link href="/onboarding" className="btn block mt24">Start with Strava</Link>
+      <Link href="/signup" className="btn block mt24">Sign up</Link>
 
       <p className="center tiny muted mt24">
         Pixel art drawn in code · “Jingle Bells” (J. L. Pierpont, 1857, public domain) played as chiptune

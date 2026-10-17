@@ -8,8 +8,8 @@ import { MusicButton } from '@/components/MusicToggle';
 import Sprite from '@/components/Sprite';
 import SpriteFx from '@/components/SpriteFx';
 import { animFor, animName } from '@/components/useBump';
-import { WEEKLY, doorOrnament, doorState } from '@/lib/calendar';
-import { DEMO_POUCH, getTree, type Hung } from '@/lib/data';
+import { DEMO_GIVEN, WEEKLY, doorOrnament, doorState } from '@/lib/calendar';
+import { getTree, type Hung } from '@/lib/data';
 import { HOW_TO_GET, ORNAMENTS, type Ornament, type Tier } from '@/lib/ornaments';
 
 const SECTIONS: { tier: Tier; title: string; note: string }[] = [
@@ -22,7 +22,7 @@ const shortName = (o: Ornament) => o.name.replace('Advent Runner: ', '');
 const list = (xs: (string | number)[]) =>
   xs.length <= 1 ? xs.join('') : `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`;
 
-/** Where the demo runner got each ornament: friends, doors, weekly prizes and their pouch. */
+/** Where the demo runner met each ornament: on their tree, behind a door they gave away, or as a prize. */
 function useSources(tree: Hung[]) {
   return useMemo(() => {
     const from: Record<string, string[]> = {};
@@ -31,9 +31,8 @@ function useSources(tree: Hung[]) {
     for (let n = 1; n <= 24; n++) if (doorState(n) === 'opened') (doors[doorOrnament(n)] ??= []).push(n);
     const weeks: Record<string, number[]> = {};
     (weeks[WEEKLY[0].reward] ??= []).push(WEEKLY[0].week); // week 1 is done
-    const pouch = new Set(DEMO_POUCH);
-    const found = new Set([...Object.keys(from), ...Object.keys(doors), ...Object.keys(weeks), ...pouch]);
-    return { from, doors, weeks, pouch, found };
+    const found = new Set([...Object.keys(from), ...Object.keys(doors), ...Object.keys(weeks)]);
+    return { from, doors, weeks, found };
   }, [tree]);
 }
 
@@ -56,12 +55,11 @@ export default function OrnamentDirectory() {
   const story = (o: Ornament) => {
     const lines: string[] = [];
     if (src.from[o.id]) lines.push(`On your tree from ${list(src.from[o.id])}`);
-    if (src.doors[o.id]) lines.push(`Unwrapped behind door${src.doors[o.id].length > 1 ? 's' : ''} ${list(src.doors[o.id])}`);
+    for (const n of src.doors[o.id] ?? []) lines.push(`Door ${n}: you gave it to ${DEMO_GIVEN[n] ?? 'a friend'}`);
     if (src.weeks[o.id]) lines.push(`Won in week ${list(src.weeks[o.id])}`);
-    if (src.pouch.has(o.id)) lines.push('In your pouch, ready to give');
     return lines;
   };
-  const canGive = (o: Ornament) => o.tier === 'basic' || src.pouch.has(o.id);
+  const canGive = (o: Ornament) => o.tier === 'basic';
 
   return (
     <main className="screen no-nav">

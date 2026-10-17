@@ -20,7 +20,7 @@ export default function Landing() {
       <div className="topbar">
         <span className="brand">Advent of Running</span>
         <div className="topbar-end">
-          <Link href="/tree" className="textlink">Log in</Link>
+          <Link href="/login" className="textlink">Log in</Link>
           <MusicButton />
         </div>
       </div>
@@ -38,15 +38,15 @@ export default function Landing() {
         ))}
       </ol>
 
-      <div className="grow" />
+      <div style={{ flex: '0 1 48px' }} />
 
       <div className="stack mt24">
         {/* Phase 2: Strava's official "Connect with Strava" button + OAuth. */}
-        <Link href="/onboarding" className="btn block">Start with Strava</Link>
-        <Link href="/t/mina" className="btn ghost block">See a friend&apos;s tree</Link>
+        <Link href="/signup" className="btn block">Sign up</Link>
+        <Link href="/login" className="btn ghost block">Log in</Link>
       </div>
       <p className="center tiny muted mt12">
-        Door 1 opens December 1 · <Link href="/about" style={{ fontWeight: 800 }}>How it works</Link> · <Link href="/ornaments" style={{ fontWeight: 800 }}>Ornaments</Link>
+        <Link href="/t/mina" style={{ fontWeight: 800 }}>See a demo tree</Link> · <Link href="/about" style={{ fontWeight: 800 }}>How it works</Link> · <Link href="/ornaments" style={{ fontWeight: 800 }}>Ornaments</Link>
       </p>
     </main>
   );
