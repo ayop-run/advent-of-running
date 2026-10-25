@@ -22,7 +22,9 @@ export default function MyTree() {
   const [open, setOpen] = useState<Hung | null>(null);
   const [toast, setToast] = useState('');
 
-  useEffect(() => setTree(getTree('demo')), []);
+  useEffect(() => {
+    getTree('demo').then(setTree, console.error);
+  }, []);
   useEffect(() => {
     if (!toast) return;
     const id = setTimeout(() => setToast(''), 2200);

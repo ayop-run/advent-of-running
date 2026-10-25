@@ -1,18 +1,17 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { MusicButton } from '@/components/MusicToggle';
-import { getTree, type Hung } from '@/lib/data';
+import { CHRISTMAS_PREVIEW } from '@/lib/data';
 import { BY_ID, TIER_LABEL } from '@/lib/ornaments';
 
 const REACTIONS = ['Thank you', 'Made my day', 'Run together soon'];
 
 export default function ChristmasUnlock() {
-  const [list, setList] = useState<Hung[]>([]);
+  const list = CHRISTMAS_PREVIEW;
   const [i, setI] = useState(0);
   const [sent, setSent] = useState<Record<string, string>>({});
-  useEffect(() => setList(getTree('demo').ornaments), []);
 
   const cur = list[i];
   const o = cur ? BY_ID[cur.ornamentId] : null;

@@ -10,7 +10,9 @@ import { getTree, type Tree } from '@/lib/data';
 export default function FriendTree() {
   const { nickname } = useParams<{ nickname: string }>();
   const [tree, setTree] = useState<Tree | null>(null);
-  useEffect(() => setTree(getTree(nickname)), [nickname]);
+  useEffect(() => {
+    getTree(nickname).then(setTree, console.error);
+  }, [nickname]);
 
   return (
     <main className="screen no-nav">

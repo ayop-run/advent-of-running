@@ -1,3 +1,4 @@
+import { supabase } from './supabase';
 import type { Hint } from './ornaments';
 
 export type Hung = {
@@ -16,83 +17,66 @@ export type Tree = {
 };
 
 /**
- * PROTOTYPE DATA LAYER
- * Everything lives in the browser (localStorage) so the prototype runs on Vercel
- * with no database. Phase 2 replaces these functions with Supabase queries;
- * the pages only call the functions below.
+ * DATA LAYER
+ * Trees and hung ornaments come from Supabase through the `get_tree` and `hang_ornament`
+ * functions (supabase/schema.sql). Messages never leave the database here: public trees
+ * only get sealed ornaments. Pages only call the functions below.
  */
 
+/** Sealed ornaments carry an empty message. Unknown nicknames get an empty tree. */
+export async function getTree(nickname: string): Promise<Tree> {
+  const nick = nickname.toLowerCase();
+  const { data, error } = await supabase.rpc('get_tree', { nick });
+  if (error) throw error;
+  if (!data) {
+    return { nickname: nick, displayName: nick.charAt(0).toUpperCase() + nick.slice(1), ornaments: [] };
+  }
+  const tree = data as Omit<Tree, 'ornaments'> & { ornaments: Omit<Hung, 'message'>[] };
+  return { ...tree, ornaments: tree.ornaments.map((o) => ({ ...o, message: '' })) };
+}
+
+export type HangError = 'tree_not_found' | 'sign_in_required' | 'hanging_closed' | 'unknown';
+
+export async function hangOrnament(
+  nickname: string,
+  input: Omit<Hung, 'id' | 'createdAt'> & { email?: string },
+): Promise<{ id: string } | { error: HangError }> {
+  const { data, error } = await supabase.rpc('hang_ornament', {
+    nick: nickname.toLowerCase(),
+    ornament_id: input.ornamentId,
+    from_name: input.from,
+    hint: input.hint,
+    message: input.message,
+    from_email: input.email || null,
+  });
+  if (error) {
+    const known: HangError[] = ['tree_not_found', 'sign_in_required', 'hanging_closed'];
+    return { error: known.find((k) => error.message.includes(k)) ?? 'unknown' };
+  }
+  return { id: data as string };
+}
+
+/**
+ * Preview data for /christmas only. Reading real messages needs owner sign-in plus the
+ * Dec 25 check on the server, which arrives with Strava login.
+ */
 let seq = 0;
 function h(ornamentId: string, from: string, hint: Hint, message: string): Hung {
   seq += 1;
-  return { id: `seed-${seq}`, ornamentId, from, hint, message, createdAt: '2026-12-10T08:00:00Z' };
+  return { id: `preview-${seq}`, ornamentId, from, hint, message, createdAt: '2026-12-10T08:00:00Z' };
 }
 
-const SEED: Record<string, Tree> = {
-  demo: {
-    nickname: 'demo',
-    displayName: 'You',
-    ornaments: [
-      h('star-gold', 'Mina', 'Cheer', 'You got this. See you at the Sunday long run!'),
-      h('fox', 'Jonas', 'Thanks', 'Thanks for pacing me in October. Merry Christmas!'),
-      h('finish-medal', 'Aiko', 'Love', 'Proud of you for running through the dark mornings.'),
-      h('penguin', 'Leo', 'Funny', 'Slipped on ice twice this week. Worth it.'),
-      h('bauble-snow', 'Hana', 'Cheer', 'Keep the streak alive!'),
-      h('snowflake', 'Tom', 'Love', 'Happy holidays from the Tuesday crew.'),
-      h('sock', 'Ella', 'Funny', 'Warm feet, fast feet.'),
-      h('hot-cocoa', 'Sam', 'Thanks', 'Cocoa after the run is on me.'),
-      h('bauble-frost', 'Noah', 'Cheer', 'Run happy!'),
-    ],
-  },
-  mina: {
-    nickname: 'mina',
-    displayName: 'Mina',
-    ornaments: [
-      h('reindeer', 'Jonas', 'Cheer', '...'),
-      h('bauble-cranberry', 'Aiko', 'Love', '...'),
-      h('snowflake', 'Leo', 'Thanks', '...'),
-      h('santa-shoe', 'Tom', 'Cheer', '...'),
-      h('bauble-snow', 'Ella', 'Funny', '...'),
-    ],
-  },
-  jonas: {
-    nickname: 'jonas',
-    displayName: 'Jonas',
-    ornaments: [h('stopwatch', 'Mina', 'Cheer', '...'), h('sock', 'Leo', 'Funny', '...')],
-  },
-};
-
-const key = (nick: string) => `aor:tree:${nick}`;
-
-export function getTree(nickname: string): Tree {
-  const nick = nickname.toLowerCase();
-  const base: Tree = SEED[nick] ?? {
-    nickname: nick,
-    displayName: nick.charAt(0).toUpperCase() + nick.slice(1),
-    ornaments: [],
-  };
-  let extra: Hung[] = [];
-  try {
-    const raw = window.localStorage.getItem(key(nick));
-    if (raw) extra = JSON.parse(raw);
-  } catch {
-    extra = [];
-  }
-  return { ...base, ornaments: [...base.ornaments, ...extra] };
-}
-
-export function hangOrnament(nickname: string, input: Omit<Hung, 'id' | 'createdAt'>): Hung {
-  const item: Hung = { ...input, id: `local-${Date.now()}`, createdAt: new Date().toISOString() };
-  try {
-    const raw = window.localStorage.getItem(key(nickname.toLowerCase()));
-    const list: Hung[] = raw ? JSON.parse(raw) : [];
-    list.push(item);
-    window.localStorage.setItem(key(nickname.toLowerCase()), JSON.stringify(list));
-  } catch {
-    /* storage unavailable: the ornament still shows on the done screen */
-  }
-  return item;
-}
+export const CHRISTMAS_PREVIEW: Hung[] = [
+  h('star-gold', 'Mina', 'Cheer', 'You got this. See you at the Sunday long run!'),
+  h('fox', 'Jonas', 'Thanks', 'Thanks for pacing me in October. Merry Christmas!'),
+  h('finish-medal', 'Aiko', 'Love', 'Proud of you for running through the dark mornings.'),
+  h('penguin', 'Leo', 'Funny', 'Slipped on ice twice this week. Worth it.'),
+  h('bauble-snow', 'Hana', 'Cheer', 'Keep the streak alive!'),
+  h('snowflake', 'Tom', 'Love', 'Happy holidays from the Tuesday crew.'),
+  h('sock', 'Ella', 'Funny', 'Warm feet, fast feet.'),
+  h('hot-cocoa', 'Sam', 'Thanks', 'Cocoa after the run is on me.'),
+  h('bauble-frost', 'Noah', 'Cheer', 'Run happy!'),
+];
 
 /** Ornaments the demo runner has earned and can give away (max 3). */
 export const DEMO_POUCH = ['finish-medal', 'gingerbread-runner'];

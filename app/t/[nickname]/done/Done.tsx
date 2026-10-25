@@ -10,7 +10,9 @@ export default function Done() {
   const { nickname } = useParams<{ nickname: string }>();
   const id = useSearchParams().get('id') ?? undefined;
   const [tree, setTree] = useState<Tree | null>(null);
-  useEffect(() => setTree(getTree(nickname)), [nickname]);
+  useEffect(() => {
+    getTree(nickname).then(setTree, console.error);
+  }, [nickname]);
   const name = tree?.displayName ?? '';
 
   return (
