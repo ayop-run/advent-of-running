@@ -26,7 +26,7 @@ export type Tree = {
 /** Sealed ornaments carry an empty message. Unknown nicknames get an empty tree. */
 export async function getTree(nickname: string): Promise<Tree> {
   const nick = nickname.toLowerCase();
-  const { data, error } = await supabase.rpc('get_tree', { nick });
+  const { data, error } = await supabase().rpc('get_tree', { nick });
   if (error) throw error;
   if (!data) {
     return { nickname: nick, displayName: nick.charAt(0).toUpperCase() + nick.slice(1), ornaments: [] };
@@ -41,7 +41,7 @@ export async function hangOrnament(
   nickname: string,
   input: Omit<Hung, 'id' | 'createdAt'> & { email?: string },
 ): Promise<{ id: string } | { error: HangError }> {
-  const { data, error } = await supabase.rpc('hang_ornament', {
+  const { data, error } = await supabase().rpc('hang_ornament', {
     nick: nickname.toLowerCase(),
     ornament_id: input.ornamentId,
     from_name: input.from,
