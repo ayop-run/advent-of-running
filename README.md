@@ -19,19 +19,20 @@ This is the **clickable prototype**: every main screen works with demo data stor
 | `/christmas` | Dec 25 unlock preview with reactions |
 | `/me` | Pouch, collection, settings |
 
-Ornaments you hang are saved in your browser's localStorage, so they appear on the tree right away.
+Trees and hung ornaments are stored in Supabase (see `supabase/README.md`). Calendar, pouch and friends are still demo data.
 
 ## Run locally
 
 ```bash
 npm install
+cp .env.example .env.local   # Supabase URL + publishable key
 npm run dev
 ```
 
 ## Deploy on Vercel
 
 1. Push this repo to GitHub.
-2. In Vercel: **Add New → Project → Import** the repo. Framework is detected as Next.js; no settings or environment variables needed.
+2. In Vercel: **Add New → Project → Import** the repo. Framework is detected as Next.js. Add the two variables from `.env.example` under **Settings → Environment Variables**.
 3. Deploy. Every push to `main` redeploys.
 
 ## Phase 2 (real service)
