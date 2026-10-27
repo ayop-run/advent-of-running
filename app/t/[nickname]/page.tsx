@@ -9,7 +9,7 @@ import OrnamentSheet from '@/components/OrnamentSheet';
 import { MusicButton } from '@/components/MusicToggle';
 import PixelTree from '@/components/PixelTree';
 import Sprite from '@/components/Sprite';
-import { getTree, myOrnamentOn, type Hung, type Tree } from '@/lib/data';
+import { getTree, type Hung, type Tree } from '@/lib/data';
 import { BY_ID } from '@/lib/ornaments';
 import { rememberVisit } from '@/lib/friends';
 import { isMember } from '@/lib/me';
@@ -30,10 +30,12 @@ export default function FriendTree() {
     return () => clearTimeout(id);
   }, [saved]);
   useEffect(() => {
-    setTree(getTree(nickname));
-    setMine(myOrnamentOn(nickname));
-    setMember(isMember());
-    rememberVisit(nickname);
+    getTree(nickname).then((t) => {
+      setTree(t);
+      setMine(t.ornaments.find((h) => h.mine) ?? null);
+      if (t.exists) rememberVisit(nickname);
+    }, console.error);
+    isMember().then(setMember);
   }, [nickname]);
 
   return (
@@ -43,7 +45,14 @@ export default function FriendTree() {
         <MusicButton />
       </div>
 
-      {tree && (
+      {tree && !tree.exists && (
+        <div className="center mt24">
+          <h1 className="title">No tree called “{nickname}”</h1>
+          <p className="soft mt8">Check the spelling of the link, or ask your friend to send it again.</p>
+        </div>
+      )}
+
+      {tree?.exists && (
         <>
           <h1 className="title center mt8">
             {tree.ornaments.length === 0 ? `Be the first on ${tree.displayName}'s tree` : `${tree.ornaments.length} sealed ornaments so far`}
@@ -60,7 +69,7 @@ export default function FriendTree() {
         </>
       )}
       <div className={`sticky-cta mt24${member ? ' above-nav' : ''}`}>
-        {mine ? (
+        {!tree?.exists ? null : mine ? (
           <div className="panel gold row">
             <Sprite id={mine.ornamentId} px={2} style={{ flexShrink: 0 }} />
             <div className="grow">

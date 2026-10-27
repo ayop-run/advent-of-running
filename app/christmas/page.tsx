@@ -7,8 +7,7 @@ import { MusicButton } from '@/components/MusicToggle';
 import Sprite from '@/components/Sprite';
 import SpriteFx from '@/components/SpriteFx';
 import { animFor, animName } from '@/components/useBump';
-import { getTree, type Hung } from '@/lib/data';
-import { DEMO_NICKNAME } from '@/lib/me';
+import { christmasPreview, type Hung } from '@/lib/data';
 import { BY_ID } from '@/lib/ornaments';
 
 const REACTIONS = ['Thank you', 'Made my day', 'Run together soon'];
@@ -18,7 +17,8 @@ export default function ChristmasUnlock() {
   const [i, setI] = useState(0);
   const [sent, setSent] = useState<Record<string, string>>({});
   const track = useRef<HTMLDivElement>(null);
-  useEffect(() => setList(getTree(DEMO_NICKNAME).ornaments), []);
+  // a preview with the demo tree's messages; real ones open on December 25
+  useEffect(() => setList(christmasPreview()), []);
 
   /** Scroll the carousel to message n (swiping and the buttons share one scroll position). */
   const go = useCallback(

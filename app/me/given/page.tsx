@@ -1,20 +1,29 @@
 'use client';
 
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 import BackLink from '@/components/BackLink';
 import { MusicButton } from '@/components/MusicToggle';
 import Sprite from '@/components/Sprite';
 import SpriteFx from '@/components/SpriteFx';
 import { useBump } from '@/components/useBump';
-import { DEMO_GIVEN, doorOrnament } from '@/lib/calendar';
+import { doorOrnament } from '@/lib/calendar';
+import { getProgress } from '@/lib/data';
 import { BY_ID } from '@/lib/ornaments';
 
-/** Each door the demo runner unwrapped, the ornament behind it and the friend it went to. */
-const GIVEN = Object.entries(DEMO_GIVEN).map(([n, to]) => ({ door: Number(n), to, o: BY_ID[doorOrnament(Number(n))] }));
+type Given = { door: number; to: string; o: (typeof BY_ID)[string] };
 const shortName = (name: string) => name.replace('Advent Runner: ', '');
 
 export default function OrnamentsGiven() {
   const { bump, of } = useBump();
+  // each door you unwrapped, the ornament behind it and the friend it went to
+  const [GIVEN, setGiven] = useState<Given[]>([]);
+  useEffect(() => {
+    getProgress().then((res) => {
+      if (!('progress' in res)) return;
+      setGiven(Object.entries(res.progress.given).map(([n, to]) => ({ door: Number(n), to, o: BY_ID[doorOrnament(Number(n))] })));
+    });
+  }, []);
   const friends = new Set(GIVEN.map((g) => g.to)).size;
 
   return (

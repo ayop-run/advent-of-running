@@ -1,188 +1,155 @@
-import { DEMO_GIVEN, doorOrnament } from './calendar';
-import { getMe, isMember } from './me';
+'use client';
+
+import { demoProgress, type Progress } from './calendar';
+import * as demo from './demo/data';
+import { DEMO_NICKNAME, getMe } from './me';
 import type { Hint } from './ornaments';
+
+/**
+ * DATA LAYER
+ * Real trees live in Supabase and come through the app's /api routes (app/api, lib/server).
+ * Messages never reach the browser, except your own. Signed-out visitors on trees that
+ * aren't real (the seed trees, or names nobody has) get the browser demo (lib/demo), so the
+ * prototype stays clickable without a Strava account. Pages only call the functions below.
+ */
 
 export type Hung = {
   id: string;
   ornamentId: string;
   from: string;
   hint: Hint;
+  /** empty until Christmas, except on the ornament you hung yourself */
   message: string;
   createdAt: string;
-  /** hung by the runner using this browser: one per tree */
+  /** hung by you: one per tree */
   mine?: boolean;
 };
 
 export type Tree = {
   nickname: string;
   displayName: string;
+  avatarUrl?: string | null;
   ornaments: Hung[];
+  /** false when no runner has this tree name */
+  exists: boolean;
 };
 
-/**
- * PROTOTYPE DATA LAYER
- * Everything lives in the browser (localStorage) so the prototype runs on Vercel
- * with no database. Phase 2 replaces these functions with Supabase queries;
- * the pages only call the functions below.
- */
+/** Where a tree's data comes from for this visitor. */
+type Source = { kind: 'server'; tree: Tree } | { kind: 'demo' };
 
-let seq = 0;
-function h(ornamentId: string, from: string, hint: Hint, message: string): Hung {
-  seq += 1;
-  return { id: `seed-${seq}`, ornamentId, from, hint, message, createdAt: '2026-12-10T08:00:00Z' };
-}
-
-const SEED: Record<string, Tree> = {
-  demo: {
-    nickname: 'demo',
-    displayName: 'You',
-    ornaments: [
-      h('snow-globe', 'Mina', 'Cheer', 'You got this. See you at the Sunday long run!'),
-      h('fox', 'Jonas', 'Thanks', 'Thanks for pacing me in October. Merry Christmas!'),
-      h('finish-medal', 'Aiko', 'Love', 'Proud of you for running through the dark mornings.'),
-      h('penguin', 'Leo', 'Funny', 'Slipped on ice twice this week. Worth it.'),
-      h('bauble-snow', 'Hana', 'Cheer', 'Keep the streak alive!'),
-      h('snowflake', 'Tom', 'Love', 'Happy holidays from the Tuesday crew.'),
-      h('sock', 'Ella', 'Funny', 'Warm feet, fast feet.'),
-      h('hot-cocoa', 'Sam', 'Thanks', 'Cocoa after the run is on me.'),
-      h('bauble-frost', 'Noah', 'Cheer', 'Run happy!'),
-    ],
-  },
-  mina: {
-    nickname: 'mina',
-    displayName: 'Mina',
-    ornaments: [
-      h('reindeer', 'Jonas', 'Cheer', 'Your Sunday long runs keep me going. Merry Christmas!'),
-      h('bauble-cranberry', 'Aiko', 'Love', 'Thanks for always waiting for me at the turnaround.'),
-      h('snowflake', 'Leo', 'Thanks', 'One day I will beat your 5K. Not this year, though.'),
-      h('santa-shoe', 'Tom', 'Cheer', 'See you at the Christmas Eve fun run!'),
-      h('bauble-snow', 'Ella', 'Funny', 'Hot cocoa after the next icy one? You are buying.'),
-    ],
-  },
-  jonas: {
-    nickname: 'jonas',
-    displayName: 'Jonas',
-    ornaments: [h('stopwatch', 'Mina', 'Cheer', 'Fastest friend I know. Go get that PB!'), h('sock', 'Leo', 'Funny', 'Warm socks for cold miles.')],
-  },
-};
-
-const key = (nick: string) => `aor:tree:${nick}`;
-
-/** First names the demo tree's senders are drawn from, so the demo doesn't look like real people. */
-const NAME_POOL = [
-  'Ava', 'Ben', 'Chloe', 'Dario', 'Emil', 'Freya', 'Greta', 'Hugo', 'Ines', 'Jasper', 'Kira', 'Luca', 'Maya', 'Nico',
-  'Olivia', 'Paul', 'Quinn', 'Rosa', 'Sofia', 'Theo', 'Uma', 'Vince', 'Wren', 'Xavi', 'Yara', 'Zoe', 'Ida', 'Felix',
-];
-
-/** Random, distinct sender names for the demo tree, kept for the whole visit so every page agrees. */
-function demoNames(count: number): string[] {
-  const k = 'aor:demo-names';
-  try {
-    const saved: string[] = JSON.parse(window.sessionStorage.getItem(k) ?? '[]');
-    if (saved.length >= count) return saved;
-  } catch {}
-  const pool = [...NAME_POOL];
-  const names = Array.from({ length: count }, () => pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
-  try {
-    window.sessionStorage.setItem(k, JSON.stringify(names));
-  } catch {}
-  return names;
-}
-
-const myName = () => {
-  const nick = getMe().nickname;
-  return nick.charAt(0).toUpperCase() + nick.slice(1);
-};
-
-const display = (nick: string) => nick.charAt(0).toUpperCase() + nick.slice(1);
-
-/** The demo runner's past door ornaments, shown on the trees of the friends who got them. */
-function demoGiftsTo(nick: string): Hung[] {
-  return Object.entries(DEMO_GIVEN)
-    .filter(([, name]) => name.toLowerCase() === nick)
-    .map(([n]) => ({
-      id: `door-${n}`,
-      ornamentId: doorOrnament(Number(n)),
-      from: myName(),
-      hint: 'Cheer' as Hint,
-      message: `Door ${n} was for you, ${display(nick)}. Keep running!`,
-      createdAt: `2026-12-${String(n).padStart(2, '0')}T08:00:00Z`,
-      // the demo runner's gifts belong to the signed-in runner, not to guests
-      mine: isMember(),
-    }));
-}
-
-export function getTree(nickname: string): Tree {
+async function source(nickname: string): Promise<Source> {
   const nick = nickname.toLowerCase();
-  let base: Tree = SEED[nick] ?? {
-    nickname: nick,
-    displayName: nick.charAt(0).toUpperCase() + nick.slice(1),
-    ornaments: [],
-  };
-  if (nick === 'demo') {
-    const names = demoNames(base.ornaments.length);
-    base = { ...base, ornaments: base.ornaments.map((h, i) => ({ ...h, from: names[i] })) };
+  const [me, res] = await Promise.all([getMe(), fetch(`/api/tree/${encodeURIComponent(nick)}`, { cache: 'no-store' })]);
+  const body = res.ok ? await res.json() : { tree: null, real: false };
+  if (!me && !body.real) return { kind: 'demo' };
+  if (!body.tree) {
+    return { kind: 'server', tree: { nickname: nick, displayName: nick.charAt(0).toUpperCase() + nick.slice(1), ornaments: [], exists: false } };
   }
-  let extra: Hung[] = [];
-  try {
-    const raw = window.localStorage.getItem(key(nick));
-    if (raw) extra = JSON.parse(raw);
-  } catch {
-    extra = [];
-  }
-  // edits you made to the demo door ornaments you gave
-  let edits: Record<string, Partial<Hung>> = {};
-  try {
-    edits = JSON.parse(window.localStorage.getItem(editsKey(nick)) ?? '{}');
-  } catch {
-    edits = {};
-  }
-  const gifts = demoGiftsTo(nick).map((h) => ({ ...h, ...edits[h.id] }));
-  return { ...base, ornaments: [...base.ornaments, ...gifts, ...extra] };
+  return { kind: 'server', tree: { ...body.tree, exists: true, ornaments: withGuestOrnaments(nick, body.tree.ornaments) } };
 }
 
-const editsKey = (nick: string) => `aor:edits:${nick}`;
+export async function getTree(nickname: string): Promise<Tree> {
+  const s = await source(nickname);
+  return s.kind === 'demo' ? { ...demo.getTree(nickname), exists: true } : s.tree;
+}
 
-export type HungEdit = Pick<Hung, 'message' | 'hint' | 'from'> & { ornamentId?: string };
+/* Ornaments a guest (no account) hung on real trees, remembered in their browser. */
 
-/** Change the ornament you hung on this tree (open until hanging closes on Dec 24). */
-export function editMyOrnament(nickname: string, patch: HungEdit): Hung | null {
-  const nick = nickname.toLowerCase();
-  const mine = myOrnamentOn(nick);
-  if (!mine) return null;
+type GuestHung = { tree: string; id: string; editToken: string; ornamentId: string; from: string; hint: Hint; message: string };
+const GUEST_KEY = 'aor:guest-hung';
+
+function guestHung(): GuestHung[] {
   try {
-    if (mine.id.startsWith('local-')) {
-      const list: Hung[] = JSON.parse(window.localStorage.getItem(key(nick)) ?? '[]');
-      window.localStorage.setItem(key(nick), JSON.stringify(list.map((h) => (h.id === mine.id ? { ...h, ...patch } : h))));
-    } else {
-      // demo door gifts aren't stored, so keep the edit alongside them
-      const edits = JSON.parse(window.localStorage.getItem(editsKey(nick)) ?? '{}');
-      edits[mine.id] = { ...edits[mine.id], ...patch };
-      window.localStorage.setItem(editsKey(nick), JSON.stringify(edits));
-    }
+    return JSON.parse(window.localStorage.getItem(GUEST_KEY) ?? '[]');
   } catch {
-    /* storage unavailable */
+    return [];
   }
-  return { ...mine, ...patch };
+}
+
+function saveGuestHung(list: GuestHung[]) {
+  try {
+    window.localStorage.setItem(GUEST_KEY, JSON.stringify(list));
+  } catch {
+    /* storage blocked */
+  }
+}
+
+/** Mark the guest's own ornament on a tree and show their own words on it. */
+function withGuestOrnaments(nick: string, ornaments: Hung[]): Hung[] {
+  const own = new Map(guestHung().filter((g) => g.tree === nick).map((g) => [g.id, g]));
+  return ornaments.map((h) => {
+    const g = own.get(h.id);
+    return g ? { ...h, mine: true, message: g.message, from: g.from, hint: g.hint, ornamentId: g.ornamentId } : h;
+  });
 }
 
 /** The ornament you hung on this tree, if any. Everyone gets one per tree. */
-export function myOrnamentOn(nickname: string): Hung | null {
-  return getTree(nickname).ornaments.find((h) => h.mine) ?? null;
+export async function myOrnamentOn(nickname: string): Promise<Hung | null> {
+  return (await getTree(nickname)).ornaments.find((h) => h.mine) ?? null;
 }
 
-export function hangOrnament(nickname: string, input: Omit<Hung, 'id' | 'createdAt' | 'mine'>): Hung {
-  // one per tree: hanging again just returns the ornament already there
-  const existing = myOrnamentOn(nickname);
-  if (existing) return existing;
-  const item: Hung = { ...input, id: `local-${Date.now()}`, createdAt: new Date().toISOString(), mine: true };
+export type HangError = 'tree_not_found' | 'sign_in_required' | 'hanging_closed' | 'not_earned' | 'not_yours' | 'invalid' | 'unknown';
+
+export type HangInput = Pick<Hung, 'ornamentId' | 'from' | 'hint' | 'message'>;
+
+/** Hang an ornament. One per tree: hanging again returns the one already there. */
+export async function hangOrnament(nickname: string, input: HangInput): Promise<{ id: string } | { error: HangError }> {
+  const nick = nickname.toLowerCase();
+  if ((await source(nick)).kind === 'demo') return { id: demo.hangOrnament(nick, input).id };
   try {
-    const raw = window.localStorage.getItem(key(nickname.toLowerCase()));
-    const list: Hung[] = raw ? JSON.parse(raw) : [];
-    list.push(item);
-    window.localStorage.setItem(key(nickname.toLowerCase()), JSON.stringify(list));
+    const res = await fetch('/api/hang', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nickname: nick, ...input }),
+    });
+    const body = await res.json();
+    if (!res.ok) return { error: body.error ?? 'unknown' };
+    if (body.editToken) saveGuestHung([...guestHung().filter((g) => g.tree !== nick), { tree: nick, id: body.id, editToken: body.editToken, ...input }]);
+    return { id: body.id };
   } catch {
-    /* storage unavailable: the ornament still shows on the done screen */
+    return { error: 'unknown' };
   }
-  return item;
 }
+
+export type HungEdit = Pick<Hung, 'message' | 'hint' | 'from'> & { ornamentId: string };
+
+/** Change the ornament you hung on this tree (open until hanging closes on Dec 24). */
+export async function editMyOrnament(nickname: string, patch: HungEdit): Promise<{ id: string } | { error: HangError }> {
+  const nick = nickname.toLowerCase();
+  if ((await source(nick)).kind === 'demo') {
+    const h = demo.editMyOrnament(nick, patch);
+    return h ? { id: h.id } : { error: 'not_yours' };
+  }
+  const guest = guestHung().find((g) => g.tree === nick);
+  try {
+    const res = await fetch('/api/hang', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nickname: nick, ...patch, id: guest?.id, editToken: guest?.editToken }),
+    });
+    const body = await res.json();
+    if (!res.ok) return { error: body.error ?? 'unknown' };
+    if (guest) saveGuestHung(guestHung().map((g) => (g.id === guest.id ? { ...g, ...patch } : g)));
+    return { id: body.id };
+  } catch {
+    return { error: 'unknown' };
+  }
+}
+
+/**
+ * Your calendar: doors, km per day, and the ornaments you unwrapped, synced from Strava
+ * (at most every 10 minutes). Only you can see it. Signed out: the demo calendar.
+ */
+export async function getProgress(): Promise<{ progress: Progress; demo: boolean } | { error: 'sync_failed' }> {
+  if (!(await getMe())) return { progress: demoProgress(), demo: true };
+  try {
+    const res = await fetch('/api/progress', { cache: 'no-store' });
+    if (!res.ok) return { error: 'sync_failed' };
+    return { progress: await res.json(), demo: false };
+  } catch {
+    return { error: 'sync_failed' };
+  }
+}
+
+/** The demo tree with its messages, for the Christmas morning preview. */
+export const christmasPreview = () => demo.getTree(DEMO_NICKNAME).ornaments;

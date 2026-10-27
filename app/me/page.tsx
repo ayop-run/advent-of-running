@@ -4,19 +4,10 @@ import { MusicButton } from '@/components/MusicToggle';
 import MeProfile from '@/components/MeProfile';
 import LogOutButton from '@/components/LogOutButton';
 import MeSettings from '@/components/MeSettings';
-import { DEMO_GIVEN, DEMO_TODAY } from '@/lib/calendar';
+import MeStats from '@/components/MeStats';
+import DisconnectButton from '@/components/DisconnectButton';
 import Sprite from '@/components/Sprite';
 import { ChevronIcon } from '@/components/Icons';
-
-const given = Object.keys(DEMO_GIVEN).length;
-const daysSoFar = DEMO_TODAY - 1;
-const friends = new Set(Object.values(DEMO_GIVEN)).size;
-
-const STATS = [
-  { label: 'Ornaments given', value: `${given}`, href: '/me/given' },
-  { label: 'Days run', value: `${given}/${daysSoFar}` },
-  { label: 'Friends', value: `${friends}` },
-];
 
 export default function Me() {
   return (
@@ -31,14 +22,7 @@ export default function Me() {
 
       <MeProfile />
 
-      <div className="steps mt16">
-        {STATS.map((s) => {
-          const body = (<><b>{s.value}</b><span>{s.label}</span></>);
-          return s.href
-            ? <Link key={s.label} href={s.href} className="step link">{body}</Link>
-            : <div key={s.label} className="step">{body}</div>;
-        })}
-      </div>
+      <MeStats />
 
       <div className="stack mt12" style={{ gap: 8 }}>
         {[
@@ -59,8 +43,7 @@ export default function Me() {
       <MeSettings />
 
       <div className="mt24"><LogOutButton /></div>
-      <button className="btn red block mt12">Disconnect Strava</button>
-      <p className="center tiny muted mt8">Deletes your tree, ornaments and synced runs.</p>
+      <DisconnectButton />
 
       <BottomNav />
     </main>

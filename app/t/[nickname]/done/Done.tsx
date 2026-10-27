@@ -13,8 +13,8 @@ export default function Done() {
   const [tree, setTree] = useState<Tree | null>(null);
   const [member, setMember] = useState(false);
   useEffect(() => {
-    setTree(getTree(nickname));
-    setMember(isMember());
+    getTree(nickname).then(setTree, console.error);
+    isMember().then(setMember);
   }, [nickname]);
   const name = tree?.displayName ?? '';
 

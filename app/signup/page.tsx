@@ -1,40 +1,65 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { ChevronIcon } from '@/components/Icons';
 import { MusicButton } from '@/components/MusicToggle';
 import Sprite from '@/components/Sprite';
-import { checkNickname, cleanNickname, saveMe } from '@/lib/me';
+import { getMe, nicknameTaken, saveProfile, stravaLoginUrl, type Me, type ProfileError } from '@/lib/me';
+import { checkNickname, cleanNickname } from '@/lib/nickname';
+
+const PROFILE_ERROR: Record<ProfileError, string> = {
+  nickname_taken: 'That tree name was just taken. Try another.',
+  invalid: 'Check your tree name.',
+  signed_out: 'Your Strava login expired. Please connect again.',
+  unknown: 'Couldn’t save. Please try again.',
+};
 
 const STEPS = ['Tree name', 'Strava', 'Finish'] as const;
 
 export default function SignUp() {
+  return (
+    <Suspense>
+      <SignUpInner />
+    </Suspense>
+  );
+}
+
+function SignUpInner() {
   const router = useRouter();
-  const [step, setStep] = useState(0);
+  // Strava sends new runners back to the last step (?step=finish)
+  const finishing = useSearchParams().get('step') === 'finish';
+  const [step, setStep] = useState(finishing ? 2 : 0);
   const [nick, setNick] = useState('');
   const [touched, setTouched] = useState(false);
+  const [taken, setTaken] = useState(false);
   const [connecting, setConnecting] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [failed, setFailed] = useState<ProfileError | null>(null);
+  const [me, setMe] = useState<Me | null>(null);
   const [tz, setTz] = useState('');
   const nameInput = useRef<HTMLInputElement>(null);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => setTz(Intl.DateTimeFormat().resolvedOptions().timeZone), []);
-  useEffect(() => () => {
-    if (timer.current) clearTimeout(timer.current);
-  }, []);
+  useEffect(() => {
+    if (!finishing) return;
+    getMe().then((runner) => {
+      if (!runner) return setStep(0);
+      if (runner.onboarded) return router.replace('/tree');
+      setMe(runner);
+      // the name picked in step 1, or a free one based on the Strava name if it was taken
+      setNick(runner.nickname);
+    });
+  }, [finishing, router]);
 
-  const check = checkNickname(nick);
+  const format = checkNickname(nick);
+  const check = taken ? { ok: false, message: `“${nick}” is taken. Try another.` } : format;
   const showCheck = touched || nick.length >= 3;
 
   const connectStrava = () => {
-    // Phase 2: redirect to Strava OAuth (scope read,activity:read) and come back here.
     setConnecting(true);
-    timer.current = setTimeout(() => {
-      setConnecting(false);
-      setStep(2);
-    }, 900);
+    window.location.href = stravaLoginUrl({ nick, tz });
   };
 
   return (
@@ -66,10 +91,14 @@ export default function SignUp() {
         <form
           className="stack mt24 fade-in"
           style={{ gap: 20 }}
-          onSubmit={(e) => {
+          onSubmit={async (e) => {
             e.preventDefault();
             setTouched(true);
-            if (!check.ok) return nameInput.current?.focus();
+            if (!format.ok) return nameInput.current?.focus();
+            if (await nicknameTaken(nick)) {
+              setTaken(true);
+              return nameInput.current?.focus();
+            }
             setStep(1);
           }}
         >
@@ -97,7 +126,10 @@ export default function SignUp() {
                 maxLength={20}
                 aria-invalid={showCheck && !check.ok}
                 aria-describedby="nick-help"
-                onChange={(e) => setNick(cleanNickname(e.target.value))}
+                onChange={(e) => {
+                  setNick(cleanNickname(e.target.value));
+                  setTaken(false);
+                }}
                 onBlur={() => setTouched(true)}
               />
             </div>
@@ -147,7 +179,6 @@ export default function SignUp() {
           <button className="btn block strava" onClick={connectStrava} aria-busy={connecting}>
             {connecting ? 'Connecting…' : 'Connect with Strava'}
           </button>
-          <p className="center tiny muted">Demo: no Strava account needed. Tapping connects a pretend account.</p>
         </div>
       )}
 
@@ -155,9 +186,18 @@ export default function SignUp() {
         <form
           className="stack mt24 fade-in"
           style={{ gap: 20 }}
-          onSubmit={(e) => {
+          onSubmit={async (e) => {
             e.preventDefault();
-            saveMe({ nickname: nick, signedIn: true });
+            if (!me || saving) return;
+            if (!format.ok) return setFailed('invalid');
+            setSaving(true);
+            setFailed(null);
+            const res = await saveProfile({ nickname: nick, timeZone: tz || me.timeZone, hangPolicy: me.hangPolicy, emailOptIn: me.emailOptIn });
+            if ('error' in res) {
+              setFailed(res.error);
+              setSaving(false);
+              return;
+            }
             router.push('/tree');
           }}
         >
@@ -169,6 +209,23 @@ export default function SignUp() {
             </div>
           </div>
 
+          <label className="field">
+            Tree name
+            <div className="input-prefix">
+              <span aria-hidden="true">/t/</span>
+              <input
+                className="input"
+                value={nick}
+                autoCapitalize="none"
+                spellCheck={false}
+                maxLength={20}
+                aria-invalid={!format.ok}
+                onChange={(e) => setNick(cleanNickname(e.target.value))}
+              />
+            </div>
+            <span className={`help${format.ok ? '' : ' bad'}`}>{format.ok ? 'Friends use it to find your tree.' : format.message}</span>
+          </label>
+
           <div className="field">
             Time zone
             <div className="panel quiet row between" style={{ padding: 14 }}>
@@ -177,7 +234,8 @@ export default function SignUp() {
             <span className="help">Your messages open at midnight on December 25 in this time zone.</span>
           </div>
 
-          <button className="btn block" type="submit">Create my tree</button>
+          {failed && <p className="center small" role="alert">{PROFILE_ERROR[failed]}</p>}
+          <button className="btn block" type="submit" aria-busy={saving} disabled={!me || saving}>{saving ? 'Creating…' : 'Create my tree'}</button>
         </form>
       )}
     </main>

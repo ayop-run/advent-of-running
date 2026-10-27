@@ -1,86 +1,58 @@
-import { DEMO_GIVEN } from './calendar';
-import { getTree, myOrnamentOn } from './data';
-import { DEMO_NICKNAME } from './me';
+'use client';
+
+import * as demo from './demo/friends';
+import { DEMO_NICKNAME, getMe, nicknameTaken } from './me';
 
 /**
- * PROTOTYPE FRIENDS
- * Your friends are everyone you're connected to through ornaments: people who hung one on
- * your tree, people you gave one to, and trees you visited. Phase 2 reads these from the
- * database; trees you visit are remembered in the browser for now.
+ * FRIENDS
+ * Everyone on the app, with how you're connected: people who hung one on your tree, people
+ * you gave one to, and trees you visited (remembered in the browser). Strava's API can't list
+ * who you follow, so the list is every runner with a tree. Signed out: the demo's friends.
  */
 
 export type Friend = {
   nickname: string;
   name: string;
+  avatarUrl?: string | null;
   /** ornaments they hung on your tree */
   hung: number;
-  /** ornaments you gave them */
+  /** ornaments you gave them (one per tree) */
   given: number;
   visited: boolean;
 };
 
-const VISITED_KEY = 'aor:visited';
-/** Trees that exist in the demo besides your friends'. */
-const DEMO_TREES = ['mina', 'jonas', 'aiko', 'leo', 'hana', 'tom', 'ella', 'sam', 'noah', 'yuki', 'ben', 'kai', 'lena', 'rio', 'momo', 'zara'];
+export const getVisited = demo.getVisited;
+export const rememberVisit = demo.rememberVisit;
+export const friendNote = demo.friendNote;
 
-const display = (nick: string) => nick.charAt(0).toUpperCase() + nick.slice(1);
+/** Everyone on the app, people you swap with the most first. */
+export async function getFriends(): Promise<Friend[]> {
+  const me = await getMe();
+  if (!me) return demo.getFriends(DEMO_NICKNAME);
 
-export function getVisited(): string[] {
+  let friends: Friend[] = [];
   try {
-    return JSON.parse(window.localStorage.getItem(VISITED_KEY) ?? '[]');
+    const res = await fetch('/api/friends', { cache: 'no-store' });
+    if (res.ok) friends = (await res.json()).friends;
   } catch {
-    return [];
+    /* offline: visited trees only */
   }
-}
-
-/** Remember a tree you looked at, most recent first. */
-export function rememberVisit(nickname: string) {
-  const nick = nickname.toLowerCase();
-  try {
-    const list = [nick, ...getVisited().filter((n) => n !== nick)].slice(0, 20);
-    window.localStorage.setItem(VISITED_KEY, JSON.stringify(list));
-  } catch {
-    /* storage blocked */
-  }
-}
-
-/** Everyone you're connected to, people you swap with the most first. */
-export function getFriends(me: string): Friend[] {
-  const byNick = new Map<string, Friend>();
-  const get = (nick: string) => {
-    const key = nick.toLowerCase();
-    if (!byNick.has(key)) byNick.set(key, { nickname: key, name: display(key), hung: 0, given: 0, visited: false });
-    return byNick.get(key)!;
-  };
-  for (const h of getTree(DEMO_NICKNAME).ornaments) get(h.from).hung += 1;
-  for (const name of Object.values(DEMO_GIVEN)) get(name).given += 1;
+  const byNick = new Map(friends.map((f) => [f.nickname, f]));
   for (const nick of getVisited()) {
-    const f = get(nick);
-    f.visited = true;
-    // ornaments you hung while visiting (not from a door) count as given too
-    if (!f.given && myOrnamentOn(nick)) f.given = 1;
+    if (nick === me.nickname) continue;
+    const f = byNick.get(nick);
+    if (f) f.visited = true;
+    else byNick.set(nick, { nickname: nick, name: nick.charAt(0).toUpperCase() + nick.slice(1), hung: 0, given: 0, visited: true });
   }
-  byNick.delete(me.toLowerCase());
   return [...byNick.values()].sort((a, b) => b.hung + b.given - (a.hung + a.given) || a.name.localeCompare(b.name));
 }
 
-/** One short line about how you know each other. */
-export function friendNote(f: Friend, { showGiven = true } = {}) {
-  const bits: string[] = [];
-  if (f.hung) bits.push(f.hung > 1 ? `Hung ${f.hung} on your tree` : 'Hung one on your tree');
-  if (f.given && showGiven) bits.push('Has yours');
-  if (!bits.length && f.visited) bits.push('You visited their tree');
-  return bits.join(' · ');
-}
+/** You can hang one ornament on each friend's tree. Trees not in your list are checked when you hang. */
+export const canGiveTo = (nickname: string, friends: Friend[]) =>
+  !friends.some((f) => f.nickname === nickname.toLowerCase() && f.given > 0);
 
-/** You can hang one ornament on each friend's tree: not one you gave from a door, nor one you hung. */
-export const canGiveTo = (nickname: string) => {
-  const nick = nickname.toLowerCase();
-  return !Object.values(DEMO_GIVEN).some((n) => n.toLowerCase() === nick) && !myOrnamentOn(nick);
-};
-
-/** Whether a tree with this name exists (in the demo: friends and a few known trees). */
-export function treeExists(nick: string, me: string) {
-  const n = nick.toLowerCase();
-  return n === me.toLowerCase() || DEMO_TREES.includes(n) || getFriends(me).some((f) => f.nickname === n);
+/** Whether a tree with this name exists: a real one, or (signed out) one of the demo's. */
+export async function treeExists(nick: string) {
+  if (await nicknameTaken(nick)) return true;
+  return !(await getMe()) && demo.treeExists(nick, DEMO_NICKNAME);
 }

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import BackLink from '@/components/BackLink';
 import { getTree, type Hung } from '@/lib/data';
-import { DEMO_NICKNAME, getMe } from '@/lib/me';
+import { getMe, myNickname } from '@/lib/me';
 import { canShareFiles, downloadCanvas, drawTree, photoLayout, renderPhoto, SCENE_H, SCENE_W, shareCanvas } from '@/lib/treeImage';
 
 type State = 'starting' | 'live' | 'taken' | 'blocked' | 'nocamera';
@@ -36,10 +36,11 @@ export default function PhotoBooth() {
   }, []);
 
   useEffect(() => {
-    const nick = getMe().nickname;
-    setName(nick.charAt(0).toUpperCase() + nick.slice(1));
-    // the demo tree's ornaments stand in for a real account's
-    setOrnaments(getTree(DEMO_NICKNAME).ornaments);
+    getMe().then(async (me) => {
+      const nick = myNickname(me);
+      setName(me?.displayName ?? nick.charAt(0).toUpperCase() + nick.slice(1));
+      setOrnaments((await getTree(nick)).ornaments);
+    });
     setShare(canShareFiles());
     start();
     return () => stream.current?.getTracks().forEach((t) => t.stop());

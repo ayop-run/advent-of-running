@@ -1,32 +1,19 @@
-import { canGiveTo } from './friends';
+'use client';
+
+import * as demo from './demo/requests';
+import { getMe } from './me';
 
 /**
- * PROTOTYPE REQUESTS
+ * REQUESTS
  * Ask a friend to hang an ornament on your tree, and see who asked you. Phase 2 sends
- * these as in-app notifications; for now your sent requests live in the browser.
+ * these as in-app notifications; for now your sent requests live in the browser, and only
+ * the demo has incoming ones.
  */
 
-const ASKED_KEY = 'aor:asked';
-
-/** Friends who asked you in the demo. */
-const DEMO_INCOMING = ['tom', 'sam'];
-
-export function getAsked(): string[] {
-  try {
-    return JSON.parse(window.localStorage.getItem(ASKED_KEY) ?? '[]');
-  } catch {
-    return [];
-  }
-}
-
-export function ask(nickname: string) {
-  const nick = nickname.toLowerCase();
-  try {
-    window.localStorage.setItem(ASKED_KEY, JSON.stringify([...new Set([...getAsked(), nick])]));
-  } catch {
-    /* storage blocked */
-  }
-}
+export const getAsked = demo.getAsked;
+export const ask = demo.ask;
 
 /** Friends waiting for you to hang one on their tree (gone once you have). */
-export const incomingRequests = () => DEMO_INCOMING.filter((nick) => canGiveTo(nick));
+export async function incomingRequests(): Promise<string[]> {
+  return (await getMe()) ? [] : demo.incomingRequests();
+}

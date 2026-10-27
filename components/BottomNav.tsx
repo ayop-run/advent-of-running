@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { isLoggedOut, markInApp } from '@/lib/me';
+import { getMe, isLoggedOut, markInApp } from '@/lib/me';
 
 /** Nav icons share one 12×12 grid, drawn at 2px per pixel, in the link's text colour. */
 const ICONS = {
@@ -24,8 +24,10 @@ export default function BottomNav() {
   const router = useRouter();
   // the nav only appears on member pages: logged-out visitors go to log in first
   useEffect(() => {
-    if (isLoggedOut()) router.replace('/login');
-    else markInApp();
+    getMe().then((me) => {
+      if (!me && isLoggedOut()) router.replace('/login');
+      else markInApp();
+    });
   }, [router]);
   const active = (href: string) => path.startsWith(href);
   return (

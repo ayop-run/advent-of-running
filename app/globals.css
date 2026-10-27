@@ -387,6 +387,10 @@ button.orn:focus-visible > svg { outline: 4px solid var(--frost); outline-offset
   position: absolute; left: 0; top: 0; min-width: 18px; padding: 2px 4px; line-height: 1;
   font: 800 11px var(--body); font-variant-numeric: tabular-nums; color: var(--muted); background: rgba(10,17,36,.6);
 }
+.door .km {
+  position: absolute; right: 0; bottom: 0; padding: 1px 3px; line-height: 1;
+  font: 800 9px var(--body); font-variant-numeric: tabular-nums; color: var(--snow); background: rgba(10,17,36,.6);
+}
 .door:hover { transform: translateY(-2px); }
 .door[aria-pressed='true'] { box-shadow: inset 0 0 0 4px var(--frost); }
 /* opened: snow on the lid, ornament in full colour */

@@ -1,11 +1,15 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { getMe } from '@/lib/me';
 
 /** The runner's settings. */
 export default function MeSettings() {
   const [tz, setTz] = useState('');
-  useEffect(() => setTz(Intl.DateTimeFormat().resolvedOptions().timeZone), []);
+  // yours as saved at sign-up; the browser's in the demo
+  useEffect(() => {
+    getMe().then((me) => setTz(me?.timeZone ?? Intl.DateTimeFormat().resolvedOptions().timeZone));
+  }, []);
 
   return (
     <div className="panel quiet flush mt12">

@@ -1,26 +1,37 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { Suspense, useState } from 'react';
 import { ChevronIcon } from '@/components/Icons';
 import { MusicButton } from '@/components/MusicToggle';
 import Sprite from '@/components/Sprite';
-import { getMe, saveMe } from '@/lib/me';
+import { stravaLoginUrl } from '@/lib/me';
+
+const LOGIN_ERROR: Record<string, string> = {
+  denied: 'Strava login was cancelled.',
+  scope: 'Please allow access to your activities, so your runs can open doors.',
+  expired: 'The login took too long. Please try again.',
+  strava: 'Strava didn’t respond. Please try again.',
+  db: 'Couldn’t open your tree. Please try again.',
+};
 
 export default function LogIn() {
-  const router = useRouter();
-  const [connecting, setConnecting] = useState(false);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => () => {
-    if (timer.current) clearTimeout(timer.current);
-  }, []);
+  return (
+    <Suspense>
+      <LogInInner />
+    </Suspense>
+  );
+}
 
+function LogInInner() {
+  const error = useSearchParams().get('error');
+  const [connecting, setConnecting] = useState(false);
+
+  // the Strava account is the login; new runners finish sign-up after it
   const logIn = () => {
-    // Phase 2: Strava OAuth; the Strava account is the login.
     setConnecting(true);
-    saveMe({ ...getMe(), signedIn: true });
-    timer.current = setTimeout(() => router.push('/tree'), 700);
+    window.location.href = stravaLoginUrl();
   };
 
   return (
@@ -44,7 +55,7 @@ export default function LogIn() {
       <button className="btn block strava mt32" onClick={logIn} aria-busy={connecting}>
         {connecting ? 'Logging in…' : 'Log in with Strava'}
       </button>
-      <p className="center tiny muted mt8">Demo: no Strava account needed. Tapping logs in to a pretend account.</p>
+      {error && <p className="center small mt8" role="alert">{LOGIN_ERROR[error] ?? LOGIN_ERROR.strava}</p>}
 
       <div className="grow" />
       <p className="center small soft mt24">

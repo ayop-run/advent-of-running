@@ -1,79 +1,110 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import * as demo from './demo/me';
+
 /**
- * PROTOTYPE ACCOUNT
- * The signed-in runner, kept in the browser so sign-up and log-in work without a backend.
- * Phase 2 replaces this with a real session from Strava OAuth.
+ * ACCOUNT
+ * Signed in = a Strava login session (server cookie). Signed out, the app runs as the browser
+ * demo (lib/demo), so it stays clickable without a Strava account.
  */
 
-const KEY = 'aor:me';
-export const DEMO_NICKNAME = 'demo';
+/** The signed-in runner's own profile. Only returned to that runner. */
+export type Me = {
+  nickname: string;
+  displayName: string;
+  avatarUrl: string | null;
+  timeZone: string;
+  hangPolicy: 'anyone' | 'signed_in';
+  emailOptIn: boolean;
+  /** False until the runner finished sign-up (confirmed tree name and time zone). */
+  onboarded: boolean;
+};
 
-/** Tree names already in use in the demo. */
-const TAKEN = new Set(['mina', 'jonas', 'aiko', 'demo', 'admin', 'tree', 'about', 'login', 'signup']);
+export const DEMO_NICKNAME = demo.DEMO_NICKNAME;
 
-/** `signedIn: false` after logging out; the tree and name are kept for the next log-in. */
-export type Me = { nickname: string; signedIn?: boolean };
+let cached: Promise<Me | null> | null = null;
 
-export function getMe(): Me {
-  try {
-    const raw = window.localStorage.getItem(KEY);
-    if (raw) return JSON.parse(raw) as Me;
-  } catch {
-    /* storage blocked */
-  }
-  return { nickname: DEMO_NICKNAME };
+/** The signed-in runner, or null when signed out. Fetched once per visit. */
+export function getMe(): Promise<Me | null> {
+  cached ??= fetch('/api/me', { cache: 'no-store' })
+    .then((res) => (res.ok ? res.json() : { runner: null }))
+    .then((body) => body.runner as Me | null)
+    .catch(() => null);
+  return cached;
 }
 
-export function saveMe(me: Me) {
+/** After logging in, out or changing the profile. */
+export function refreshMe() {
+  cached = null;
+  return getMe();
+}
+
+/** `undefined` while loading, `null` when signed out. */
+export function useMe() {
+  const [me, setMe] = useState<Me | null | undefined>(undefined);
+  useEffect(() => {
+    getMe().then(setMe);
+  }, []);
+  return me;
+}
+
+/** Whose tree "My tree" shows: yours, or the demo's when signed out. */
+export const myNickname = (me: Me | null | undefined) => me?.nickname ?? DEMO_NICKNAME;
+
+export const displayName = (nick: string) => nick.charAt(0).toUpperCase() + nick.slice(1);
+
+export const markInApp = demo.markInApp;
+export const isLoggedOut = demo.isLoggedOut;
+
+/** A member using the app (signed in, or browsing the demo from inside it), not a guest from a shared link. */
+export async function isMember() {
+  return Boolean(await getMe()) || demo.isMember();
+}
+
+/** Ends the session; logging in again with Strava returns to the same tree. */
+export async function logOut() {
+  await fetch('/api/logout', { method: 'POST' });
+  demo.logOut();
+  cached = Promise.resolve(null);
+}
+
+export type ProfileError = 'nickname_taken' | 'invalid' | 'signed_out' | 'unknown';
+
+export async function saveProfile(
+  profile: Pick<Me, 'nickname' | 'timeZone' | 'hangPolicy' | 'emailOptIn'>,
+): Promise<{ ok: true } | { error: ProfileError }> {
   try {
-    window.localStorage.setItem(KEY, JSON.stringify(me));
+    const res = await fetch('/api/me', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(profile),
+    });
+    if (!res.ok) return { error: (await res.json()).error ?? 'unknown' };
+    await refreshMe();
+    return { ok: true };
   } catch {
-    /* storage blocked: the demo still works with the default name */
+    return { error: 'unknown' };
   }
 }
 
-const IN_APP = 'aor:in-app';
-
-/** Remember (for this tab) that the runner is using the app, not just visiting a shared link. */
-export function markInApp() {
-  try {
-    window.sessionStorage.setItem(IN_APP, '1');
-  } catch {
-    /* storage blocked */
-  }
+/** Revokes Strava access and deletes the runner with their tree, ornaments and runs. */
+export async function deleteAccount(): Promise<boolean> {
+  const res = await fetch('/api/me', { method: 'DELETE' });
+  if (res.ok) cached = Promise.resolve(null);
+  return res.ok;
 }
 
-/** Logged out on purpose (as opposed to never having signed up, which the demo allows). */
-export const isLoggedOut = () => getMe().signedIn === false;
+/** Strava login. Sign-up passes the chosen tree name and time zone along. */
+export const stravaLoginUrl = (signup?: { nick: string; tz: string }) =>
+  signup ? `/api/strava/connect?${new URLSearchParams(signup)}` : '/api/strava/connect';
 
-/** A member using the app: signed up, logged in, or browsing from inside the app. */
-export function isMember() {
-  if (isLoggedOut()) return false;
+/** Whether another runner already has this tree name. */
+export async function nicknameTaken(nick: string) {
   try {
-    return window.localStorage.getItem(KEY) !== null || window.sessionStorage.getItem(IN_APP) === '1';
+    const res = await fetch(`/api/tree/${encodeURIComponent(nick)}`, { cache: 'no-store' });
+    return res.ok && (await res.json()).tree !== null;
   } catch {
     return false;
   }
-}
-
-/** Sign out but keep the tree and name, so logging back in returns to them. */
-export function logOut() {
-  saveMe({ ...getMe(), signedIn: false });
-  try {
-    window.sessionStorage.removeItem(IN_APP);
-  } catch {
-    /* storage blocked */
-  }
-}
-
-/** Lowercase letters, numbers and dashes, 3–20 characters. */
-export const cleanNickname = (s: string) => s.toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 20);
-
-export type NicknameCheck = { ok: boolean; message: string };
-
-export function checkNickname(nick: string): NicknameCheck {
-  if (nick.length === 0) return { ok: false, message: 'Pick a name for your tree.' };
-  if (nick.length < 3) return { ok: false, message: 'Use at least 3 characters.' };
-  if (nick.startsWith('-') || nick.endsWith('-')) return { ok: false, message: 'It can’t start or end with a dash.' };
-  if (TAKEN.has(nick)) return { ok: false, message: `“${nick}” is taken. Try another.` };
-  return { ok: true, message: 'Available' };
 }

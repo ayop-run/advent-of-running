@@ -10,7 +10,7 @@ import PixelTree from '@/components/PixelTree';
 import { CameraIcon, ChevronIcon, ShareIcon } from '@/components/Icons';
 import { MusicButton } from '@/components/MusicToggle';
 import { getTree, type Hung, type Tree } from '@/lib/data';
-import { DEMO_NICKNAME, getMe } from '@/lib/me';
+import { myNickname, useMe } from '@/lib/me';
 
 
 export default function MyTree() {
@@ -19,13 +19,14 @@ export default function MyTree() {
   const [toast, setToast] = useState('');
   const [picture, setPicture] = useState(false);
 
-  const [me, setMe] = useState(DEMO_NICKNAME);
-  const displayName = me.charAt(0).toUpperCase() + me.slice(1);
+  // signed out, the demo tree stands in for your own
+  const account = useMe();
+  const me = myNickname(account);
+  const displayName = account?.displayName ?? me.charAt(0).toUpperCase() + me.slice(1);
   useEffect(() => {
-    setMe(getMe().nickname);
-    // the demo tree's ornaments stand in for a real account's
-    setTree(getTree(DEMO_NICKNAME));
-  }, []);
+    if (account === undefined) return;
+    getTree(myNickname(account)).then(setTree, console.error);
+  }, [account]);
   useEffect(() => {
     if (!toast) return;
     const id = setTimeout(() => setToast(''), 2200);

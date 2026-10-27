@@ -8,8 +8,8 @@ import Sprite from '@/components/Sprite';
 import SpriteFx from '@/components/SpriteFx';
 import { useBump } from '@/components/useBump';
 import Link from 'next/link';
-import { editMyOrnament, hangOrnament, myOrnamentOn, type Hung } from '@/lib/data';
-import { getMe, isMember } from '@/lib/me';
+import { editMyOrnament, hangOrnament, myOrnamentOn, type HangError, type Hung } from '@/lib/data';
+import { getMe } from '@/lib/me';
 import { BASIC, BY_ID, HINTS, type Hint } from '@/lib/ornaments';
 
 const MAX = 200;
@@ -22,6 +22,16 @@ const HINT_NOTE: Record<Hint, string> = {
 };
 
 const short = (name: string) => name.replace('Advent Runner: ', '');
+
+const HANG_ERROR: Record<HangError, string> = {
+  tree_not_found: 'This tree doesn’t exist.',
+  sign_in_required: 'Only signed-in runners can hang ornaments on this tree.',
+  hanging_closed: 'Hanging closed on December 24.',
+  not_earned: 'You haven’t unwrapped this ornament. Pick a free one, or run to earn it.',
+  not_yours: 'You can only edit the ornament you hung.',
+  invalid: 'Please check your message and name.',
+  unknown: 'That didn’t work. Please try again.',
+};
 
 export default function HangForm() {
   const { nickname } = useParams<{ nickname: string }>();
@@ -36,23 +46,32 @@ export default function HangForm() {
   const [from, setFrom] = useState('');
   const [tried, setTried] = useState(false);
   const [already, setAlready] = useState<Hung | null>(null);
+  const [ready, setReady] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [failed, setFailed] = useState<HangError | null>(null);
   const messageRef = useRef<HTMLTextAreaElement>(null);
   const fromRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const mine = myOrnamentOn(nickname);
-    setAlready(mine);
-    if (mine && wantsEdit) {
-      // editing: start from what's already hanging
-      setPick(mine.ornamentId);
-      setMessage(mine.message);
-      setHint(mine.hint);
-      setFrom(mine.from);
-    } else if (isMember()) {
-      // signed-in runners sign with their tree name; guests type theirs
-      const nick = getMe().nickname;
-      setFrom(nick.charAt(0).toUpperCase() + nick.slice(1));
-    }
+    let live = true;
+    Promise.all([myOrnamentOn(nickname), getMe()]).then(([mine, me]) => {
+      if (!live) return;
+      setAlready(mine);
+      if (mine && wantsEdit) {
+        // editing: start from what's already hanging
+        setPick(mine.ornamentId);
+        setMessage(mine.message);
+        setHint(mine.hint);
+        setFrom(mine.from);
+      } else if (me) {
+        // signed-in runners sign with their name; guests type theirs
+        setFrom(me.displayName);
+      }
+      setReady(true);
+    });
+    return () => {
+      live = false;
+    };
   }, [nickname, wantsEdit]);
 
   const editing = Boolean(already && wantsEdit);
@@ -79,6 +98,8 @@ export default function HangForm() {
     );
   };
   const preview = of(pick, pick);
+
+  if (!ready) return <main className="screen no-nav" aria-busy="true" />;
 
   if (already && !editing) {
     const o = BY_ID[already.ornamentId];
@@ -131,19 +152,23 @@ export default function HangForm() {
       <form
         className="stack mt24"
         style={{ gap: 28 }}
-        onSubmit={(e) => {
+        onSubmit={async (e) => {
           e.preventDefault();
           setTried(true);
           if (!message.trim()) return messageRef.current?.focus();
           if (!from.trim()) return fromRef.current?.focus();
+          if (sending) return;
           // Phase 2: Cloudflare Turnstile bot check and a spam filter before saving.
-          if (editing) {
-            editMyOrnament(nickname, { ornamentId: pick, from: from.trim(), hint, message: message.trim() });
-            router.push(`/t/${nickname}?saved=1`);
+          setSending(true);
+          setFailed(null);
+          const input = { ornamentId: pick, from: from.trim(), hint, message: message.trim() };
+          const res = editing ? await editMyOrnament(nickname, input) : await hangOrnament(nickname, input);
+          if ('error' in res) {
+            setFailed(res.error);
+            setSending(false);
             return;
           }
-          const item = hangOrnament(nickname, { ornamentId: pick, from: from.trim(), hint, message: message.trim() });
-          router.push(`/t/${nickname}/done?id=${item.id}`);
+          router.push(editing ? `/t/${nickname}?saved=1` : `/t/${nickname}/done?id=${res.id}`);
         }}
       >
         <fieldset className="field" style={{ border: 0, padding: 0, margin: 0 }}>
@@ -220,7 +245,10 @@ export default function HangForm() {
         </label>
 
         <div className="sticky-cta">
-          <button className="btn block" type="submit">{editing ? 'Save changes' : `Hang it on ${name}’s tree`}</button>
+          {failed && <p className="center small" role="alert" style={{ marginBottom: 8 }}>{HANG_ERROR[failed]}</p>}
+          <button className="btn block" type="submit" aria-busy={sending} disabled={sending}>
+            {sending ? 'Hanging…' : editing ? 'Save changes' : `Hang it on ${name}’s tree`}
+          </button>
           <p className="center tiny muted mt8">Hanging closes December 24 at 23:59.</p>
         </div>
       </form>
