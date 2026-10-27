@@ -1,4 +1,5 @@
 import { DOORS, WEEKLY, adventMonth, computeProgress, doorOrnament, type DayRuns, type Progress } from '@/lib/calendar';
+import { BASIC } from '@/lib/ornaments';
 import { db } from './db';
 import { accessToken, fetchActivities, isCountedRun } from './strava';
 
@@ -101,36 +102,50 @@ export async function runnerProgress(runnerId: string, timeZone: string): Promis
   }
   const { data: pouch } = await db()
     .from('pouch')
-    .select('ornament_id')
+    .select('ornament_id, source, used, hung:hung_id(tree:tree_owner(display_name))')
     .eq('runner_id', runnerId)
-    .eq('used', false)
     .order('earned_on', { ascending: false });
 
-  return { ...progress, pouch: (pouch ?? []).map((p) => p.ornament_id), syncedAt };
+  const prefix = `${year}-${pad(month)}:door-`;
+  const doorOf = (source: string | null) => (source?.startsWith(prefix) ? Number(source.slice(prefix.length)) : null);
+  const given: Record<number, string> = {};
+  for (const p of pouch ?? []) {
+    const door = doorOf(p.source);
+    // embedded rows come back as an object (one-to-one) even though the types say array
+    const hung = p.hung as unknown as { tree: { display_name: string } | null } | null;
+    if (door && p.used && hung?.tree) given[door] = hung.tree.display_name;
+  }
+
+  return {
+    ...progress,
+    given,
+    unwrapped: (pouch ?? []).filter((p) => !p.used).map((p) => ({ ornamentId: p.ornament_id, door: doorOf(p.source) })),
+    found: [...new Set([...BASIC.map((o) => o.id), ...(pouch ?? []).map((p) => p.ornament_id)])],
+    syncedAt,
+  };
 }
 
-export type Friend = { nickname: string; displayName: string; avatarUrl: string | null; note: string };
+type Friend = import('@/lib/friends').Friend;
 
-/** Runners connected through ornament swaps: they hung one on your tree, or you on theirs. */
+/** Runners connected through ornaments: they hung one on your tree, or you on theirs. */
 export async function friendsOf(runnerId: string): Promise<Friend[]> {
   const [{ data: toMe }, { data: fromMe }] = await Promise.all([
     db().from('ornaments_hung').select('from_runner').eq('tree_owner', runnerId).not('from_runner', 'is', null),
     db().from('ornaments_hung').select('tree_owner').eq('from_runner', runnerId),
   ]);
-  const hungForMe = new Set((toMe ?? []).map((r) => r.from_runner as string));
-  const iHungFor = new Set((fromMe ?? []).map((r) => r.tree_owner as string));
-  const ids = [...new Set([...hungForMe, ...iHungFor])].filter((id) => id !== runnerId);
+  const hung = new Map<string, number>();
+  for (const r of toMe ?? []) hung.set(r.from_runner as string, (hung.get(r.from_runner as string) ?? 0) + 1);
+  const given = new Set((fromMe ?? []).map((r) => r.tree_owner as string));
+  const ids = [...new Set([...hung.keys(), ...given])].filter((id) => id !== runnerId);
   if (!ids.length) return [];
 
-  const { data } = await db().from('runners').select('id, nickname, display_name, avatar_url').in('id', ids).order('display_name');
+  const { data } = await db().from('runners').select('id, nickname, display_name, avatar_url').in('id', ids);
   return (data ?? []).map((r) => ({
     nickname: r.nickname,
-    displayName: r.display_name,
+    name: r.display_name,
     avatarUrl: r.avatar_url,
-    note: hungForMe.has(r.id) && iHungFor.has(r.id)
-      ? 'You swapped ornaments'
-      : hungForMe.has(r.id)
-        ? 'Hung an ornament on your tree'
-        : 'You hung an ornament on their tree',
+    hung: hung.get(r.id) ?? 0,
+    given: given.has(r.id) ? 1 : 0,
+    visited: false,
   }));
 }

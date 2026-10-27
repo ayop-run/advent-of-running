@@ -8,7 +8,7 @@ import { cookies } from 'next/headers';
 const NAME = 'aor_session';
 const MAX_AGE = 60 * 60 * 24 * 60; // 60 days
 
-const sign = (value: string) => createHmac('sha256', process.env.SESSION_SECRET!).update(value).digest('base64url');
+export const sign = (value: string) => createHmac('sha256', process.env.SESSION_SECRET!).update(value).digest('base64url');
 
 export const cookieOptions = (maxAge: number) => ({
   httpOnly: true,
@@ -37,4 +37,14 @@ export async function sessionRunnerId(): Promise<string | null> {
   if (given.length !== expected.length || !timingSafeEqual(given, expected)) return null;
   const [id, exp] = value.split('.');
   return Number(exp) > Date.now() / 1000 ? id : null;
+}
+
+/** Lets a guest (no account) edit the ornament they hung: kept in their browser, checked here. */
+export const editToken = (hungId: string) => sign(`hung:${hungId}`);
+
+export function validEditToken(hungId: string, token: unknown) {
+  if (typeof token !== 'string') return false;
+  const a = Buffer.from(token);
+  const b = Buffer.from(editToken(hungId));
+  return a.length === b.length && timingSafeEqual(a, b);
 }

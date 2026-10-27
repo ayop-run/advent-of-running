@@ -9,7 +9,7 @@ insert into runners (strava_athlete_id, nickname, display_name, time_zone) value
 insert into ornaments_hung (tree_owner, ornament_id, from_name, hint, message, created_at)
 select r.id, v.ornament_id, v.from_name, v.hint, v.message, '2026-12-10T08:00:00Z'
 from (values
-  ('demo', 'star-gold', 'Mina', 'Cheer', 'You got this. See you at the Sunday long run!'),
+  ('demo', 'snow-globe', 'Mina', 'Cheer', 'You got this. See you at the Sunday long run!'),
   ('demo', 'fox', 'Jonas', 'Thanks', 'Thanks for pacing me in October. Merry Christmas!'),
   ('demo', 'finish-medal', 'Aiko', 'Love', 'Proud of you for running through the dark mornings.'),
   ('demo', 'penguin', 'Leo', 'Funny', 'Slipped on ice twice this week. Worth it.'),

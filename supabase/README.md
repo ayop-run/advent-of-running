@@ -14,7 +14,7 @@ The app keeps trees and hung ornaments in Supabase (Postgres). Everything else (
 2. In the left sidebar, open **SQL Editor** and click **New query**.
 3. Paste all of `schema.sql` and click **Run**. You should see "Success. No rows returned".
 4. Open a new query, paste `seed.sql`, and click **Run**.
-5. Run each file in `migrations/` the same way, in number order (`002_strava_login.sql`, …).
+5. Run each file in `migrations/` the same way, in number order (`002_strava_login.sql`, `003_activity_sync.sql`, `004_one_per_tree.sql`, …).
 
 When someone adds a new migration, run just that file.
 
@@ -43,15 +43,15 @@ To hide a spam ornament, set `hidden` to `true` on its row in the Table Editor.
 
 ## How the app accesses data
 
-The browser uses the publishable key, which is allowed to be public. That key has no access to the tables, only to one function:
+The browser never talks to Supabase directly. Everything goes through the app's server routes in `app/api`, which use the secret key (`lib/server/db.ts`):
 
-- `get_tree(nick)`: owner name plus sealed ornaments (sender, ornament, hint). It never returns messages or emails.
-
-Everything else goes through the app's server routes in `app/api`, which use the secret key (`lib/server/db.ts`):
-
+- `/api/tree/[nickname]`: a tree with its sealed ornaments. Messages are only included for the ornament the signed-in runner hung themself.
+- `/api/hang`: hang (POST) or edit (PATCH) an ornament through `hang_ornament(...)`. One per runner per tree; earned ornaments must be in the sender's pouch. Guests get an edit token kept in their browser. Hanging closes on December 25 in the owner's time zone.
 - Strava login (`/api/strava/connect`, `/api/strava/callback`) creates or updates the row in `runners` and stores the Strava tokens.
 - `/api/me` reads and saves the signed-in runner's profile, and deletes it on "Disconnect Strava".
-- `/api/hang` calls `hang_ornament(...)`. It refuses on and after December 25 in the owner's time zone, and for guests when the owner set `hang_policy = 'signed_in'`.
+- `/api/progress` syncs runs from Strava into `daily_progress` and awards door ornaments to `pouch`; `/api/friends` lists runners you swapped ornaments with.
+
+Signed-out visitors on seed trees (negative `strava_athlete_id`) get the browser demo in `lib/demo` instead.
 
 Pages reach all of this only through `lib/data.ts`.
 

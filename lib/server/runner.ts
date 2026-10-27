@@ -1,4 +1,5 @@
-import type { Me } from '@/lib/data';
+import type { Me } from '@/lib/me';
+import { checkNickname, cleanNickname } from '@/lib/nickname';
 import { db } from './db';
 import { sessionRunnerId } from './session';
 
@@ -24,12 +25,14 @@ export async function currentRunner(): Promise<(Me & { id: string }) | null> {
   };
 }
 
-export const NICKNAME = /^[a-z0-9-]{2,30}$/;
-
-/** A free nickname based on the runner's first name: "mina", then "mina-2", … */
-export async function freeNickname(firstName: string) {
-  let base = firstName.toLowerCase().normalize('NFKD').replace(/[^a-z0-9-]/g, '').slice(0, 24);
-  if (base.length < 2) base = 'runner';
+/** A free tree name based on the runner's first name: "mina", then "mina-2", … */
+export async function freeNickname(firstName: string, wanted?: string) {
+  if (wanted && checkNickname(wanted).ok) {
+    const { data } = await db().from('runners').select('id').eq('nickname', wanted).maybeSingle();
+    if (!data) return wanted;
+  }
+  let base = cleanNickname(firstName.normalize('NFKD')).replace(/^-+|-+$/g, '').slice(0, 16);
+  if (!checkNickname(base).ok) base = 'runner';
   const { data } = await db().from('runners').select('nickname').like('nickname', `${base}%`);
   const taken = new Set((data ?? []).map((r) => r.nickname));
   if (!taken.has(base)) return base;

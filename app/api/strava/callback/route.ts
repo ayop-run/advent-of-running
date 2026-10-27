@@ -8,9 +8,22 @@ import { exchangeCode, tokenColumns } from '@/lib/server/strava';
 export async function GET(req: NextRequest) {
   const url = req.nextUrl;
   const fail = (reason: string) => {
-    const res = NextResponse.redirect(new URL(`/?login=${reason}`, url.origin));
+    const res = NextResponse.redirect(new URL(`/login?error=${reason}`, url.origin));
     res.cookies.set('aor_oauth_state', '', cookieOptions(0));
     return res;
+  };
+  let signup: { nick?: string; tz?: string } = {};
+  try {
+    signup = JSON.parse(req.cookies.get('aor_signup')?.value ?? '{}');
+  } catch {
+    /* no sign-up details: plain log-in */
+  }
+  const validTz = (tz?: string) => {
+    try {
+      return tz ? (new Intl.DateTimeFormat('en', { timeZone: tz }), tz) : null;
+    } catch {
+      return null;
+    }
   };
 
   const state = req.cookies.get('aor_oauth_state')?.value;
@@ -47,8 +60,9 @@ export async function GET(req: NextRequest) {
       .from('runners')
       .insert({
         strava_athlete_id: athlete.id,
-        nickname: await freeNickname(athlete.firstname),
+        nickname: await freeNickname(athlete.firstname, signup.nick),
         display_name: athlete.firstname || 'Runner',
+        time_zone: validTz(signup.tz) ?? 'UTC',
         avatar_url: avatar,
         ...tokenColumns(token),
       })
@@ -59,8 +73,10 @@ export async function GET(req: NextRequest) {
     onboarded = false;
   }
 
-  const res = NextResponse.redirect(new URL(onboarded ? '/tree' : '/onboarding', url.origin));
+  // new runners confirm their tree name and time zone on the last sign-up step
+  const res = NextResponse.redirect(new URL(onboarded ? '/tree' : '/signup?step=finish', url.origin));
   res.cookies.set(...sessionCookie(id));
   res.cookies.set('aor_oauth_state', '', cookieOptions(0));
+  res.cookies.set('aor_signup', '', cookieOptions(0));
   return res;
 }

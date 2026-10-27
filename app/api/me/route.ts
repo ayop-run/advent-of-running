@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/server/db';
-import { NICKNAME, currentRunner } from '@/lib/server/runner';
+import { checkNickname } from '@/lib/nickname';
+import { currentRunner } from '@/lib/server/runner';
 import { clearedSessionCookie } from '@/lib/server/session';
 import { accessToken, deauthorize } from '@/lib/server/strava';
 
@@ -31,7 +32,7 @@ export async function PATCH(req: Request) {
   const body = await req.json().catch(() => null);
   const nickname = typeof body?.nickname === 'string' ? body.nickname.trim().toLowerCase() : '';
   if (
-    !NICKNAME.test(nickname) ||
+    !checkNickname(nickname).ok ||
     !validTimeZone(body.timeZone) ||
     !['anyone', 'signed_in'].includes(body.hangPolicy) ||
     typeof body.emailOptIn !== 'boolean'

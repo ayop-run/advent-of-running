@@ -3,16 +3,24 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import BottomNav from '@/components/BottomNav';
-import { Meter } from '@/components/Icons';
+import { ChevronIcon, Meter } from '@/components/Icons';
 import { MusicButton } from '@/components/MusicToggle';
+import Sprite from '@/components/Sprite';
+import SpriteFx from '@/components/SpriteFx';
+import { useBump } from '@/components/useBump';
 import { getProgress } from '@/lib/data';
+import { stravaLoginUrl } from '@/lib/me';
 import { BY_ID } from '@/lib/ornaments';
-import { DAILY_GOAL_KM, DOORS, WEEKLY, monthName, type Progress } from '@/lib/calendar';
+import { DAILY_GOAL_KM, DOORS, doorOrnament, monthName, type DoorState, type Progress } from '@/lib/calendar';
+
+const STATE_LABEL: Record<DoorState, string> = { opened: 'Unwrapped', today: 'Today', missed: 'Missed', locked: 'Coming up' };
 
 export default function Calendar() {
   const [p, setP] = useState<Progress | null>(null);
   const [demo, setDemo] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [picked, setPicked] = useState<number | null>(null);
+  const { bump, of } = useBump();
   useEffect(() => {
     getProgress().then((res) => {
       if ('error' in res) return setFailed(true);
@@ -24,100 +32,180 @@ export default function Calendar() {
   if (!p) {
     return (
       <main className="screen">
-        <div className="topbar"><h1 className="title">Calendar</h1><MusicButton /></div>
-        <p className="soft center mt24">{failed ? "Couldn't sync with Strava. Please try again later." : 'Syncing your runs…'}</p>
+        <div className="topbar">
+          <div>
+            <p className="brand-mark">Advent of Running</p>
+            <h1 className="title">Calendar</h1>
+          </div>
+          <MusicButton />
+        </div>
+        <p className="soft center mt24">{failed ? 'Couldn’t sync with Strava. Please try again later.' : 'Syncing your runs…'}</p>
         <BottomNav />
       </main>
     );
   }
 
-  const opened = p.doors.filter((s) => s === 'opened').length;
-  const missed = p.doors.flatMap((s, i) => (s === 'missed' ? [i + 1] : []));
   const month = monthName(p.month);
-  const nextWeek = p.week ? WEEKLY.find((w) => w.week === p.week!.week + 1) : null;
-  const reward = p.week ? BY_ID[p.week.reward] : null;
+  const doors = Array.from({ length: DOORS }, (_, i) => i + 1);
+  const state = (n: number) => p.doors[n - 1];
+  // only unwrapped doors reveal their ornament; everything else stays a surprise
+  const revealed = (n: number) => state(n) === 'opened';
+  const shownSprite = (n: number) => (revealed(n) ? doorOrnament(n) : 'gift-box');
+  const shownName = (n: number) => (revealed(n) ? BY_ID[doorOrnament(n)].name.replace('Advent Runner: ', '') : 'A wrapped surprise');
+  const km = (n: number) => p.km[n - 1];
+
+  const doorStory = (n: number) => {
+    const ran = km(n) > 0 ? `You ran ${km(n)} km that day. ` : '';
+    switch (state(n)) {
+      case 'opened':
+        if (p.caughtUp.includes(n)) return `${ran}Unwrapped later with a ${n} km catch-up run. ${p.given[n] ? `You gave it to ${p.given[n]}.` : 'Give it to a friend.'}`;
+        return `${ran}${p.given[n] ? `You gave it to ${p.given[n]}. It hangs on their tree until Christmas.` : 'Unwrapped. Give it to a friend.'}`;
+      case 'today':
+        return `${ran}Finish today’s run to unwrap it and give it to a friend.`;
+      case 'missed':
+        return `${ran}Not enough that day. Run ${n} km in one go to still unwrap it.`;
+      default:
+        return `Opens on ${month} ${n}.`;
+    }
+  };
+
+  const given = Object.keys(p.given).length;
+  const running = p.today >= 1 && p.today <= DOORS;
+  const left = Math.max(0, DAILY_GOAL_KM - p.todayKm);
+  const ready = p.unwrapped.length > 0;
+  const week = p.week;
 
   return (
     <main className="screen">
       <div className="topbar">
-        <h1 className="title">Calendar</h1>
-        <div className="topbar-end">
-          <span className="num" style={{ color: 'var(--gold)', fontSize: 18 }}>{opened}/{DOORS} open</span>
-          <MusicButton />
+        <div>
+          <p className="brand-mark">Advent of Running</p>
+          <h1 className="title">Calendar</h1>
         </div>
+        <MusicButton />
       </div>
 
-      <div className="doors" role="list" aria-label="Advent doors">
-        {p.doors.map((s, i) => (
-          <div key={i} role="listitem" className={`door ${s}`} aria-label={`Door ${i + 1}, ${s}${p.km[i] ? `, ${p.km[i]} km` : ''}${p.caughtUp.includes(i + 1) ? ', caught up' : ''}`}>
-            {i + 1}
-            {p.km[i] > 0 && <span className="km">{p.km[i]} km</span>}
+      {/* 1. today's mission: run → unwrap → give */}
+      {running ? (
+        <section className="panel gold" aria-labelledby="mission">
+          <div className="panel-head">
+            <p className="eyebrow" style={{ color: 'var(--gold)' }}>Today&apos;s mission</p>
+            <span className="num" style={{ color: 'var(--gold)' }}>{p.todayKm.toFixed(1)} / {DAILY_GOAL_KM.toFixed(1)} km</span>
           </div>
-        ))}
-      </div>
-      <div className="legend mt12" style={{ justifyContent: 'flex-start' }}>
-        <span><i style={{ background: 'var(--cranberry)' }} />Opened</span>
-        <span style={{ color: 'var(--gold)' }}><i style={{ boxShadow: 'inset 0 0 0 2px var(--gold)' }} />Today</span>
-        <span className="muted"><i style={{ boxShadow: 'inset 0 0 0 1px #7d8db3' }} />Missed</span>
-        <span className="muted" style={{ marginLeft: 'auto', fontWeight: 500 }}>Only you see this</span>
-      </div>
-      {p.caughtUp.length > 0 && (
-        <p className="tiny muted mt8">Caught up later with a long run: door {p.caughtUp.sort((a, b) => a - b).join(', ')}.</p>
-      )}
-
-      {p.today === 0 && <div className="panel hint small mt24">Door 1 opens on {month} 1.</div>}
-      {p.today > DOORS && <div className="panel hint small mt24">Advent is over. You opened {opened} of {DOORS} doors.</div>}
-
-      {p.today >= 1 && p.today <= DOORS && (
-        <section className="panel gold mt24">
-          <div className="row between">
-            <h2 className="h2">Door {p.today}: run {DAILY_GOAL_KM} km</h2>
-            <span className="small muted">{p.doors[p.today - 1] === 'opened' ? 'Opened' : 'until 23:59'}</span>
-          </div>
-          <div className="mt12"><Meter value={Math.min(p.todayKm, DAILY_GOAL_KM)} max={DAILY_GOAL_KM} /></div>
-          <p className="small soft mt8">
-            <span className="num" style={{ color: 'var(--gold)' }}>{p.todayKm.toFixed(1)} km</span> so far. Outdoor, trail and treadmill runs count; manual entries don&apos;t.
-          </p>
-        </section>
-      )}
-
-      {missed.length > 0 && p.today <= DOORS && (
-        <div className="panel hint small mt12">
-          {missed.length === 1 ? `You missed door ${missed[0]}.` : `You missed doors ${missed.join(', ')}.`} Run {missed[missed.length - 1]} km in one go to open door {missed[missed.length - 1]}
-          {missed.length > 1 ? `, or ${missed[0]} km for door ${missed[0]}` : ''}.
-        </div>
-      )}
-
-      {p.week && reward && (
-        <section className="panel mt24">
-          <div className="row" style={{ alignItems: 'flex-start' }}>
-            <img className="px" src={reward.img} alt="" width={64} height={64} style={{ filter: 'drop-shadow(0 0 10px rgba(255,201,74,.8))' }} />
+          <div className="row mt8">
+            <Sprite id="gift-box" px={4} style={{ flexShrink: 0 }} />
             <div className="grow">
-              <p className="tier tier-rare">Week {p.week.week} challenge{p.today === p.week.to ? ', ends today' : `, until ${month} ${p.week.to}`}</p>
-              <h2 className="h2 mt4">{p.week.title}</h2>
-              <p className="small soft mt4">{p.week.done ? `Done! The rare ${reward.name} is in your pouch.` : `Finish it to win the rare ${reward.name}.`}</p>
+              <h2 id="mission" className="h2">Run {DAILY_GOAL_KM.toFixed(0)} km</h2>
+              <p className="small soft mt4">By 23:59. Door {p.today} opens when you finish, then give the ornament inside to a friend.</p>
             </div>
           </div>
-          {p.week.unit === 'runs together' ? (
-            <p className="small muted mt12">Runs together are counted once your friends are connected. Coming soon.</p>
+          <div className="mt12"><Meter value={Math.min(p.todayKm, DAILY_GOAL_KM)} max={DAILY_GOAL_KM} /></div>
+          {ready ? (
+            <Link href="/gift" className="btn block mt12">{demo ? 'Try a demo unwrap' : 'Unwrap and give'}</Link>
           ) : (
-            <>
-              <div className="mt12"><Meter value={Math.min(p.week.progress, p.week.goal)} max={p.week.goal} /></div>
-              <p className="small muted mt8">
-                <span className="num" style={{ color: 'var(--snow)' }}>{p.week.progress} of {p.week.goal} {p.week.unit}</span>.
-                {nextWeek && ` The next challenge starts ${month} ${nextWeek.from}.`}
-              </p>
-            </>
+            <div className="panel-head mt8">
+              <span className="small soft"><strong style={{ color: 'var(--snow)' }}>{left.toFixed(1)} km</strong> to go</span>
+            </div>
           )}
+        </section>
+      ) : (
+        <section className="panel gold">
+          <p className="eyebrow" style={{ color: 'var(--gold)' }}>{p.today === 0 ? 'Coming soon' : 'Advent is over'}</p>
+          <p className="small soft mt8">
+            {p.today === 0 ? `Door 1 opens on ${month} 1.` : `You unwrapped ${p.doors.filter((s) => s === 'opened').length} of ${DOORS} doors.`}
+          </p>
+          {ready && <Link href="/gift" className="btn block mt12">Give your unwrapped ornaments</Link>}
         </section>
       )}
 
-      {demo ? (
-        <a href="/api/strava/connect" className="btn block mt24">Log in with Strava to use your runs</a>
-      ) : (
-        p.syncedAt && <p className="center tiny muted mt16">Synced from Strava {new Date(p.syncedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.</p>
+      {/* 2. the Advent doors */}
+      <div className="panel-head mt32">
+        <h2 className="h2">Your Advent</h2>
+        <span className="num muted">{given} given</span>
+      </div>
+      <p className="small soft mt4">Tap a door to see how far you ran, and who got its ornament.</p>
+
+      <div className="doors mt12" role="group" aria-label="Advent doors">
+        {doors.map((n) => {
+          const s = state(n);
+          const b = of(n, shownSprite(n));
+          return (
+            <button
+              key={n}
+              type="button"
+              className={`door ${s}`}
+              aria-pressed={picked === n}
+              aria-label={`Door ${n}, ${STATE_LABEL[s].toLowerCase()}${km(n) > 0 ? `, ${km(n)} km` : ''}${revealed(n) ? `: ${shownName(n)}` : ''}`}
+              onClick={() => {
+                setPicked(n);
+                // unwrapped doors play their ornament's animation; wrapped ones just jiggle
+                bump(n, s === 'opened' || s === 'today' ? 'play' : 'nope');
+              }}
+            >
+              <span className="n">{n}</span>
+              <span key={b.k} className="bump">
+                <span className={b.anim}><Sprite id={shownSprite(n)} px={2} /></span>
+                {b.fx && <SpriteFx anim={b.fx} px={2} />}
+              </span>
+              {km(n) > 0 && <span className="km">{km(n)} km</span>}
+            </button>
+          );
+        })}
+      </div>
+
+      {picked && (
+        <section className="panel quiet row mt12 fade-in" aria-live="polite">
+          <Sprite id={shownSprite(picked)} px={4} style={{ flexShrink: 0, opacity: state(picked) === 'missed' ? 0.5 : 1 }} />
+          <div className="grow">
+            <p className="eyebrow">Door {picked} · {STATE_LABEL[state(picked)]}</p>
+            <h2 className="h2 mt4">{shownName(picked)}</h2>
+            <p className="small soft mt4">{doorStory(picked)}</p>
+          </div>
+        </section>
       )}
-      {p.pouch.length > 0 && <Link href="/gift" className="btn ghost block mt12">Give your ornaments</Link>}
+      <p className="tiny muted mt8">
+        Only you can see your calendar.{' '}
+        {demo ? (
+          <>This is the demo. <a href={stravaLoginUrl()} className="textlink" style={{ fontSize: 13 }}>Log in with Strava <ChevronIcon /></a></>
+        ) : p.syncedAt ? (
+          `Synced from Strava at ${new Date(p.syncedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.`
+        ) : null}
+      </p>
+
+      {/* 3. a small weekly bonus */}
+      {week && (
+        <section className="panel quiet mt24" style={{ padding: '14px 16px' }}>
+          <div className="panel-head">
+            <p className="eyebrow">Weekly bonus</p>
+            {week.unit !== 'runs together' && <span className="num muted">{week.progress} / {week.goal} {week.unit}</span>}
+          </div>
+          <div className="row mt8" style={{ alignItems: 'center' }}>
+            {week.done ? (
+              <Sprite id={week.reward} px={2} style={{ flexShrink: 0 }} />
+            ) : (
+              // the prize's shadow: a hint of its shape, revealed when you win it
+              <span className="prize-shadow" aria-hidden="true">
+                <span className="silhouette"><Sprite id={week.reward} px={2} /></span>
+                <span className="dir-q pix">?</span>
+              </span>
+            )}
+            <div className="grow">
+              <p className="small" style={{ fontWeight: 800 }}>
+                {week.done ? `You won the ${BY_ID[week.reward].name}!` : `${week.title} to win this rare ornament`}
+              </p>
+              <p className="tiny muted mt4">
+                {week.unit === 'runs together'
+                  ? 'Runs together are counted soon.'
+                  : week.done
+                    ? 'Give it to a friend like your door ornaments.'
+                    : `What it is stays a surprise until you do. Ends ${p.today === week.to ? 'tonight' : `${month} ${week.to}`}.`}
+              </p>
+            </div>
+          </div>
+          {week.unit !== 'runs together' && <div className="mt8"><Meter value={Math.min(week.progress, week.goal)} max={week.goal} /></div>}
+        </section>
+      )}
+
       <BottomNav />
     </main>
   );

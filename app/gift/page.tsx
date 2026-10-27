@@ -1,90 +1,126 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Avatar } from '@/components/PixelTree';
-import { getFriends, getProgress, type Friend } from '@/lib/data';
+import Sprite from '@/components/Sprite';
+import { DOORS, type Progress } from '@/lib/calendar';
+import { getProgress } from '@/lib/data';
+import { ChevronIcon } from '@/components/Icons';
+import { canGiveTo, friendNote, getFriends, type Friend } from '@/lib/friends';
 import { BY_ID } from '@/lib/ornaments';
-import { DOORS, monthName, type Progress } from '@/lib/calendar';
+
+type Phase = 'wrapped' | 'opening' | 'open';
+
+/** Sparkles fly out from the box in eight directions when it pops. */
+const BURST = [
+  [0, -56], [40, -40], [56, 0], [40, 40], [0, 56], [-40, 40], [-56, 0], [-40, -40],
+] as const;
 
 export default function GiftOpened() {
   const [p, setP] = useState<Progress | null>(null);
-  const [friends, setFriends] = useState<Friend[] | null>(null);
-  const [pick, setPick] = useState(0);
+  const [phase, setPhase] = useState<Phase>('wrapped');
+  const [friends, setFriends] = useState<Friend[]>([]);
   useEffect(() => {
     getProgress().then((res) => 'progress' in res && setP(res.progress));
-    getFriends().then(setFriends);
+    // one per tree, so suggest friends who don't have one of yours yet
+    getFriends().then((all) => setFriends(all.filter((f) => canGiveTo(f.nickname, all)).slice(0, 4)));
+  }, []);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    if (timer.current) clearTimeout(timer.current);
   }, []);
 
-  if (!p) return <main className="screen no-nav"><p className="soft center mt24">Unwrapping…</p></main>;
+  const unwrap = () => {
+    if (phase !== 'wrapped') return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return setPhase('open');
+    setPhase('opening');
+    timer.current = setTimeout(() => setPhase('open'), 900);
+  };
 
-  const o = p.pouch.length ? BY_ID[p.pouch[Math.min(pick, p.pouch.length - 1)]] : null;
-  const opened = p.doors.filter((s) => s === 'opened').length;
+  const open = phase === 'open';
+  // the newest ornament you earned and haven't given yet
+  const gift = p?.unwrapped[0];
+  const o = gift ? BY_ID[gift.ornamentId] : null;
+  const label = gift?.door ? `Door ${gift.door} of ${DOORS}` : 'Weekly prize';
+
+  if (!p) return <main className="screen no-nav" aria-busy="true" />;
+  if (!o) {
+    return (
+      <main className="screen no-nav">
+        <div className="topbar">
+          <span className="badge">{p.todayKm.toFixed(1)} km today</span>
+          <Link href="/tree" className="textlink">Close</Link>
+        </div>
+        <div className="showcase mt8"><Sprite id="gift-box" px={4} label="Wrapped gift" /></div>
+        <h1 className="h1 center mt16">Nothing to unwrap yet</h1>
+        <p className="center soft mt8">Run 1 km to open today&apos;s door. The ornament inside is yours to give to a friend.</p>
+        <Link href="/calendar" className="btn block mt24">Open the calendar</Link>
+      </main>
+    );
+  }
 
   return (
     <main className="screen no-nav">
       <div className="topbar">
-        <span className="small muted">
-          {monthName(p.month)} {Math.min(Math.max(p.today, 1), DOORS)}{p.today >= 1 && p.today <= DOORS ? `, ${p.todayKm.toFixed(1)} km synced` : ''}
-        </span>
+        <span className="badge">{p.todayKm.toFixed(1)} km today</span>
         <Link href="/tree" className="textlink">Close</Link>
       </div>
 
-      {o ? (
-        <>
-          <div className="center mt8" style={{ position: 'relative' }}>
-            <img className="px" src="/ornaments/gift-box.png" alt="" width={72} height={72} style={{ opacity: .35, position: 'absolute', left: '50%', top: 130, transform: 'translateX(-50%)' }} />
-            <img className="px" src={o.img} alt={o.name} width={176} height={176} style={{ position: 'relative', filter: 'drop-shadow(0 0 22px rgba(232,84,106,.6))' }} />
-          </div>
-          <p className={`center tier tier-${o.tier} mt16`}>{opened} of {DOORS} doors open, {o.tier} ornament</p>
-          <h1 className="h1 center mt8">You unwrapped the {o.name}</h1>
-          <p className="center soft mt8">Hang it on a friend&apos;s tree. It glows brighter than the free ones.</p>
-          {p.pouch.length > 1 && (
-            <div className="picker mt16">
-              {p.pouch.map((id, k) => (
-                <button key={`${id}-${k}`} type="button" className="pick" aria-pressed={k === pick} onClick={() => setPick(k)}>
-                  <img className="px" src={BY_ID[id].img} alt="" />
-                  <span className={`tier-${BY_ID[id].tier}`}>{BY_ID[id].name.replace('Advent Runner: ', '')}</span>
-                </button>
-              ))}
-            </div>
-          )}
-        </>
-      ) : (
-        <>
-          <img className="px" src="/ornaments/gift-box.png" alt="" width={120} height={120} style={{ alignSelf: 'center', marginTop: 24 }} />
-          <h1 className="h1 center mt16">Nothing to unwrap yet</h1>
-          <p className="center soft mt8">Run 1 km to open today&apos;s door and unwrap a special ornament.</p>
-        </>
-      )}
+      <div className={`showcase unwrap ${phase} mt8`}>
+        {open ? (
+          <>
+            <Sprite id={o.id} px={4} label={o.name} className="reveal" />
+            {BURST.map(([dx, dy], i) => (
+              <i key={i} className="burst" style={{ '--dx': `${dx}px`, '--dy': `${dy}px` } as React.CSSProperties} />
+            ))}
+            <i className="glint" style={{ top: 24, right: 28 }} />
+            <i className="glint" style={{ bottom: 30, left: 26, animationDelay: '-1.2s' }} />
+          </>
+        ) : (
+          <Sprite id="gift-box" px={4} label="Wrapped gift" className="box" />
+        )}
+      </div>
 
-      {o && (
-        <>
+      {open ? (
+        <div className="fade-in">
+          <p className="center eyebrow mt16" style={{ color: 'var(--gold)' }}>{label} · unwrapped</p>
+          <h1 className="h1 center mt8">{o.name}</h1>
+          <p className="center soft mt8">Now give it away: pick a friend and hang it on their tree with a sealed message.</p>
+
           <h2 className="h2 mt32">Give it to</h2>
+          <p className="small soft mt4">Friends who don&apos;t have one of yours yet.</p>
+          {friends.length === 0 && <p className="small soft mt12">Everyone on your list has one already. Find someone new below.</p>}
           <div className="stack mt12" style={{ gap: 8 }}>
-            {friends?.length === 0 && (
-              <p className="small soft">
-                No friends here yet. Runners show up once you hang an ornament on their tree or they hang one on yours. Share your tree from{' '}
-                <Link href="/tree" className="textlink">My tree</Link>.
-              </p>
-            )}
-            {friends?.map((f) => (
-              <div key={f.nickname} className="panel quiet row" style={{ padding: 12 }}>
-                <Avatar owner={{ name: f.displayName, avatarUrl: f.avatarUrl ?? undefined }} size={38} />
-                <div className="grow">
-                  <div style={{ fontWeight: 800 }}>{f.displayName}</div>
-                  <div className="tiny muted">{f.note}</div>
+            {friends.map((f) => (
+              <div key={f.nickname} className="panel quiet row" style={{ padding: '12px 12px 12px 14px' }}>
+                <Avatar owner={{ name: f.name }} size={38} />
+                <div className="grow" style={{ minWidth: 0 }}>
+                  <div style={{ fontWeight: 800 }}>{f.name}</div>
+                  <div className="tiny muted">{friendNote(f)}</div>
                 </div>
-                <Link href={`/t/${f.nickname}/hang?o=${o.id}`} className="btn sm">Hang</Link>
+                <Link href={`/t/${f.nickname}/hang?o=${o.id}`} className="btn sm">Give</Link>
               </div>
             ))}
           </div>
+          <Link href={`/friends?give=${o.id}`} className="panel quiet row mt8" style={{ color: 'var(--snow)', padding: '12px 16px' }}>
+            <span className="grow small" style={{ fontWeight: 700 }}>Someone else? Find a tree by name</span>
+            <ChevronIcon />
+          </Link>
+        </div>
+      ) : (
+        <>
+          <p className="center eyebrow mt16" style={{ color: 'var(--gold)' }}>{label} · you ran it!</p>
+          <h1 className="h1 center mt8">Your gift is ready</h1>
+          <p className="center soft mt8">Open today&apos;s door to see which ornament you get, then give it to a friend.</p>
+          <button className="btn block mt24" onClick={unwrap} aria-busy={phase === 'opening'}>
+            {phase === 'opening' ? 'Unwrapping…' : 'Unwrap'}
+          </button>
         </>
       )}
 
       <div className="grow" />
-      <Link href="/tree" className="btn ghost block mt24">{o ? 'Keep it for later' : 'Back to my tree'}</Link>
-      {o && <p className="center tiny muted mt8">You&apos;re holding {p.pouch.length}. Any left on December 25 go on your own tree.</p>}
+      {open && <p className="center tiny muted mt24">Your friend sees it on their tree right away. Your message stays sealed until Christmas.</p>}
     </main>
   );
 }

@@ -1,12 +1,35 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { SKY_KEYS, localHour, skyVars } from '@/lib/sky';
 
-type Flake = { x: number; y: number; s: number; v: number; phase: number; amp: number };
+type Flake = { x: number; y: number; s: number; v: number; phase: number; sway: number; drift: number };
 
-/** Full-screen pixel snowfall. Square flakes, bigger ones fall faster (parallax). */
+/** Snow is drawn on a 2px grid so it matches the rest of the pixel art. */
+const PX = 2;
+
+/** Updates the sky colours from the clock. `?sky=17.5` previews a time of day. */
+function useDynamicSky() {
+  useEffect(() => {
+    const forced = Number(new URLSearchParams(window.location.search).get('sky'));
+    const hasForced = Number.isFinite(forced) && new URLSearchParams(window.location.search).has('sky');
+    const meta = document.querySelector('meta[name="theme-color"]');
+    const apply = () => {
+      const vars = skyVars(hasForced ? forced % 24 : localHour(), SKY_KEYS);
+      const root = document.documentElement.style;
+      for (const [k, v] of Object.entries(vars)) root.setProperty(k, v);
+      meta?.setAttribute('content', vars['--sky-top']);
+    };
+    apply();
+    const id = setInterval(apply, 60_000);
+    return () => clearInterval(id);
+  }, []);
+}
+
+/** Full-screen sky: time-of-day gradient, stars, slow pixel snowfall and snow drifts. */
 export default function Snowfall() {
   const ref = useRef<HTMLCanvasElement>(null);
+  useDynamicSky();
 
   useEffect(() => {
     const canvas = ref.current;
@@ -18,17 +41,19 @@ export default function Snowfall() {
     let h = 0;
     let flakes: Flake[] = [];
     let raf = 0;
+    let last = 0;
 
     const make = (anywhere: boolean): Flake => {
-      const r = Math.random();
-      const s = r < 0.55 ? 2 : r < 0.85 ? 3 : r < 0.97 ? 4 : 6;
+      const big = Math.random() < 0.22;
       return {
         x: Math.random() * w,
-        y: anywhere ? Math.random() * h : -10,
-        s,
-        v: 0.25 + s * 0.18 + Math.random() * 0.2,
+        y: anywhere ? Math.random() * h : -PX * 3,
+        s: big ? PX * 2 : PX,
+        // px per second: a slow, calm fall; nearer (bigger) flakes a little faster
+        v: big ? 16 + Math.random() * 8 : 8 + Math.random() * 6,
         phase: Math.random() * Math.PI * 2,
-        amp: 0.2 + Math.random() * 0.5,
+        sway: 4 + Math.random() * 8,
+        drift: 0.25 + Math.random() * 0.35,
       };
     };
 
@@ -41,26 +66,27 @@ export default function Snowfall() {
       canvas.style.width = `${w}px`;
       canvas.style.height = `${h}px`;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      const target = Math.min(320, Math.round((w * h) / 2800));
+      const target = Math.min(180, Math.round((w * h) / 4200));
       flakes = Array.from({ length: target }, () => make(true));
     };
 
     const draw = () => {
       ctx.clearRect(0, 0, w, h);
       for (const f of flakes) {
-        ctx.fillStyle = f.s >= 4 ? 'rgba(255,247,236,1)' : f.s === 3 ? 'rgba(255,247,236,0.85)' : 'rgba(255,247,236,0.6)';
-        ctx.fillRect(Math.round(f.x), Math.round(f.y), f.s, f.s);
+        ctx.fillStyle = f.s > PX ? 'rgba(255,247,236,0.95)' : 'rgba(255,247,236,0.6)';
+        const x = f.x + Math.sin(f.phase) * f.sway;
+        ctx.fillRect(Math.round(x), Math.round(f.y), f.s, f.s);
       }
     };
 
-    const tick = () => {
+    const tick = (now: number) => {
+      // Time-based, so the snow falls at the same calm pace on 60 Hz and 120 Hz screens.
+      const dt = last ? Math.min(0.1, (now - last) / 1000) : 0;
+      last = now;
       for (const f of flakes) {
-        f.phase += 0.012;
-        f.y += f.v;
-        f.x += Math.sin(f.phase) * f.amp;
+        f.phase += f.drift * dt;
+        f.y += f.v * dt;
         if (f.y > h + 8) Object.assign(f, make(false));
-        if (f.x < -8) f.x = w + 4;
-        if (f.x > w + 8) f.x = -4;
       }
       draw();
       raf = requestAnimationFrame(tick);
@@ -68,6 +94,7 @@ export default function Snowfall() {
 
     const onVis = () => {
       cancelAnimationFrame(raf);
+      last = 0;
       if (!document.hidden && !still) raf = requestAnimationFrame(tick);
     };
 
@@ -85,11 +112,10 @@ export default function Snowfall() {
 
   return (
     <div className="sky" aria-hidden="true">
+      <div className="sky-glow" />
+      <div className="sky-stars" />
       <canvas ref={ref} className="snowfall" />
-      <svg className="drifts" viewBox="0 0 120 16" preserveAspectRatio="none" shapeRendering="crispEdges">
-        <path d="M0 16V9h8V7h14V6h12V8h10V9h12V7h10V5h16V6h10V8h10V7h12V9h6v7z" fill="#dfe7fa" />
-        <path d="M0 16v-4h10v-1h16V10h20v1h18v-1h22v1h14v1h20v4z" fill="#b9c7ea" />
-      </svg>
+      <div className="drifts" />
     </div>
   );
 }

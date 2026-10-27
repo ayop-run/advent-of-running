@@ -46,4 +46,4 @@ npm run dev
 
 ## Ornament art
 
-Sprites in `public/ornaments` are original concept art (16×16 and 32×32). The full catalog of 100 ornaments and the style rules for the artist live in the ornament catalog spreadsheet.
+All pixel art (the tree and every ornament) is drawn in code in `lib/sprites.ts` on one shared 12×12 grid, so every pixel renders at the same size. The full catalog of 100 ornaments and the style rules for the artist live in the ornament catalog spreadsheet.
