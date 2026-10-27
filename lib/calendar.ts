@@ -57,8 +57,8 @@ export type Progress = {
   today: number;
   /** Index 0 is door 1. */
   doors: DoorState[];
-  /** Doors opened by a catch-up run. */
-  caughtUp: number[];
+  /** Doors opened by a catch-up run: door → day of that run. */
+  caughtUp: Record<number, number>;
   /** Km run on each day, index 0 is day 1. */
   km: number[];
   todayKm: number;
@@ -95,12 +95,12 @@ export function computeProgress(
 
   // Catch-ups: a day's longest run opens the highest earlier missed door it covers, as long as
   // the day also has its own 1 km on top (missed door N needs N km more than the daily goal).
-  const caughtUp: number[] = [];
+  const caughtUp: Record<number, number> = {};
   for (const d of [...days].sort((a, b) => a.day - b.day)) {
     for (let n = Math.min(d.day - 1, DOORS); n >= 1; n--) {
       if (doors[n - 1] === 'missed' && d.longestKm >= n && d.km >= n + DAILY_GOAL_KM) {
         doors[n - 1] = 'opened';
-        caughtUp.push(n);
+        caughtUp[n] = d.day;
         break;
       }
     }
