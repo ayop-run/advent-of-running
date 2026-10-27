@@ -8,9 +8,8 @@ import BottomNav from '@/components/BottomNav';
 import { MusicButton } from '@/components/MusicToggle';
 import { Avatar } from '@/components/PixelTree';
 import Sprite from '@/components/Sprite';
-import { canGiveTo, friendNote, getFriends, treeExists, type Friend } from '@/lib/friends';
+import { canGiveTo, friendNote, getFriends, type Friend } from '@/lib/friends';
 import { DEMO_NICKNAME, getMe, myNickname } from '@/lib/me';
-import { cleanNickname } from '@/lib/nickname';
 import { BY_ID } from '@/lib/ornaments';
 import { ask, getAsked, incomingRequests } from '@/lib/requests';
 
@@ -21,7 +20,6 @@ function FriendsInner() {
 
   const [me, setMe] = useState(DEMO_NICKNAME);
   const [friends, setFriends] = useState<Friend[]>([]);
-  const [q, setQ] = useState('');
   const [toast, setToast] = useState('');
   const [asked, setAsked] = useState<string[]>([]);
   const [incoming, setIncoming] = useState<string[]>([]);
@@ -43,23 +41,9 @@ function FriendsInner() {
     return () => clearTimeout(id);
   }, [toast]);
 
-  const query = cleanNickname(q);
-  const matched = query ? friends.filter((f) => f.nickname.includes(query)) : friends;
   // when giving, friends you can still give to come first
-  const shown = giving ? [...matched].sort((a, b) => Number(canGiveTo(b.nickname, friends)) - Number(canGiveTo(a.nickname, friends))) : matched;
+  const shown = giving ? [...friends].sort((a, b) => Number(canGiveTo(b.nickname, friends)) - Number(canGiveTo(a.nickname, friends))) : friends;
   const blocked = (nick: string) => Boolean(giving) && !canGiveTo(nick, friends);
-  const exact = query.length >= 3 && !friends.some((f) => f.nickname === query) && query !== me ? query : null;
-  const [exactExists, setExactExists] = useState(false);
-  useEffect(() => {
-    setExactExists(false);
-    if (!exact) return;
-    let live = true;
-    const t = setTimeout(() => treeExists(exact).then((yes) => live && setExactExists(yes)), 250);
-    return () => {
-      live = false;
-      clearTimeout(t);
-    };
-  }, [exact]);
   const visitHref = (nick: string) => (giving ? `/t/${nick}/hang?o=${giving.id}` : `/t/${nick}`);
   const action = giving ? 'Give' : 'Visit';
 
@@ -92,43 +76,7 @@ function FriendsInner() {
         </div>
       )}
 
-      <label className="field mt16">
-        <span className="sr-only">Find a tree by name</span>
-        <div className="input-prefix">
-          <span aria-hidden="true">/t/</span>
-          <input
-            className="input"
-            type="search"
-            value={q}
-            placeholder="Find a tree by name"
-            autoCapitalize="none"
-            spellCheck={false}
-            onChange={(e) => setQ(e.target.value)}
-          />
-        </div>
-      </label>
-
-      {exact && (
-        <div className="panel quiet row mt12 fade-in" style={{ padding: '12px 14px' }}>
-          {exactExists ? (
-            <>
-              <Avatar owner={{ name: exact }} size={38} />
-              <div className="grow">
-                <div style={{ fontWeight: 800 }}>{exact.charAt(0).toUpperCase() + exact.slice(1)}&apos;s tree</div>
-                <div className="tiny muted">/t/{exact}</div>
-              </div>
-              {blocked(exact) ? <span className="tag">Has yours</span> : <Link href={visitHref(exact)} className="btn sm">{action}</Link>}
-            </>
-          ) : (
-            <>
-              <Sprite id="gift-box" px={2} style={{ flexShrink: 0, filter: 'grayscale(1)', opacity: 0.6 }} />
-              <p className="small soft grow">No tree called <strong style={{ color: 'var(--snow)' }}>“{exact}”</strong> yet. Check the spelling, or invite them below.</p>
-            </>
-          )}
-        </div>
-      )}
-
-      {!giving && !query && incoming.length > 0 && (
+      {!giving && incoming.length > 0 && (
         <section className="mt24" aria-labelledby="requests">
           <div className="panel-head">
             <h2 id="requests" className="h2">Requests</h2>
@@ -152,18 +100,16 @@ function FriendsInner() {
         </section>
       )}
 
-      {(!query || shown.length > 0) && (
       <div className="panel-head mt24">
-        <h2 className="h2">Your friends</h2>
+        <h2 className="h2">Runners</h2>
         <span className="num muted">{shown.length}</span>
       </div>
-      )}
-      {!query && <p className="small soft mt4">People who hung ornaments on your tree, people you gave to, and trees you visited.</p>}
+      <p className="small soft mt4">Everyone on Advent of Running. People you swap ornaments with come first.</p>
 
       <ul className="stack mt12" style={{ listStyle: 'none', padding: 0, margin: '12px 0 0', gap: 8 }}>
         {shown.map((f) => (
           <li key={f.nickname} className="panel quiet row" style={{ padding: '12px 12px 12px 14px' }}>
-            <Avatar owner={{ name: f.name }} size={38} />
+            <Avatar owner={{ name: f.name, avatarUrl: f.avatarUrl ?? undefined }} size={38} />
             <div className="grow" style={{ minWidth: 0 }}>
               <div style={{ fontWeight: 800 }}>{f.name}</div>
               <div className="tiny muted">{friendNote(f, { showGiven: !giving })}</div>
@@ -176,7 +122,7 @@ function FriendsInner() {
             {blocked(f.nickname) ? <span className="tag">Has yours</span> : <Link href={visitHref(f.nickname)} className="btn sm">{action}</Link>}
           </li>
         ))}
-        {shown.length === 0 && !exact && query && <li className="small soft">No friends match “{query}”. Type their full tree name to find them.</li>}
+        {shown.length === 0 && <li className="small soft">Nobody else is here yet. Invite your running friends below.</li>}
       </ul>
 
       <section className="panel quiet mt24" style={{ padding: '14px 16px' }}>

@@ -94,7 +94,7 @@ export default function GiftOpened() {
           <div className="stack mt12" style={{ gap: 8 }}>
             {friends.map((f) => (
               <div key={f.nickname} className="panel quiet row" style={{ padding: '12px 12px 12px 14px' }}>
-                <Avatar owner={{ name: f.name }} size={38} />
+                <Avatar owner={{ name: f.name, avatarUrl: f.avatarUrl ?? undefined }} size={38} />
                 <div className="grow" style={{ minWidth: 0 }}>
                   <div style={{ fontWeight: 800 }}>{f.name}</div>
                   <div className="tiny muted">{friendNote(f)}</div>
@@ -104,7 +104,7 @@ export default function GiftOpened() {
             ))}
           </div>
           <Link href={`/friends?give=${o.id}`} className="panel quiet row mt8" style={{ color: 'var(--snow)', padding: '12px 16px' }}>
-            <span className="grow small" style={{ fontWeight: 700 }}>Someone else? Find a tree by name</span>
+            <span className="grow small" style={{ fontWeight: 700 }}>Someone else? See all runners</span>
             <ChevronIcon />
           </Link>
         </div>

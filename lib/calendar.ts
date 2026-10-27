@@ -4,8 +4,9 @@ import { BASIC } from './ornaments';
  * Advent calendar rules, shared by the server (computing a runner's progress from synced
  * Strava runs) and the pages. Outdoor, trail and treadmill runs count; manual entries don't.
  *
- * Rules: every door opens with 1 km run that day. A missed door N can be caught up later
- * by running N km in one go (door 13 → 13 km), with no limit on catch-ups. Weeks 3–4: one run
+ * Rules: every door opens with 1 km run that day. A missed door N can be caught up on a later
+ * day by running N km in one go on top of that day's 1 km (missed door 6 → 6 km run, 7 km that
+ * day), with no limit on catch-ups. Weeks 3–4: one run
  * together with a friend completes the week (two connected runners starting within ~15 min and
  * ~200 m of each other, each running at least 1 km). The ornament behind an opened door goes
  * straight to a friend's tree: run, unwrap, give.
@@ -92,11 +93,12 @@ export function computeProgress(
     return n === today ? 'today' : 'missed';
   });
 
-  // Catch-ups: each day's longest run opens the highest earlier missed door it covers.
+  // Catch-ups: a day's longest run opens the highest earlier missed door it covers, as long as
+  // the day also has its own 1 km on top (missed door N needs N km more than the daily goal).
   const caughtUp: number[] = [];
   for (const d of [...days].sort((a, b) => a.day - b.day)) {
     for (let n = Math.min(d.day - 1, DOORS); n >= 1; n--) {
-      if (doors[n - 1] === 'missed' && d.longestKm >= n) {
+      if (doors[n - 1] === 'missed' && d.longestKm >= n && d.km >= n + DAILY_GOAL_KM) {
         doors[n - 1] = 'opened';
         caughtUp.push(n);
         break;

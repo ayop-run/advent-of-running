@@ -63,7 +63,7 @@ export default function Calendar() {
       case 'today':
         return `${ran}Finish today’s run to unwrap it and give it to a friend.`;
       case 'missed':
-        return `${ran}Not enough that day. Run ${n} km in one go to still unwrap it.`;
+        return `${ran}Not enough that day. To still unwrap it, run ${n} km in one go on top of a day’s ${DAILY_GOAL_KM} km.`;
       default:
         return `Opens on ${month} ${n}.`;
     }

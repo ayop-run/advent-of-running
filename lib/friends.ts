@@ -5,9 +5,9 @@ import { DEMO_NICKNAME, getMe, nicknameTaken } from './me';
 
 /**
  * FRIENDS
- * Your friends are everyone you're connected to through ornaments: people who hung one on
- * your tree, people you gave one to, and trees you visited. The first two come from the
- * server; visited trees are remembered in the browser. Signed out: the demo's friends.
+ * Everyone on the app, with how you're connected: people who hung one on your tree, people
+ * you gave one to, and trees you visited (remembered in the browser). Strava's API can't list
+ * who you follow, so the list is every runner with a tree. Signed out: the demo's friends.
  */
 
 export type Friend = {
@@ -25,7 +25,7 @@ export const getVisited = demo.getVisited;
 export const rememberVisit = demo.rememberVisit;
 export const friendNote = demo.friendNote;
 
-/** Everyone you're connected to, people you swap with the most first. */
+/** Everyone on the app, people you swap with the most first. */
 export async function getFriends(): Promise<Friend[]> {
   const me = await getMe();
   if (!me) return demo.getFriends(DEMO_NICKNAME);
