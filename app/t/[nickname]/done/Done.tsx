@@ -30,7 +30,7 @@ export default function Done() {
       <section className="panel gold mt32">
         <h2 className="h2">Want a tree of your own?</h2>
         <p className="small soft mt8">Friends hang ornaments on it, and you unwrap special ones by running each day of Advent.</p>
-        <Link href="/onboarding" className="btn block mt16">Start my tree with Strava</Link>
+        <a href="/api/strava/connect" className="btn block mt16">Start my tree with Strava</a>
       </section>
 
       <Link href={`/t/${nickname}`} className="textlink center mt16" style={{ alignSelf: 'center' }}>Back to {name}&apos;s tree</Link>

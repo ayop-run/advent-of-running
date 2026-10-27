@@ -7,13 +7,22 @@ const PREVIEW: Hung[] = ['star-gold', 'fox', 'bauble-snow', 'penguin', 'hot-coco
   (ornamentId, i) => ({ id: `p${i}`, ornamentId, from: '', hint: 'Cheer', message: '', createdAt: '' }),
 );
 
-export default function Landing() {
+const LOGIN_ERROR: Record<string, string> = {
+  denied: 'Strava login was cancelled.',
+  scope: 'Please allow access to your activities, so your runs can open doors.',
+  expired: 'The login took too long. Please try again.',
+  strava: "Strava didn't respond. Please try again.",
+  db: "Couldn't create your tree. Please try again.",
+};
+
+export default async function Landing({ searchParams }: { searchParams: Promise<{ login?: string }> }) {
+  const { login } = await searchParams;
   return (
     <main className="screen no-nav">
       <div className="topbar">
         <span className="brand">Advent of Running</span>
         <div className="topbar-end">
-          <Link href="/tree" className="textlink">Log in</Link>
+          <a href="/api/strava/connect" className="textlink">Log in</a>
           <MusicButton />
         </div>
       </div>
@@ -30,11 +39,11 @@ export default function Landing() {
       <div className="grow" />
 
       <div className="stack mt24">
-        {/* Phase 2: Strava's official "Connect with Strava" button + OAuth. */}
-        <Link href="/onboarding" className="btn block">Start my tree with Strava</Link>
+        {login && <p className="center small" role="alert">{LOGIN_ERROR[login] ?? LOGIN_ERROR.strava}</p>}
+        <a href="/api/strava/connect" className="btn block">Start my tree with Strava</a>
         <Link href="/t/mina" className="btn ghost block">See a friend&apos;s tree</Link>
       </div>
-      <p className="center tiny muted mt16">Door 1 opens on December 1. This prototype uses demo data.</p>
+      <p className="center tiny muted mt16">Door 1 opens on December 1. Log in with Strava to get your own tree.</p>
     </main>
   );
 }

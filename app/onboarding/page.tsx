@@ -2,19 +2,53 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { getMe, saveProfile, type Me, type ProfileError } from '@/lib/data';
+
+const PROFILE_ERROR: Record<ProfileError, string> = {
+  nickname_taken: 'That nickname is taken. Try another one.',
+  invalid: 'Nicknames need 2–30 letters, numbers or dashes.',
+  signed_out: 'Your login expired. Please log in with Strava again.',
+  unknown: "Couldn't save. Please try again.",
+};
 
 export default function Onboarding() {
   const router = useRouter();
-  const [nick, setNick] = useState('demo');
+  const [me, setMe] = useState<Me | null | undefined>(undefined);
+  const [nick, setNick] = useState('');
   const [anyone, setAnyone] = useState(true);
+  const [emailOptIn, setEmailOptIn] = useState(true);
   const [tz, setTz] = useState('');
-  useEffect(() => setTz(Intl.DateTimeFormat().resolvedOptions().timeZone), []);
+  const [saving, setSaving] = useState(false);
+  const [failed, setFailed] = useState<ProfileError | null>(null);
+
+  useEffect(() => {
+    setTz(Intl.DateTimeFormat().resolvedOptions().timeZone);
+    getMe().then((runner) => {
+      setMe(runner);
+      if (runner) {
+        setNick(runner.nickname);
+        setAnyone(runner.hangPolicy === 'anyone');
+        setEmailOptIn(runner.emailOptIn);
+      }
+    });
+  }, []);
+
+  if (me === null) {
+    return (
+      <main className="screen no-nav">
+        <div className="topbar"><span className="brand">Advent of Running</span></div>
+        <h1 className="h1 mt8" style={{ fontSize: 32 }}>Connect Strava first</h1>
+        <p className="soft mt8">Your runs open the doors of your advent calendar.</p>
+        <a href="/api/strava/connect" className="btn block mt24">Log in with Strava</a>
+      </main>
+    );
+  }
 
   return (
     <main className="screen no-nav">
       <div className="topbar">
         <span className="brand">Advent of Running</span>
-        <span className="small" style={{ color: 'var(--pine)', fontWeight: 800 }}>Strava connected</span>
+        {me && <span className="small" style={{ color: 'var(--pine)', fontWeight: 800 }}>Strava connected</span>}
       </div>
       <div className="row mt8">
         <img className="px" src="/ornaments/tree.png" alt="" width={64} height={76} />
@@ -27,8 +61,17 @@ export default function Onboarding() {
       <form
         className="stack mt24"
         style={{ gap: 22 }}
-        onSubmit={(e) => {
+        onSubmit={async (e) => {
           e.preventDefault();
+          if (!me || saving) return;
+          setSaving(true);
+          setFailed(null);
+          const res = await saveProfile({ nickname: nick, timeZone: tz || 'UTC', hangPolicy: anyone ? 'anyone' : 'signed_in', emailOptIn });
+          if ('error' in res) {
+            setFailed(res.error);
+            setSaving(false);
+            return;
+          }
           router.push('/tree');
         }}
       >
@@ -55,11 +98,14 @@ export default function Onboarding() {
         </div>
 
         <label className="row small" style={{ alignItems: 'flex-start', fontWeight: 600 }}>
-          <input type="checkbox" defaultChecked style={{ width: 22, height: 22, marginTop: 1, accentColor: 'var(--gold)' }} />
+          <input type="checkbox" checked={emailOptIn} onChange={(e) => setEmailOptIn(e.target.checked)} style={{ width: 22, height: 22, marginTop: 1, accentColor: 'var(--gold)' }} />
           <span>Email me when someone hangs an ornament, and when next Advent starts</span>
         </label>
 
-        <button className="btn block mt8" type="submit">Create my tree</button>
+        {failed && <p className="center small" role="alert">{PROFILE_ERROR[failed]}</p>}
+        <button className="btn block mt8" type="submit" disabled={!me || saving}>
+          {saving ? 'Saving…' : me?.onboarded ? 'Save' : 'Create my tree'}
+        </button>
       </form>
     </main>
   );

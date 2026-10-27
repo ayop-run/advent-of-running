@@ -1,3 +1,4 @@
+import { demoProgress, type Progress } from './calendar';
 import { supabase } from './supabase';
 import type { Hint } from './ornaments';
 
@@ -18,9 +19,10 @@ export type Tree = {
 
 /**
  * DATA LAYER
- * Trees and hung ornaments come from Supabase through the `get_tree` and `hang_ornament`
- * functions (supabase/schema.sql). Messages never leave the database here: public trees
- * only get sealed ornaments. Pages only call the functions below.
+ * Trees come from Supabase through the `get_tree` function (supabase/schema.sql); messages
+ * never reach the browser, public trees only get sealed ornaments. Anything that needs the
+ * signed-in runner or the secret key goes through the app's /api routes (app/api, lib/server).
+ * Pages only call the functions below.
  */
 
 /** Sealed ornaments carry an empty message. Unknown nicknames get an empty tree. */
@@ -35,25 +37,101 @@ export async function getTree(nickname: string): Promise<Tree> {
   return { ...tree, ornaments: tree.ornaments.map((o) => ({ ...o, message: '' })) };
 }
 
-export type HangError = 'tree_not_found' | 'sign_in_required' | 'hanging_closed' | 'unknown';
+export type HangError = 'tree_not_found' | 'sign_in_required' | 'hanging_closed' | 'not_earned' | 'invalid' | 'unknown';
 
+/** Goes through /api/hang so a signed-in sender is recorded. */
 export async function hangOrnament(
   nickname: string,
   input: Omit<Hung, 'id' | 'createdAt'> & { email?: string },
 ): Promise<{ id: string } | { error: HangError }> {
-  const { data, error } = await supabase().rpc('hang_ornament', {
-    nick: nickname.toLowerCase(),
-    ornament_id: input.ornamentId,
-    from_name: input.from,
-    hint: input.hint,
-    message: input.message,
-    from_email: input.email || null,
-  });
-  if (error) {
-    const known: HangError[] = ['tree_not_found', 'sign_in_required', 'hanging_closed'];
-    return { error: known.find((k) => error.message.includes(k)) ?? 'unknown' };
+  try {
+    const res = await fetch('/api/hang', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nickname: nickname.toLowerCase(), ...input }),
+    });
+    const body = await res.json();
+    return res.ok ? { id: body.id } : { error: body.error ?? 'unknown' };
+  } catch {
+    return { error: 'unknown' };
   }
-  return { id: data as string };
+}
+
+/** The signed-in runner's own profile. Only returned to that runner. */
+export type Me = {
+  nickname: string;
+  displayName: string;
+  avatarUrl: string | null;
+  timeZone: string;
+  hangPolicy: 'anyone' | 'signed_in';
+  emailOptIn: boolean;
+  /** False until the runner has picked a nickname in /onboarding. */
+  onboarded: boolean;
+};
+
+/** Null when signed out. Log in by sending the browser to /api/strava/connect. */
+export async function getMe(): Promise<Me | null> {
+  try {
+    const res = await fetch('/api/me', { cache: 'no-store' });
+    return res.ok ? (await res.json()).runner : null;
+  } catch {
+    return null;
+  }
+}
+
+export type ProfileError = 'nickname_taken' | 'invalid' | 'signed_out' | 'unknown';
+
+export async function saveProfile(
+  profile: Pick<Me, 'nickname' | 'timeZone' | 'hangPolicy' | 'emailOptIn'>,
+): Promise<{ ok: true } | { error: ProfileError }> {
+  try {
+    const res = await fetch('/api/me', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(profile),
+    });
+    return res.ok ? { ok: true } : { error: (await res.json()).error ?? 'unknown' };
+  } catch {
+    return { error: 'unknown' };
+  }
+}
+
+export async function logOut() {
+  await fetch('/api/logout', { method: 'POST' });
+}
+
+/**
+ * The signed-in runner's calendar and pouch, synced from Strava (at most every 10 minutes).
+ * Signed out: demo data, with `demo: true`.
+ */
+export async function getProgress(): Promise<{ progress: Progress; demo: boolean } | { error: 'sync_failed' }> {
+  try {
+    const res = await fetch('/api/progress', { cache: 'no-store' });
+    if (res.status === 401) return { progress: demoProgress(), demo: true };
+    if (!res.ok) return { error: 'sync_failed' };
+    return { progress: await res.json(), demo: false };
+  } catch {
+    return { error: 'sync_failed' };
+  }
+}
+
+export type Friend = { nickname: string; displayName: string; avatarUrl: string | null; note: string };
+
+/** Runners you swapped ornaments with. Signed out: the demo friends. */
+export async function getFriends(): Promise<Friend[]> {
+  try {
+    const res = await fetch('/api/friends', { cache: 'no-store' });
+    if (res.status === 401) return FRIENDS.map((f) => ({ nickname: f.nickname, displayName: f.name, avatarUrl: null, note: f.note }));
+    return res.ok ? (await res.json()).friends : [];
+  } catch {
+    return [];
+  }
+}
+
+/** Revokes Strava access and deletes the runner with their tree. */
+export async function deleteAccount(): Promise<boolean> {
+  const res = await fetch('/api/me', { method: 'DELETE' });
+  return res.ok;
 }
 
 /**
@@ -78,10 +156,8 @@ export const CHRISTMAS_PREVIEW: Hung[] = [
   h('bauble-frost', 'Noah', 'Cheer', 'Run happy!'),
 ];
 
-/** Ornaments the demo runner has earned and can give away (max 3). */
-export const DEMO_POUCH = ['finish-medal', 'gingerbread-runner'];
-
-export const FRIENDS = [
+/** Demo friends for signed-out visitors. */
+const FRIENDS = [
   { nickname: 'mina', name: 'Mina', note: 'Hung an ornament on your tree' },
   { nickname: 'jonas', name: 'Jonas', note: 'Visited your tree yesterday' },
   { nickname: 'aiko', name: 'Aiko', note: 'From your saved trees' },

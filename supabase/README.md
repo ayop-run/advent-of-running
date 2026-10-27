@@ -4,8 +4,9 @@ The app keeps trees and hung ornaments in Supabase (Postgres). Everything else (
 
 | File | What it does |
 | --- | --- |
-| `schema.sql` | Tables, row-level security, and the two functions the app calls |
+| `schema.sql` | Tables, row-level security, and the database functions |
 | `seed.sql` | Demo trees: `demo`, `mina`, `jonas`, `aiko` |
+| `migrations/` | Changes after the first setup, numbered. Run each one once, in order |
 
 ## First-time setup
 
@@ -13,6 +14,9 @@ The app keeps trees and hung ornaments in Supabase (Postgres). Everything else (
 2. In the left sidebar, open **SQL Editor** and click **New query**.
 3. Paste all of `schema.sql` and click **Run**. You should see "Success. No rows returned".
 4. Open a new query, paste `seed.sql`, and click **Run**.
+5. Run each file in `migrations/` the same way, in number order (`002_strava_login.sql`, …).
+
+When someone adds a new migration, run just that file.
 
 Run each file only once. Running `schema.sql` again fails because the tables already exist.
 
@@ -39,12 +43,17 @@ To hide a spam ornament, set `hidden` to `true` on its row in the Table Editor.
 
 ## How the app accesses data
 
-The browser uses the publishable key, which is allowed to be public. That key has no access to the tables, only to two functions:
+The browser uses the publishable key, which is allowed to be public. That key has no access to the tables, only to one function:
 
 - `get_tree(nick)`: owner name plus sealed ornaments (sender, ornament, hint). It never returns messages or emails.
-- `hang_ornament(...)`: adds an ornament. It refuses on and after December 25 in the owner's time zone, and for guests when the owner set `hang_policy = 'signed_in'`.
 
-The app calls them only from `lib/data.ts`.
+Everything else goes through the app's server routes in `app/api`, which use the secret key (`lib/server/db.ts`):
+
+- Strava login (`/api/strava/connect`, `/api/strava/callback`) creates or updates the row in `runners` and stores the Strava tokens.
+- `/api/me` reads and saves the signed-in runner's profile, and deletes it on "Disconnect Strava".
+- `/api/hang` calls `hang_ornament(...)`. It refuses on and after December 25 in the owner's time zone, and for guests when the owner set `hang_policy = 'signed_in'`.
+
+Pages reach all of this only through `lib/data.ts`.
 
 Never put the **secret** key (Project Settings → API Keys) in the app's client code or in a `NEXT_PUBLIC_` variable.
 
@@ -57,7 +66,16 @@ NEXT_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 ```
 
-Both values are in the dashboard under **Project Settings → API Keys** (the URL is under **Data API**).
+Both values are in the dashboard under **Project Settings → API Keys** (the URL is under **Data API**). They are enough to browse trees.
+
+Strava login also needs these server-only values. Never give them a `NEXT_PUBLIC_` prefix or commit them:
+
+```
+SUPABASE_SERVICE_ROLE_KEY=sb_secret_...    # Project Settings → API Keys → Secret keys
+STRAVA_CLIENT_ID=...                       # strava.com/settings/api
+STRAVA_CLIENT_SECRET=...
+SESSION_SECRET=...                         # any long random string, signs login cookies
+```
 
 ## Starting over
 
@@ -65,5 +83,5 @@ To wipe everything, run this in the SQL Editor, then repeat the setup:
 
 ```sql
 drop table if exists ornaments_hung, pouch, daily_progress, runners cascade;
-drop function if exists get_tree(text), hang_ornament(text, text, text, text, text, text);
+drop function if exists get_tree(text), hang_ornament(text, text, text, text, text, text), hang_ornament(text, text, text, text, text, text, uuid);
 ```

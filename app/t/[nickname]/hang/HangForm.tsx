@@ -2,8 +2,8 @@
 
 import Link from 'next/link';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { useState } from 'react';
-import { DEMO_POUCH, hangOrnament, type HangError } from '@/lib/data';
+import { useEffect, useState } from 'react';
+import { getProgress, hangOrnament, type HangError } from '@/lib/data';
 import { BASIC, BY_ID, HINTS, TIER_LABEL, type Hint } from '@/lib/ornaments';
 
 const MAX = 200;
@@ -12,6 +12,8 @@ const HANG_ERROR: Record<HangError, string> = {
   tree_not_found: "This tree doesn't exist yet.",
   sign_in_required: 'This runner only accepts ornaments from signed-in runners.',
   hanging_closed: 'Hanging closed on December 24.',
+  not_earned: 'You need to earn this ornament by running first. Pick a free one.',
+  invalid: 'Please check your message and name.',
   unknown: "Couldn't hang your ornament. Please try again.",
 };
 
@@ -20,7 +22,16 @@ export default function HangForm() {
   const params = useSearchParams();
   const router = useRouter();
   const preset = params.get('o');
-  const earned = preset && BY_ID[preset] ? Array.from(new Set([preset, ...DEMO_POUCH])) : DEMO_POUCH;
+  // Special ornaments come from the signed-in runner's pouch; guests only get free ones.
+  const [earned, setEarned] = useState<string[]>([]);
+  useEffect(() => {
+    getProgress().then((res) => {
+      const pouch = 'progress' in res && !res.demo ? [...new Set(res.progress.pouch)] : [];
+      setEarned(pouch);
+      // A shared link may preselect a special ornament the sender hasn't earned.
+      setPick((cur) => (BY_ID[cur].tier === 'basic' || pouch.includes(cur) ? cur : BASIC[0].id));
+    });
+  }, []);
 
   const [pick, setPick] = useState<string>(preset && BY_ID[preset] ? preset : BASIC[0].id);
   const [message, setMessage] = useState('');
@@ -67,7 +78,7 @@ export default function HangForm() {
           router.push(`/t/${nickname}/done?id=${res.id}`);
         }}
       >
-        <fieldset className="field" style={{ border: 0, padding: 0, margin: 0 }}>
+        {earned.length > 0 && <fieldset className="field" style={{ border: 0, padding: 0, margin: 0 }}>
           <legend style={{ padding: 0, marginBottom: 8 }}>Earned by your runs</legend>
           <div className="picker">
             {earned.map((id) => (
@@ -77,8 +88,8 @@ export default function HangForm() {
               </button>
             ))}
           </div>
-          <span className="help">Demo pouch. Guests see free ornaments only.</span>
-        </fieldset>
+          <span className="help">Each one can be given once.</span>
+        </fieldset>}
 
         <fieldset className="field" style={{ border: 0, padding: 0, margin: 0 }}>
           <legend style={{ padding: 0, marginBottom: 8 }}>Free ornaments</legend>
