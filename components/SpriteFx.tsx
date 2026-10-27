@@ -8,7 +8,8 @@ const SHAPES: Record<string, string[]> = {
   dot: ['X'],
   puff: ['XX', 'XX'],
   cloud: ['.XX.', 'XXXX', '.XX.'],
-  plus: ['.X.', 'XXX', '.X.'],
+  /** the same mini star as the sky, the tree and the gift sparkles */
+  star: ['..X..', 'XXXXX', '.XXX.', '.X.X.'],
   heart: ['X.X', 'XXX', '.X.'],
   note: ['..XX', '..X.', '..X.', 'XXX.', 'XX..'],
   bang: ['X', 'X', 'X', '.', 'X'],
@@ -49,17 +50,17 @@ const FX: Record<string, Particle[]> = {
   // six frosty sparkles fly off as it twirls
   twirl: [0, 1, 2, 3, 4, 5].map((i) => {
     const a = (i / 6) * Math.PI * 2;
-    return p('plus', i % 2 ? C.frost : C.snow, Math.round(Math.cos(a) * 6) - 1, Math.round(Math.sin(a) * 6) - 1, Math.round(Math.cos(a) * 8), Math.round(Math.sin(a) * 8), 0.1 + i * 0.06, 0.5);
+    return p('star', i % 2 ? C.frost : C.snow, Math.round(Math.cos(a) * 6) - 1, Math.round(Math.sin(a) * 6) - 1, Math.round(Math.cos(a) * 8), Math.round(Math.sin(a) * 8), 0.1 + i * 0.06, 0.5);
   }),
   // a little gold star tumbles out of the sock
   swing: [
-    p('plus', C.gold, -1, -8, 10, 14, 0.2, 0.7, 'arc', 8),
+    p('star', C.gold, -1, -8, 10, 14, 0.2, 0.7, 'arc', 8),
     p('dot', C.snow, 4, -6, 6, -4, 0.35, 0.4),
   ],
   // frost crystals crackle outward
   shiver: [
-    p('plus', C.frost, -9, -6, -4, -4, 0.05, 0.45), p('plus', C.frost, 8, -6, 4, -4, 0.12, 0.45),
-    p('plus', C.snow, -9, 5, -4, 4, 0.19, 0.45), p('plus', C.snow, 8, 5, 4, 4, 0.26, 0.45),
+    p('star', C.frost, -9, -6, -4, -4, 0.05, 0.45), p('star', C.frost, 8, -6, 4, -4, 0.12, 0.45),
+    p('star', C.snow, -9, 5, -4, 4, 0.19, 0.45), p('star', C.snow, 8, 5, 4, 4, 0.26, 0.45),
     p('dot', C.frost, 0, -9, 0, -6, 0.3, 0.4),
   ],
   // steam curls up, then a heart
@@ -69,8 +70,8 @@ const FX: Record<string, Particle[]> = {
   ],
   // gold glints chase around as it spins
   spin: [
-    p('plus', C.gold, -9, -2, -2, 0, 0.0, 0.3), p('plus', C.gold, 8, -2, 2, 0, 0.14, 0.3),
-    p('plus', C.snow, -9, -2, -2, 0, 0.28, 0.3), p('plus', C.snow, 8, -2, 2, 0, 0.42, 0.3),
+    p('star', C.gold, -9, -2, -2, 0, 0.0, 0.3), p('star', C.gold, 8, -2, 2, 0, 0.14, 0.3),
+    p('star', C.snow, -9, -2, -2, 0, 0.28, 0.3), p('star', C.snow, 8, -2, 2, 0, 0.42, 0.3),
     p('dot', C.gold, -1, -10, 0, -6, 0.5, 0.4),
   ],
   // "!" — then a quick hop with a dust kick
@@ -86,7 +87,7 @@ const FX: Record<string, Particle[]> = {
   // big leap with a sparkle trail and a landing puff
   leap: [
     p('cloud', C.mist, -9, 7, -4, 0, 0.05, 0.35), p('cloud', C.mist, 6, 7, 4, 0, 0.05, 0.35),
-    p('dot', C.gold, -2, 0, -4, 4, 0.18, 0.4), p('dot', C.gold, 0, -6, -4, 4, 0.26, 0.4), p('plus', C.gold, 2, -10, -2, 2, 0.34, 0.4),
+    p('dot', C.gold, -2, 0, -4, 4, 0.18, 0.4), p('dot', C.gold, 0, -6, -4, 4, 0.26, 0.4), p('star', C.gold, 2, -10, -2, 2, 0.34, 0.4),
     p('puff', C.snow, -6, 8, -4, 0, 0.6, 0.3), p('puff', C.snow, 5, 8, 4, 0, 0.6, 0.3),
   ],
   // crumbs fly as it runs, with speed lines behind
@@ -107,8 +108,8 @@ const FX: Record<string, Particle[]> = {
   ],
   // flips high and flashes with sparkles
   coin: [
-    p('plus', C.gold, -10, -12, -4, -4, 0.28, 0.45), p('plus', C.snow, 9, -12, 4, -4, 0.32, 0.45),
-    p('plus', C.gold, -11, -2, -4, 2, 0.36, 0.45), p('plus', C.snow, 10, -2, 4, 2, 0.4, 0.45),
+    p('star', C.gold, -10, -12, -4, -4, 0.28, 0.45), p('star', C.snow, 9, -12, 4, -4, 0.32, 0.45),
+    p('star', C.gold, -11, -2, -4, 2, 0.36, 0.45), p('star', C.snow, 10, -2, 4, 2, 0.4, 0.45),
   ],
   // ringing alarm: ticks on both sides
   rattle: [
@@ -122,6 +123,19 @@ const FX: Record<string, Particle[]> = {
   ring: [
     p('note', C.gold, -12, -10, -4, -10, 0.12, 0.8), p('note', C.snow, 9, -10, 4, -12, 0.42, 0.8),
   ],
+  // drinks: water drops splash out of the top
+  splash: [
+    p('dot', C.frost, -2, -8, -8, 6, 0.1, 0.5, 'arc', 8), p('dot', C.frost, 1, -8, 8, 6, 0.2, 0.5, 'arc', 10),
+    p('dot', C.snow, 0, -8, -4, 8, 0.35, 0.5, 'arc', 6), p('puff', C.frost, -1, -9, 2, -6, 0.45, 0.4),
+  ],
+  // a balloon drifts up, then a sparkle where it floated
+  float: [p('dot', C.snow, -6, 4, -2, 6, 0.3, 0.6), p('star', C.frost, 6, -10, 2, -4, 0.6, 0.5)],
+  // a disco ball throws coloured sparkles all around
+  glitter: [0, 1, 2, 3, 4, 5, 6, 7].map((i) => {
+    const a = (i / 8) * Math.PI * 2;
+    const color = [C.pink, C.frost, C.mint, C.gold][i % 4];
+    return p('star', color, Math.round(Math.cos(a) * 8) - 1, Math.round(Math.sin(a) * 8) - 1, Math.round(Math.cos(a) * 8), Math.round(Math.sin(a) * 8), i * 0.06, 0.5);
+  }),
   // wrapped gift: a "?" pops up
   tease: [p('q', C.gold, -1, -16, 0, -4, 0.45, 0.45), p('dot', C.snow, -7, -8, -2, -2, 0.5, 0.3), p('dot', C.snow, 6, -8, 2, -2, 0.5, 0.3)],
   nope: [],

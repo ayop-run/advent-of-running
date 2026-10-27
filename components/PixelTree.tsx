@@ -2,8 +2,17 @@
 
 import Sprite from '@/components/Sprite';
 import { BY_ID } from '@/lib/ornaments';
-import { SPRITE_SIZE, TREE_H, TREE_SLOTS as SLOTS, TREE_W } from '@/lib/sprites';
+import { SPRITE_SIZE, TREE_H, TREE_LIGHTS, TREE_SLOTS as SLOTS, TREE_W } from '@/lib/sprites';
+import { placeOrnaments, TOPPER_GLINTS } from '@/lib/treeImage';
 import type { Hung } from '@/lib/data';
+
+/** Senders stay secret until Christmas: only the first letter shows, e.g. "M***". */
+export const maskName = (name: string) => `${Array.from(name.trim())[0] ?? '?'}***`;
+
+/** What the tooltip says instead of the message, picked per ornament so neighbours differ. */
+const SEALED_LINES = ['Sealed until Christmas', 'No peeking yet!', 'Opens on Dec 25', 'Wrapped up tight', 'A secret for Christmas', 'Save it for Christmas'];
+const sealedLine = (id: string) => SEALED_LINES[[...id].reduce((n, c) => (n * 31 + c.charCodeAt(0)) >>> 0, 7) % SEALED_LINES.length];
+
 
 export type Owner = {
   name: string;
@@ -39,17 +48,7 @@ type Props = {
 };
 
 export default function PixelTree({ ornaments, owner, onSelect, highlightId, label, scale = 2, decorative }: Props) {
-  const order = { rare: 0, special: 1, basic: 2 } as const;
-  const sorted = [...ornaments].sort(
-    (a, b) => order[BY_ID[a.ornamentId]?.tier ?? 'basic'] - order[BY_ID[b.ornamentId]?.tier ?? 'basic'],
-  );
-  // Keep a freshly hung ornament visible even when the tree is full.
-  if (highlightId) {
-    const i = sorted.findIndex((h) => h.id === highlightId);
-    if (i >= SLOTS.length) sorted.unshift(...sorted.splice(i, 1));
-  }
-  const shown = sorted.slice(0, SLOTS.length);
-  const extra = ornaments.length - shown.length;
+  const { shown, extra } = placeOrnaments(ornaments, highlightId);
   // The tree and its ornaments share one pixel size, so every pixel on screen is identical.
   const px = Math.max(1, Math.round(scale));
   const W = TREE_W * px;
@@ -70,6 +69,13 @@ export default function PixelTree({ ornaments, owner, onSelect, highlightId, lab
           <path d="M0 14v-3h8V9h12V8h50v1h12v2h8v3z" fill="#c7d3f0" />
         </svg>
         <Sprite id="tree" px={px} className="tree" />
+        {TREE_LIGHTS.map(([x, y, color], i) => (
+          // three sets of bulbs take turns, like a real string of lights
+          <i key={`l${i}`} className="tree-light" style={{ left: x * px, top: y * px, color, '--u': `${px}px`, animationDelay: `${-(i % 3) * 0.6}s` } as React.CSSProperties} />
+        ))}
+        {TOPPER_GLINTS.map(([x, y, d], i) => (
+          <i key={i} className="topper-glint" style={{ left: x * px, top: y * px, '--u': `${px}px`, animationDelay: `${d}s` } as React.CSSProperties} />
+        ))}
         {shown.map((h, i) => {
           const o = BY_ID[h.ornamentId];
           if (!o) return null;
@@ -77,16 +83,25 @@ export default function PixelTree({ ornaments, owner, onSelect, highlightId, lab
           // Slots are in tree pixels, so ornaments sit exactly on the tree's pixel grid.
           const style = { left: (x - half) * px, top: (y - half) * px };
           const cls = `orn${h.id === highlightId ? ' new' : ''}`;
+          const sender = h.mine ? 'you' : maskName(h.from);
+          const tip = (h.mine || h.from.trim()) && (
+            <span className="orn-tip" aria-hidden="true">
+              <b>From {sender}</b>
+              <span><Sprite id="lock" px={1} /> {sealedLine(h.id)}</span>
+            </span>
+          );
           if (!onSelect) {
             return (
               <span key={h.id} className={cls} style={style}>
                 <Sprite id={o.id} px={px} />
+                {tip}
               </span>
             );
           }
           return (
-            <button key={h.id} type="button" className={cls} style={style} onClick={() => onSelect(h)} aria-label={`${o.name} from ${h.from}`}>
+            <button key={h.id} type="button" className={cls} style={style} onClick={() => onSelect(h)} aria-label={`${o.name}, from ${sender}, ${sealedLine(h.id)}`}>
               <Sprite id={o.id} px={px} />
+              {tip}
             </button>
           );
         })}

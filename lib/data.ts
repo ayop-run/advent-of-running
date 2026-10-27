@@ -68,6 +68,27 @@ const SEED: Record<string, Tree> = {
 
 const key = (nick: string) => `aor:tree:${nick}`;
 
+/** First names the demo tree's senders are drawn from, so the demo doesn't look like real people. */
+const NAME_POOL = [
+  'Ava', 'Ben', 'Chloe', 'Dario', 'Emil', 'Freya', 'Greta', 'Hugo', 'Ines', 'Jasper', 'Kira', 'Luca', 'Maya', 'Nico',
+  'Olivia', 'Paul', 'Quinn', 'Rosa', 'Sofia', 'Theo', 'Uma', 'Vince', 'Wren', 'Xavi', 'Yara', 'Zoe', 'Ida', 'Felix',
+];
+
+/** Random, distinct sender names for the demo tree, kept for the whole visit so every page agrees. */
+function demoNames(count: number): string[] {
+  const k = 'aor:demo-names';
+  try {
+    const saved: string[] = JSON.parse(window.sessionStorage.getItem(k) ?? '[]');
+    if (saved.length >= count) return saved;
+  } catch {}
+  const pool = [...NAME_POOL];
+  const names = Array.from({ length: count }, () => pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+  try {
+    window.sessionStorage.setItem(k, JSON.stringify(names));
+  } catch {}
+  return names;
+}
+
 const myName = () => {
   const nick = getMe().nickname;
   return nick.charAt(0).toUpperCase() + nick.slice(1);
@@ -93,11 +114,15 @@ function demoGiftsTo(nick: string): Hung[] {
 
 export function getTree(nickname: string): Tree {
   const nick = nickname.toLowerCase();
-  const base: Tree = SEED[nick] ?? {
+  let base: Tree = SEED[nick] ?? {
     nickname: nick,
     displayName: nick.charAt(0).toUpperCase() + nick.slice(1),
     ornaments: [],
   };
+  if (nick === 'demo') {
+    const names = demoNames(base.ornaments.length);
+    base = { ...base, ornaments: base.ornaments.map((h, i) => ({ ...h, from: names[i] })) };
+  }
   let extra: Hung[] = [];
   try {
     const raw = window.localStorage.getItem(key(nick));

@@ -54,7 +54,7 @@ export default function FriendTree() {
               ornaments={tree.ornaments}
               owner={{ name: tree.displayName }}
               onSelect={setOpen}
-              label={`${tree.displayName}'s tree with ${tree.ornaments.length} sealed ornaments. Tap one to see who sent it.`}
+              label={`${tree.displayName}'s tree with ${tree.ornaments.length} sealed ornaments. Tap one to take a look.`}
             />
           </div>
         </>

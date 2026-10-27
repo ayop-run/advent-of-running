@@ -7,6 +7,7 @@ import '@fontsource/m-plus-rounded-1c/latin-700.css';
 import '@fontsource/m-plus-rounded-1c/latin-800.css';
 import './globals.css';
 import { MusicProvider } from '@/components/MusicToggle';
+import NavHistory from '@/components/NavHistory';
 import Snowfall from '@/components/Snowfall';
 import { SKY_BOOT_SCRIPT } from '@/lib/sky';
 
@@ -41,6 +42,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script dangerouslySetInnerHTML={{ __html: SKY_BOOT_SCRIPT }} />
       </head>
       <body>
+        <NavHistory />
         <Snowfall />
         <MusicProvider>{children}</MusicProvider>
       </body>

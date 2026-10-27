@@ -10,8 +10,9 @@ const STEPS = [
   { n: 3, sprite: 'gift-box', text: 'Open them all on Christmas' },
 ];
 
+const PREVIEW_NAMES = ['Kira', 'Theo', 'Maya', 'Felix', 'Rosa', 'Hugo', 'Ines', 'Luca', 'Greta', 'Ben'];
 const PREVIEW: Hung[] = ['snow-globe', 'fox', 'bauble-snow', 'penguin', 'hot-cocoa', 'sock', 'finish-medal', 'snowflake', 'reindeer', 'bauble-frost'].map(
-  (ornamentId, i) => ({ id: `p${i}`, ornamentId, from: '', hint: 'Cheer', message: '', createdAt: '' }),
+  (ornamentId, i) => ({ id: `p${i}`, ornamentId, from: PREVIEW_NAMES[i], hint: 'Cheer', message: '', createdAt: '' }),
 );
 
 export default function Landing() {

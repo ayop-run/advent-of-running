@@ -5,8 +5,9 @@ import { useEffect, useState } from 'react';
 import BottomNav from '@/components/BottomNav';
 import { CountdownTiles } from '@/components/Countdown';
 import OrnamentSheet from '@/components/OrnamentSheet';
+import PictureSheet from '@/components/PictureSheet';
 import PixelTree from '@/components/PixelTree';
-import { ChevronIcon, ShareIcon } from '@/components/Icons';
+import { CameraIcon, ChevronIcon, ShareIcon } from '@/components/Icons';
 import { MusicButton } from '@/components/MusicToggle';
 import { getTree, type Hung, type Tree } from '@/lib/data';
 import { DEMO_NICKNAME, getMe } from '@/lib/me';
@@ -16,6 +17,7 @@ export default function MyTree() {
   const [tree, setTree] = useState<Tree | null>(null);
   const [open, setOpen] = useState<Hung | null>(null);
   const [toast, setToast] = useState('');
+  const [picture, setPicture] = useState(false);
 
   const [me, setMe] = useState(DEMO_NICKNAME);
   const displayName = me.charAt(0).toUpperCase() + me.slice(1);
@@ -52,6 +54,9 @@ export default function MyTree() {
           <h1 className="title clip">{displayName}&apos;s tree</h1>
         </div>
         <div className="topbar-end">
+          <button type="button" className="icon-btn" onClick={() => setPicture(true)} aria-label="Picture of my tree" title="Picture of my tree" disabled={!tree}>
+            <CameraIcon />
+          </button>
           <button type="button" className="icon-btn" onClick={share} aria-label="Share my tree" title="Share my tree">
             <ShareIcon />
           </button>
@@ -68,7 +73,7 @@ export default function MyTree() {
         <div className="tree-stage">
           <PixelTree ornaments={tree.ornaments} owner={{ name: displayName }} onSelect={setOpen} label={`Your tree with ${tree.ornaments.length} sealed ornaments`} />
           <p className="center small soft mt12">
-            <strong style={{ color: 'var(--snow)' }}>{tree.ornaments.length} sealed ornaments</strong> from friends. Tap one to see who sent it.
+            <strong style={{ color: 'var(--snow)' }}>{tree.ornaments.length} sealed ornaments</strong> from friends. Names and messages unlock on Christmas.
           </p>
           <p className="center mt4"><Link href="/friends" className="textlink" style={{ fontSize: 14 }}>Ask friends to hang one <ChevronIcon /></Link></p>
         </div>
@@ -80,8 +85,11 @@ export default function MyTree() {
           ownerName={displayName}
           isOwner
           onClose={() => setOpen(null)}
-          action={<Link href={`/t/${open.from.toLowerCase()}/hang`} className="btn block mt16">Hang one back</Link>}
         />
+      )}
+
+      {picture && tree && (
+        <PictureSheet ornaments={tree.ornaments} ownerName={displayName} link={`${window.location.origin}/t/${me}`} onClose={() => setPicture(false)} />
       )}
 
       {toast && <div className="toast" role="status">{toast}</div>}

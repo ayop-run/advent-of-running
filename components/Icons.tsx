@@ -33,3 +33,12 @@ export function ShareIcon() {
     </svg>
   );
 }
+
+/** Pixel camera: a body with a lens, 12×12 grid at 2px per pixel. */
+export function CameraIcon() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 12 12" shapeRendering="crispEdges" aria-hidden="true">
+      <path fillRule="evenodd" d="M1 3h3V2h4v1h3v8H1zM5 5h2v1h1v2H7v1H5V8H4V6h1z" fill="currentColor" />
+    </svg>
+  );
+}

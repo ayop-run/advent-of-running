@@ -13,7 +13,7 @@ const daysSoFar = DEMO_TODAY - 1;
 const friends = new Set(Object.values(DEMO_GIVEN)).size;
 
 const STATS = [
-  { label: 'Ornaments given', value: `${given}` },
+  { label: 'Ornaments given', value: `${given}`, href: '/me/given' },
   { label: 'Days run', value: `${given}/${daysSoFar}` },
   { label: 'Friends', value: `${friends}` },
 ];
@@ -32,18 +32,18 @@ export default function Me() {
       <MeProfile />
 
       <div className="steps mt16">
-        {STATS.map((s) => (
-          <div key={s.label} className="step">
-            <b>{s.value}</b>
-            <span>{s.label}</span>
-          </div>
-        ))}
+        {STATS.map((s) => {
+          const body = (<><b>{s.value}</b><span>{s.label}</span></>);
+          return s.href
+            ? <Link key={s.label} href={s.href} className="step link">{body}</Link>
+            : <div key={s.label} className="step">{body}</div>;
+        })}
       </div>
 
       <div className="stack mt12" style={{ gap: 8 }}>
         {[
           { href: '/friends', sprite: 'bauble-snow', label: 'Friends and requests' },
-          { href: '/ornaments', sprite: 'snow-globe', label: 'Ornament directory' },
+          { href: '/ornaments', sprite: 'snow-globe', label: 'All ornaments' },
           { href: '/christmas', sprite: 'gift-box', label: 'Preview Christmas morning' },
           { href: '/about', sprite: 'star-gold', label: 'How it works' },
         ].map((l) => (
