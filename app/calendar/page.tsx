@@ -58,7 +58,10 @@ export default function Calendar() {
     const ran = km(n) > 0 ? `You ran ${km(n)} km that day. ` : '';
     switch (state(n)) {
       case 'opened':
-        if (p.caughtUp.includes(n)) return `${ran}Unwrapped later with a ${n} km catch-up run. ${p.given[n] ? `You gave it to ${p.given[n]}.` : 'Give it to a friend.'}`;
+        if (p.caughtUp[n]) {
+          const by = p.caughtUp[n];
+          return `${ran}Caught up on ${month} ${by} with a ${km(by)} km day (${n} km extra on top of ${DAILY_GOAL_KM} km). ${p.given[n] ? `You gave it to ${p.given[n]}.` : 'Give it to a friend.'}`;
+        }
         return `${ran}${p.given[n] ? `You gave it to ${p.given[n]}. It hangs on their tree until Christmas.` : 'Unwrapped. Give it to a friend.'}`;
       case 'today':
         return `${ran}Finish today’s run to unwrap it and give it to a friend.`;
@@ -133,9 +136,9 @@ export default function Calendar() {
             <button
               key={n}
               type="button"
-              className={`door ${s}`}
+              className={`door ${s}${p.caughtUp[n] ? ' caught-up' : ''}`}
               aria-pressed={picked === n}
-              aria-label={`Door ${n}, ${STATE_LABEL[s].toLowerCase()}${km(n) > 0 ? `, ${km(n)} km` : ''}${revealed(n) ? `: ${shownName(n)}` : ''}`}
+              aria-label={`Door ${n}, ${STATE_LABEL[s].toLowerCase()}${p.caughtUp[n] ? `, caught up on day ${p.caughtUp[n]}` : km(n) > 0 ? `, ${km(n)} km` : ''}${revealed(n) ? `: ${shownName(n)}` : ''}`}
               onClick={() => {
                 setPicked(n);
                 // unwrapped doors play their ornament's animation; wrapped ones just jiggle
@@ -147,7 +150,11 @@ export default function Calendar() {
                 <span className={b.anim}><Sprite id={shownSprite(n)} px={2} /></span>
                 {b.fx && <SpriteFx anim={b.fx} px={2} />}
               </span>
-              {km(n) > 0 && <span className="km">{km(n)} km</span>}
+              {p.caughtUp[n] ? (
+                <span className="km caught">↺ day {p.caughtUp[n]}</span>
+              ) : (
+                km(n) > 0 && <span className="km">{km(n)} km</span>
+              )}
             </button>
           );
         })}
@@ -157,7 +164,7 @@ export default function Calendar() {
         <section className="panel quiet row mt12 fade-in" aria-live="polite">
           <Sprite id={shownSprite(picked)} px={4} style={{ flexShrink: 0, opacity: state(picked) === 'missed' ? 0.5 : 1 }} />
           <div className="grow">
-            <p className="eyebrow">Door {picked} · {STATE_LABEL[state(picked)]}</p>
+            <p className="eyebrow">Door {picked} · {p.caughtUp[picked] ? `Caught up on day ${p.caughtUp[picked]}` : STATE_LABEL[state(picked)]}</p>
             <h2 className="h2 mt4">{shownName(picked)}</h2>
             <p className="small soft mt4">{doorStory(picked)}</p>
           </div>
