@@ -1,6 +1,6 @@
 # Database (Supabase)
 
-The app keeps trees and hung ornaments in Supabase (Postgres). Everything else (calendar, pouch, friends) is still demo data in the code.
+The app keeps runners, trees, hung ornaments, synced runs and earned ornaments in Supabase (Postgres). Only the browser demo for signed-out visitors (`lib/demo`) lives outside it.
 
 | File | What it does |
 | --- | --- |
@@ -25,7 +25,8 @@ Run each file only once. Running `schema.sql` again fails because the tables alr
 - **Table Editor** (left sidebar): pick a table to see its rows like a spreadsheet.
   - `runners`: one row per tree owner. Seed runners have negative `strava_athlete_id`s.
   - `ornaments_hung`: every ornament. `tree_owner` points to a row in `runners`. You can read messages here, because the dashboard bypasses the access rules.
-  - `daily_progress`, `pouch`: empty until Strava sync exists.
+  - `daily_progress`: km per day from Strava, per runner. Private: never shown to other runners.
+  - `pouch`: ornaments earned from doors and weekly bonuses. `used` and `hung_id` show which tree each went to.
 - **SQL Editor**: run queries, for example all ornaments on one tree:
 
   ```sql
@@ -36,7 +37,7 @@ Run each file only once. Running `schema.sql` again fails because the tables alr
   order by o.created_at;
   ```
 
-- **Database → Functions**: shows `get_tree` and `hang_ornament`.
+- **Database → Functions**: shows `hang_ornament` (used by `/api/hang`) and `get_tree` (no longer used by the app).
 - **Authentication → Policies**: shows row-level security per table. It is enabled on every table with no policies, which means the public key cannot read any table directly.
 
 To hide a spam ornament, set `hidden` to `true` on its row in the Table Editor.
@@ -49,7 +50,7 @@ The browser never talks to Supabase directly. Everything goes through the app's 
 - `/api/hang`: hang (POST) or edit (PATCH) an ornament through `hang_ornament(...)`. One per runner per tree; earned ornaments must be in the sender's pouch. Guests get an edit token kept in their browser. Hanging closes on December 25 in the owner's time zone.
 - Strava login (`/api/strava/connect`, `/api/strava/callback`) creates or updates the row in `runners` and stores the Strava tokens.
 - `/api/me` reads and saves the signed-in runner's profile, and deletes it on "Disconnect Strava".
-- `/api/progress` syncs runs from Strava into `daily_progress` and awards door ornaments to `pouch`; `/api/friends` lists runners you swapped ornaments with.
+- `/api/progress` syncs runs from Strava into `daily_progress` and awards door ornaments to `pouch`; `/api/friends` lists every runner who signed up, with how many ornaments you swapped (Strava can't list who you follow).
 
 Signed-out visitors on seed trees (negative `strava_athlete_id`) get the browser demo in `lib/demo` instead.
 
