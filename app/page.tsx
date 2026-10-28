@@ -47,7 +47,7 @@ export default function Landing() {
         <Link href="/login" className="btn ghost block">Log in</Link>
       </div>
       <p className="center tiny muted mt12">
-        <Link href="/t/mina" style={{ fontWeight: 800 }}>See a demo tree</Link> · <Link href="/about" style={{ fontWeight: 800 }}>How it works</Link> · <Link href="/ornaments" style={{ fontWeight: 800 }}>Ornaments</Link>
+        <Link href="/t/ayop" style={{ fontWeight: 800 }}>See a demo tree</Link> · <Link href="/about" style={{ fontWeight: 800 }}>How it works</Link> · <Link href="/ornaments" style={{ fontWeight: 800 }}>Ornaments</Link>
       </p>
     </main>
   );

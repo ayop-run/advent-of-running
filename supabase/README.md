@@ -5,7 +5,7 @@ The app keeps runners, trees, hung ornaments, synced runs and earned ornaments i
 | File | What it does |
 | --- | --- |
 | `schema.sql` | Tables, row-level security, and the database functions |
-| `seed.sql` | Demo trees: `demo`, `mina`, `jonas`, `aiko` |
+| `seed.sql` | The demo tree `ayop` |
 | `migrations/` | Changes after the first setup, numbered. Run each one once, in order |
 
 ## First-time setup
@@ -14,7 +14,7 @@ The app keeps runners, trees, hung ornaments, synced runs and earned ornaments i
 2. In the left sidebar, open **SQL Editor** and click **New query**.
 3. Paste all of `schema.sql` and click **Run**. You should see "Success. No rows returned".
 4. Open a new query, paste `seed.sql`, and click **Run**.
-5. Run each file in `migrations/` the same way, in number order (`002_strava_login.sql`, `003_activity_sync.sql`, `004_one_per_tree.sql`, …).
+5. Run each file in `migrations/` the same way, in number order (`002_strava_login.sql`, `003_activity_sync.sql`, `004_one_per_tree.sql`, `005_demo_tree_ayop.sql`, `006_launch_signups.sql`, …).
 
 When someone adds a new migration, run just that file.
 
@@ -26,6 +26,7 @@ Run each file only once. Running `schema.sql` again fails because the tables alr
   - `runners`: one row per tree owner. Seed runners have negative `strava_athlete_id`s.
   - `ornaments_hung`: every ornament. `tree_owner` points to a row in `runners`. You can read messages here, because the dashboard bypasses the access rules.
   - `daily_progress`: km per day from Strava, per runner. Private: never shown to other runners.
+  - `launch_signups`: emails from the coming-soon page for the launch news, with the time zone they signed up in.
   - `pouch`: ornaments earned from doors and weekly bonuses. `used` and `hung_id` show which tree each went to.
 - **SQL Editor**: run queries, for example all ornaments on one tree:
 
@@ -33,7 +34,7 @@ Run each file only once. Running `schema.sql` again fails because the tables alr
   select o.from_name, o.ornament_id, o.hint, o.message, o.created_at
   from ornaments_hung o
   join runners r on r.id = o.tree_owner
-  where r.nickname = 'demo'
+  where r.nickname = 'ayop'
   order by o.created_at;
   ```
 

@@ -61,7 +61,7 @@ export default function FriendTree() {
           <div className="tree-stage">
             <PixelTree
               ornaments={tree.ornaments}
-              owner={{ name: tree.displayName }}
+              owner={{ name: tree.displayName, avatarUrl: tree.avatarUrl ?? undefined }}
               onSelect={setOpen}
               label={`${tree.displayName}'s tree with ${tree.ornaments.length} sealed ornaments. Tap one to take a look.`}
             />

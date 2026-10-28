@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import BackLink from '@/components/BackLink';
 import { getTree, type Hung } from '@/lib/data';
+import { avatarSrc } from '@/lib/avatar';
 import { getMe, myNickname } from '@/lib/me';
 import { canShareFiles, downloadCanvas, drawTree, photoLayout, renderPhoto, SCENE_H, SCENE_W, shareCanvas } from '@/lib/treeImage';
 
@@ -17,6 +18,7 @@ export default function PhotoBooth() {
   const [shot, setShot] = useState<{ canvas: HTMLCanvasElement; src: string } | null>(null);
   const [ornaments, setOrnaments] = useState<Hung[]>([]);
   const [name, setName] = useState('');
+  const [avatar, setAvatar] = useState<string | null>(null);
   const [share, setShare] = useState(false);
 
   const start = useCallback(async () => {
@@ -39,6 +41,7 @@ export default function PhotoBooth() {
     getMe().then(async (me) => {
       const nick = myNickname(me);
       setName(me?.displayName ?? nick.charAt(0).toUpperCase() + nick.slice(1));
+      setAvatar(avatarSrc(nick, me?.avatarUrl));
       setOrnaments((await getTree(nick)).ornaments);
     });
     setShare(canShareFiles());
@@ -59,7 +62,7 @@ export default function PhotoBooth() {
 
   const snap = async () => {
     if (!video.current) return;
-    const canvas = await renderPhoto({ video: video.current, ornaments, ownerName: name });
+    const canvas = await renderPhoto({ video: video.current, ornaments, ownerName: name, avatar });
     setShot({ canvas, src: canvas.toDataURL('image/png') });
     setState('taken');
   };

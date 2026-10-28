@@ -4,6 +4,7 @@ import Sprite from '@/components/Sprite';
 import { BY_ID } from '@/lib/ornaments';
 import { SPRITE_SIZE, TREE_H, TREE_LIGHTS, TREE_SLOTS as SLOTS, TREE_W } from '@/lib/sprites';
 import { placeOrnaments, TOPPER_GLINTS } from '@/lib/treeImage';
+import { avatarColor } from '@/lib/avatar';
 import type { Hung } from '@/lib/data';
 
 /** Senders stay secret until Christmas: only the first letter shows, e.g. "M***". */
@@ -18,19 +19,16 @@ export type Owner = {
   name: string;
   /** Strava profile photo in phase 2. Falls back to a pixel initial. */
   avatarUrl?: string;
-  /** "Your tree" instead of "Mina's tree". */
+  /** "Your tree" instead of "AYOP's tree". */
   isYou?: boolean;
 };
-
-const AVATAR_COLORS = ['#e8546a', '#3fb57a', '#8fd3ff', '#ffc94a', '#c38bff', '#ff9a5c'];
 
 export function Avatar({ owner, size = 32 }: { owner: Owner; size?: number }) {
   if (owner.avatarUrl) {
     return <img className="avatar-img" src={owner.avatarUrl} alt="" width={size} height={size} />;
   }
-  const hue = AVATAR_COLORS[[...owner.name].reduce((n, ch) => n + ch.charCodeAt(0), 0) % AVATAR_COLORS.length];
   return (
-    <span className="avatar-img" aria-hidden="true" style={{ width: size, height: size, background: hue, fontSize: size * 0.55 }}>
+    <span className="avatar-img" aria-hidden="true" style={{ width: size, height: size, background: avatarColor(owner.name), fontSize: size * 0.55 }}>
       {owner.name.charAt(0).toUpperCase()}
     </span>
   );

@@ -8,7 +8,7 @@ const KEY = 'aor:me';
 export const DEMO_NICKNAME = 'demo';
 
 /** Tree names already in use in the demo. */
-const TAKEN = new Set(['mina', 'jonas', 'aiko', 'demo', 'admin', 'tree', 'about', 'login', 'signup']);
+const TAKEN = new Set(['ayop', 'jonas', 'aiko', 'demo', 'admin', 'tree', 'about', 'login', 'signup']);
 
 /** `signedIn: false` after logging out; the tree and name are kept for the next log-in. */
 export type Me = { nickname: string; signedIn?: boolean };

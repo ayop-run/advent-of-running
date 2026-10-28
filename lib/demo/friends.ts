@@ -1,6 +1,7 @@
 import { DEMO_GIVEN } from '../calendar';
 import { getTree, myOrnamentOn } from './data';
 import { DEMO_NICKNAME } from './me';
+import { demoName, demoNick } from './names';
 
 /**
  * PROTOTYPE FRIENDS
@@ -21,9 +22,7 @@ export type Friend = {
 
 const VISITED_KEY = 'aor:visited';
 /** Trees that exist in the demo besides your friends'. */
-const DEMO_TREES = ['mina', 'jonas', 'aiko', 'leo', 'hana', 'tom', 'ella', 'sam', 'noah', 'yuki', 'ben', 'kai', 'lena', 'rio', 'momo', 'zara'];
-
-const display = (nick: string) => nick.charAt(0).toUpperCase() + nick.slice(1);
+const DEMO_TREES = ['ayop', 'jonas', 'aiko', 'leo', 'hana', 'tom', 'ella', 'sam', 'noah', 'yuki', 'ben', 'kai', 'lena', 'rio', 'momo', 'zara'];
 
 export function getVisited(): string[] {
   try {
@@ -48,8 +47,8 @@ export function rememberVisit(nickname: string) {
 export function getFriends(me: string): Friend[] {
   const byNick = new Map<string, Friend>();
   const get = (nick: string) => {
-    const key = nick.toLowerCase();
-    if (!byNick.has(key)) byNick.set(key, { nickname: key, name: display(key), hung: 0, given: 0, visited: false });
+    const key = demoNick(nick);
+    if (!byNick.has(key)) byNick.set(key, { nickname: key, name: demoName(key), hung: 0, given: 0, visited: false });
     return byNick.get(key)!;
   };
   for (const h of getTree(DEMO_NICKNAME).ornaments) get(h.from).hung += 1;
@@ -76,11 +75,18 @@ export function friendNote(f: Friend, { showGiven = true } = {}) {
 /** You can hang one ornament on each friend's tree: not one you gave from a door, nor one you hung. */
 export const canGiveTo = (nickname: string) => {
   const nick = nickname.toLowerCase();
-  return !Object.values(DEMO_GIVEN).some((n) => n.toLowerCase() === nick) && !myOrnamentOn(nick);
+  return !Object.values(DEMO_GIVEN).some((n) => demoNick(n) === nick) && !myOrnamentOn(nick);
 };
 
-/** Whether a tree with this name exists (in the demo: friends and a few known trees). */
-export function treeExists(nick: string, me: string) {
+/**
+ * Whether a tree with this name exists (in the demo: friends and a few known trees).
+ * `visitedCounts: false` ignores trees only in the visit history, which can hold old names.
+ */
+export function treeExists(nick: string, me: string, visitedCounts = true) {
   const n = nick.toLowerCase();
-  return n === me.toLowerCase() || DEMO_TREES.includes(n) || getFriends(me).some((f) => f.nickname === n);
+  return (
+    n === me.toLowerCase() ||
+    DEMO_TREES.includes(n) ||
+    getFriends(me).some((f) => f.nickname === n && (visitedCounts || f.hung > 0 || f.given > 0))
+  );
 }

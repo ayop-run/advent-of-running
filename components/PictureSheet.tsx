@@ -8,13 +8,15 @@ import { canShareFiles, downloadCanvas, renderTreeCard, shareCanvas } from '@/li
 type Props = {
   ornaments: Hung[];
   ownerName: string;
+  /** same-origin photo URL, from `avatarSrc` */
+  avatar?: string | null;
   /** the tree's public link, printed on the card */
   link: string;
   onClose: () => void;
 };
 
 /** A picture of your tree to save or share, and the way into the photo booth. */
-export default function PictureSheet({ ornaments, ownerName, link, onClose }: Props) {
+export default function PictureSheet({ ornaments, ownerName, avatar, link, onClose }: Props) {
   const [canvas, setCanvas] = useState<HTMLCanvasElement | null>(null);
   const [src, setSrc] = useState('');
   const [share, setShare] = useState(false);
@@ -23,7 +25,7 @@ export default function PictureSheet({ ornaments, ownerName, link, onClose }: Pr
   useEffect(() => {
     let live = true;
     setShare(canShareFiles());
-    renderTreeCard({ ornaments, ownerName, link }).then((c) => {
+    renderTreeCard({ ornaments, ownerName, avatar, link }).then((c) => {
       if (!live) return;
       setCanvas(c);
       setSrc(c.toDataURL('image/png'));
@@ -31,7 +33,7 @@ export default function PictureSheet({ ornaments, ownerName, link, onClose }: Pr
     return () => {
       live = false;
     };
-  }, [ornaments, ownerName, link]);
+  }, [ornaments, ownerName, avatar, link]);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
     window.addEventListener('keydown', onKey);

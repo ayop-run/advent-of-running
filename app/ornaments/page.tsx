@@ -105,7 +105,7 @@ export default function OrnamentDirectory() {
             </div>
 
             {picked.tier === 'basic' && (
-              <Link href={`/t/mina/hang?o=${picked.id}`} className="btn block mt16">Hang it on a friend&apos;s tree</Link>
+              <Link href={`/t/ayop/hang?o=${picked.id}`} className="btn block mt16">Hang it on a friend&apos;s tree</Link>
             )}
             <button className="btn ghost block mt8" onClick={() => setPicked(null)}>Close</button>
           </div>

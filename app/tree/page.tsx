@@ -6,9 +6,10 @@ import BottomNav from '@/components/BottomNav';
 import { CountdownTiles } from '@/components/Countdown';
 import OrnamentSheet from '@/components/OrnamentSheet';
 import PictureSheet from '@/components/PictureSheet';
-import PixelTree from '@/components/PixelTree';
+import PixelTree, { Avatar } from '@/components/PixelTree';
 import { CameraIcon, ChevronIcon, ShareIcon } from '@/components/Icons';
 import { MusicButton } from '@/components/MusicToggle';
+import { avatarSrc } from '@/lib/avatar';
 import { getTree, type Hung, type Tree } from '@/lib/data';
 import { myNickname, useMe } from '@/lib/me';
 
@@ -23,6 +24,7 @@ export default function MyTree() {
   const account = useMe();
   const me = myNickname(account);
   const displayName = account?.displayName ?? me.charAt(0).toUpperCase() + me.slice(1);
+  const owner = { name: displayName, avatarUrl: account?.avatarUrl ?? undefined };
   useEffect(() => {
     if (account === undefined) return;
     getTree(myNickname(account)).then(setTree, console.error);
@@ -52,7 +54,10 @@ export default function MyTree() {
       <div className="topbar">
         <div>
           <p className="brand-mark">Advent of Running</p>
-          <h1 className="title clip">{displayName}&apos;s tree</h1>
+          <div className="row" style={{ gap: 6, minWidth: 0 }}>
+            <Avatar owner={owner} size={24} />
+            <h1 className="title clip">{displayName}&apos;s tree</h1>
+          </div>
         </div>
         <div className="topbar-end">
           <button type="button" className="icon-btn" onClick={() => setPicture(true)} aria-label="Picture of my tree" title="Picture of my tree" disabled={!tree}>
@@ -72,7 +77,7 @@ export default function MyTree() {
 
       {tree && (
         <div className="tree-stage">
-          <PixelTree ornaments={tree.ornaments} owner={{ name: displayName }} onSelect={setOpen} label={`Your tree with ${tree.ornaments.length} sealed ornaments`} />
+          <PixelTree ornaments={tree.ornaments} owner={owner} onSelect={setOpen} label={`Your tree with ${tree.ornaments.length} sealed ornaments`} />
           <p className="center small soft mt12">
             <strong style={{ color: 'var(--snow)' }}>{tree.ornaments.length} sealed ornaments</strong> from friends. Names and messages unlock on Christmas.
           </p>
@@ -90,7 +95,7 @@ export default function MyTree() {
       )}
 
       {picture && tree && (
-        <PictureSheet ornaments={tree.ornaments} ownerName={displayName} link={`${window.location.origin}/t/${me}`} onClose={() => setPicture(false)} />
+        <PictureSheet ornaments={tree.ornaments} ownerName={displayName} avatar={avatarSrc(me, account?.avatarUrl)} link={`${window.location.origin}/t/${me}`} onClose={() => setPicture(false)} />
       )}
 
       {toast && <div className="toast" role="status">{toast}</div>}

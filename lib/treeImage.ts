@@ -4,6 +4,7 @@
  * at a whole number of screen pixels per art pixel, so the pixels stay square and crisp.
  */
 
+import { avatarColor } from './avatar';
 import type { Hung } from './data';
 import { BY_ID } from './ornaments';
 import { SKY_KEYS, localHour, skyVars } from './sky';
@@ -107,6 +108,63 @@ export async function loadFonts() {
   }
 }
 
+/** Loads an image for the canvas, or null if there is none or it fails. */
+function loadImage(src: string | null | undefined): Promise<HTMLImageElement | null> {
+  if (!src) return Promise.resolve(null);
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = src;
+  });
+}
+
+/** A square with notched pixel corners, like the page's `--px4` clip. */
+function notchedSquare(ctx: CanvasRenderingContext2D, x: number, y: number, s: number, n: number) {
+  ctx.beginPath();
+  ctx.moveTo(x + n, y);
+  ctx.lineTo(x + s - n, y);
+  ctx.lineTo(x + s - n, y + n);
+  ctx.lineTo(x + s, y + n);
+  ctx.lineTo(x + s, y + s - n);
+  ctx.lineTo(x + s - n, y + s - n);
+  ctx.lineTo(x + s - n, y + s);
+  ctx.lineTo(x + n, y + s);
+  ctx.lineTo(x + n, y + s - n);
+  ctx.lineTo(x, y + s - n);
+  ctx.lineTo(x, y + n);
+  ctx.lineTo(x + n, y + n);
+  ctx.closePath();
+}
+
+/** The runner's avatar as on the page: their photo, or their initial on a colour, in a snow frame. */
+function drawAvatar(ctx: CanvasRenderingContext2D, photo: HTMLImageElement | null, name: string, x: number, y: number, size: number) {
+  const frame = Math.max(2, Math.round(size / 20));
+  const inner = size - 2 * frame;
+  const notch = Math.max(2, Math.round(size / 16));
+  ctx.save();
+  notchedSquare(ctx, x, y, size, notch);
+  ctx.fillStyle = '#fff7ec';
+  ctx.fill();
+  notchedSquare(ctx, x + frame, y + frame, inner, notch);
+  ctx.clip();
+  if (photo) {
+    // fill the square, cropping the longer side
+    const s = Math.min(photo.naturalWidth, photo.naturalHeight);
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(photo, (photo.naturalWidth - s) / 2, (photo.naturalHeight - s) / 2, s, s, x + frame, y + frame, inner, inner);
+  } else {
+    ctx.fillStyle = avatarColor(name);
+    ctx.fillRect(x + frame, y + frame, inner, inner);
+    ctx.fillStyle = '#101a33';
+    ctx.font = `800 ${Math.round(inner * 0.55)}px ${BODY}`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(name.charAt(0).toUpperCase(), x + size / 2, y + size / 2 + inner * 0.04);
+  }
+  ctx.restore();
+}
+
 /**
  * The sky exactly as it is on screen right now (it follows the time of day, or a ?sky=
  * preview), read from the page's CSS variables; worked out from the clock if they're missing.
@@ -128,8 +186,10 @@ function currentSky() {
 }
 
 /** A 1080×1350 card (4:5, fits a phone screen and an Instagram post): sky, tree, name, count. */
-export async function renderTreeCard({ ornaments, ownerName, link }: { ornaments: Hung[]; ownerName: string; link: string }) {
-  await loadFonts();
+type Owner = { ornaments: Hung[]; ownerName: string; /** same-origin photo URL, from `avatarSrc` */ avatar?: string | null };
+
+export async function renderTreeCard({ ornaments, ownerName, avatar, link }: Owner & { link: string }) {
+  const [photo] = await Promise.all([loadImage(avatar), loadFonts()]);
   const W = 1080;
   const H = 1350;
   const canvas = document.createElement('canvas');
@@ -169,9 +229,25 @@ export async function renderTreeCard({ ornaments, ownerName, link }: { ornaments
   ctx.fillStyle = '#ffc94a';
   ctx.font = `800 28px ${BODY}`;
   ctx.fillText('ADVENT OF RUNNING', W / 2, 96);
+  // the avatar and "Name's tree", centred together; long names get a smaller font
+  const title = `${ownerName}'s tree`;
+  const face = 88;
+  const gap = 24;
+  let fontSize = 72;
+  ctx.font = `600 ${fontSize}px ${FONT}`;
+  while (fontSize > 40 && face + gap + ctx.measureText(title).width > W - 120) {
+    fontSize -= 4;
+    ctx.font = `600 ${fontSize}px ${FONT}`;
+  }
+  const left = (W - (face + gap + ctx.measureText(title).width)) / 2;
+  drawAvatar(ctx, photo, ownerName, left, 150 - face / 2, face);
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
   ctx.fillStyle = '#fff7ec';
-  ctx.font = `600 72px ${FONT}`;
-  ctx.fillText(`${ownerName}'s tree`, W / 2, 176);
+  ctx.font = `600 ${fontSize}px ${FONT}`;
+  ctx.fillText(title, left + face + gap, 150);
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic';
 
   // the tree, 4 screen pixels per art pixel
   const px = 4;
@@ -199,8 +275,8 @@ export async function renderTreeCard({ ornaments, ownerName, link }: { ornaments
  * A photo booth picture: the camera frame (mirrored, like a mirror) with the tree standing
  * in the bottom-right corner and a small name plate.
  */
-export async function renderPhoto({ video, ornaments, ownerName }: { video: HTMLVideoElement; ornaments: Hung[]; ownerName: string }) {
-  await loadFonts();
+export async function renderPhoto({ video, ornaments, ownerName, avatar }: Owner & { video: HTMLVideoElement }) {
+  const [photo] = await Promise.all([loadImage(avatar), loadFonts()]);
   const { W, H, px, margin } = photoLayout(video.videoWidth, video.videoHeight);
   const canvas = document.createElement('canvas');
   canvas.width = W;
@@ -214,16 +290,22 @@ export async function renderPhoto({ video, ornaments, ownerName }: { video: HTML
 
   drawTree(ctx, ornaments, W - SCENE_W * px - margin, H - SCENE_H * px - margin, px);
 
-  // name plate, top-left
+  // name plate with the avatar, top-left
   const size = Math.round(W * 0.032);
+  const plate = Math.round(size * 2.2);
+  const pad = Math.round(size * 0.3);
+  const face = plate - 2 * pad;
   ctx.font = `600 ${size}px ${FONT}`;
   const text = `${ownerName}'s tree · Advent of Running`;
-  const w = ctx.measureText(text).width + size * 1.2;
+  const w = pad + face + size * 0.5 + ctx.measureText(text).width + size * 0.7;
   ctx.fillStyle = 'rgba(10,17,36,.78)';
-  ctx.fillRect(margin, margin, w, size * 1.8);
+  ctx.fillRect(margin, margin, w, plate);
+  drawAvatar(ctx, photo, ownerName, margin + pad, margin + pad, face);
   ctx.fillStyle = '#fff7ec';
+  ctx.font = `600 ${size}px ${FONT}`;
+  ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
-  ctx.fillText(text, margin + size * 0.6, margin + size * 0.9);
+  ctx.fillText(text, margin + pad + face + size * 0.5, margin + plate / 2);
   return canvas;
 }
 
