@@ -49,13 +49,13 @@ SUPABASE_SERVICE_ROLE_KEY=sb_secret_...
 STRAVA_CLIENT_ID=...
 STRAVA_CLIENT_SECRET=...
 SESSION_SECRET=...                 # any long random string
-APP_URL=http://localhost:3000      # Vercel: https://advent-of-running.vercel.app
+APP_URL=http://localhost:3000      # Vercel: https://advent.ayop.run (staging: https://staging-advent.ayop.run)
 
 # Vercel: leave unset so production stays on December
 NEXT_PUBLIC_ADVENT_MONTH=current   # optional, local only
 ```
 
-The Strava app at [strava.com/settings/api](https://www.strava.com/settings/api) must have **Authorization Callback Domain** `advent-of-running.vercel.app` (no `https://`, no path). `localhost` is always allowed, so local login still works. Until Strava approves the app, only its owner can connect.
+The Strava app at [strava.com/settings/api](https://www.strava.com/settings/api) must have **Authorization Callback Domain** `ayop.run`, which covers both `advent.ayop.run` and `staging-advent.ayop.run` (no `https://`, no path). `localhost` is always allowed, so local login still works. Until Strava approves the app, only its owner can connect.
 
 ## Database
 
@@ -74,12 +74,12 @@ Supabase setup, migrations and how to look at the data: see [supabase/README.md]
 | | Staging | Production |
 |---|---|---|
 | Branch | `staging` | `main` |
-| Site | https://advent-of-running-staging.vercel.app | https://advent-of-running.vercel.app |
+| Site | https://staging-advent.ayop.run (private: sign in to Vercel) | https://advent.ayop.run |
 | Vercel environment | Preview | Production |
 | Supabase project | `omrqmxoketiukledntok` | `dcmwhlwwawhyggabjnlp` |
-| Strava app | Advent of Running (staging) | Advent of Running |
+| Strava app | Advent of Running (shared; callback domain `ayop.run`) | same |
 
-Work on a feature branch, merge it into `staging`, check it on the staging site, then merge `staging` into `main` to release. Use **Create a merge commit**, not squash, to avoid conflicts on the next merge. Other branches also deploy as previews and use the staging keys, but Strava login only works on the staging address.
+Work on a feature branch, merge it into `staging`, check it on the staging site, then merge `staging` into `main` to release. Use **Create a merge commit**, not squash, to avoid conflicts on the next merge. Other branches also deploy as previews and use the staging keys, but Strava login only works on the two `ayop.run` addresses.
 
 Keys live in Vercel under **Project → Settings → Environment Variables**: the production values on **Production**, the staging values on **Preview**. `.env.example` lists every key. Leave `NEXT_PUBLIC_ADVENT_MONTH` unset on both so the calendar runs in December.
 

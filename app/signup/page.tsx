@@ -73,7 +73,11 @@ function SignUpInner() {
   const [tz, setTz] = useState('');
   const nameInput = useRef<HTMLInputElement>(null);
 
-  useEffect(() => setTz(Intl.DateTimeFormat().resolvedOptions().timeZone), []);
+  const [host, setHost] = useState('advent.ayop.run');
+  useEffect(() => {
+    setTz(Intl.DateTimeFormat().resolvedOptions().timeZone);
+    setHost(window.location.host);
+  }, []);
   useEffect(() => {
     if (!finishing) return;
     getMe().then((runner) => {
@@ -171,7 +175,7 @@ function SignUpInner() {
           <div className="panel quiet row" style={{ padding: '12px 16px' }}>
             <Sprite id="gift-box" px={2} style={{ flexShrink: 0 }} />
             <p className="small soft">
-              Your link: <strong style={{ color: 'var(--snow)' }}>advent-of-running.vercel.app/t/{nick || 'yourname'}</strong>
+              Your link: <strong style={{ color: 'var(--snow)' }}>{host}/t/{nick || 'yourname'}</strong>
             </p>
           </div>
 
