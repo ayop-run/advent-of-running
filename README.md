@@ -83,6 +83,8 @@ Work on a feature branch, merge it into `staging`, check it on the staging site,
 
 Keys live in Vercel under **Project → Settings → Environment Variables**: the production values on **Production**, the staging values on **Preview**. `.env.example` lists every key. Leave `NEXT_PUBLIC_ADVENT_MONTH` unset on both so the calendar runs in December.
 
+Before launch, production shows only a coming-soon page (door 1, a countdown to December 1 in the visitor's time zone, and an email sign-up for the launch news). It's switched on by `COMING_SOON=1` on Vercel's **Production** environment; remove it and redeploy to launch. Staging leaves it unset and runs the full app; the page itself is at `/coming-soon` on both. Sign-ups are saved in the `launch_signups` table (migration `006_launch_signups.sql`); `notified_at` stays empty until the launch email is sent.
+
 Database changes: add a numbered file in `supabase/migrations/`, run it on the staging project first, and on production once staging works. To set up a new, empty project, run `schema.sql`, `seed.sql`, then every migration in order.
 
 ## Still to do
