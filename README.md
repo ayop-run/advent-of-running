@@ -39,14 +39,19 @@ cp .env.example .env.local
 npm run dev
 ```
 
-`.env.example` has the Supabase URL and publishable key, which is enough for trees and the demo. Strava login also needs these server-only values in `.env.local`. Ask the project owner for them; never commit them:
+`.env.example` lists every key. The public Supabase URL and publishable key are filled in (enough for trees and the demo). Copy it to `.env.local` and fill the empty server-only values. Ask the project owner for them; never commit them:
 
 ```
+# Vercel: yes
+NEXT_PUBLIC_SUPABASE_URL=...
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=...
 SUPABASE_SERVICE_ROLE_KEY=sb_secret_...
 STRAVA_CLIENT_ID=...
 STRAVA_CLIENT_SECRET=...
 SESSION_SECRET=...                 # any long random string
-NEXT_PUBLIC_ADVENT_MONTH=current   # optional: run the calendar in this month instead of December
+
+# Vercel: leave unset so production stays on December
+NEXT_PUBLIC_ADVENT_MONTH=current   # optional, local only
 ```
 
 The Strava app at [strava.com/settings/api](https://www.strava.com/settings/api) must have `localhost` as its Authorization Callback Domain for local login. Until Strava approves the app, only its owner can connect.
@@ -65,7 +70,7 @@ Supabase setup, migrations and how to look at the data: see [supabase/README.md]
 
 ## Deploy on Vercel
 
-Every push to `main` redeploys. Vercel needs all variables above except `NEXT_PUBLIC_ADVENT_MONTH` (leave it unset in production so the calendar runs in December). For login on the live site, set the Strava callback domain to `advent-of-running.vercel.app`.
+Every push to `main` redeploys. Set the keys marked `Vercel: yes` in `.env.example` under **Project → Settings → Environment Variables** (Production; also Preview if you want login on preview deploys). Leave `NEXT_PUBLIC_ADVENT_MONTH` unset so the calendar runs in December. For login on the live site, set the Strava callback domain to `advent-of-running.vercel.app`.
 
 When merging `develop` into `main`, use **Create a merge commit**, not squash, to avoid conflicts on the next merge.
 

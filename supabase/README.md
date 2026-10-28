@@ -60,23 +60,23 @@ Never put the **secret** key (Project Settings → API Keys) in the app's client
 
 ## Keys
 
-`.env.local` (not committed) and Vercel both need:
+See `.env.example` for the full list. `.env.local` (not committed) and Vercel both need:
 
 ```
+# Vercel: yes — public (they ship to the browser)
 NEXT_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
-```
 
-Both values are in the dashboard under **Project Settings → API Keys** (the URL is under **Data API**). They are enough to browse trees.
-
-Strava login also needs these server-only values. Never give them a `NEXT_PUBLIC_` prefix or commit them:
-
-```
+# Vercel: yes — server-only. Never give them a NEXT_PUBLIC_ prefix or commit them
 SUPABASE_SERVICE_ROLE_KEY=sb_secret_...    # Project Settings → API Keys → Secret keys
 STRAVA_CLIENT_ID=...                       # strava.com/settings/api
 STRAVA_CLIENT_SECRET=...
 SESSION_SECRET=...                         # any long random string, signs login cookies
 ```
+
+The public values are in the dashboard under **Project Settings → API Keys** (the URL is under **Data API**). They are enough to browse trees.
+
+Leave `NEXT_PUBLIC_ADVENT_MONTH` unset on Vercel so production stays on December. Locally you can set it to `current` to run the calendar in this month.
 
 ## Starting over
 
