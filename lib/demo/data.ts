@@ -1,5 +1,6 @@
 import { DEMO_GIVEN, doorOrnament } from '../calendar';
 import { getMe, isMember } from './me';
+import { demoName, demoNick } from './names';
 import type { Hint } from '../ornaments';
 
 export type Hung = {
@@ -37,7 +38,7 @@ const SEED: Record<string, Tree> = {
     nickname: 'demo',
     displayName: 'You',
     ornaments: [
-      h('snow-globe', 'Mina', 'Cheer', 'You got this. See you at the Sunday long run!'),
+      h('snow-globe', 'AYOP', 'Cheer', 'You got this. See you at the Sunday long run!'),
       h('fox', 'Jonas', 'Thanks', 'Thanks for pacing me in October. Merry Christmas!'),
       h('finish-medal', 'Aiko', 'Love', 'Proud of you for running through the dark mornings.'),
       h('penguin', 'Leo', 'Funny', 'Slipped on ice twice this week. Worth it.'),
@@ -48,9 +49,9 @@ const SEED: Record<string, Tree> = {
       h('bauble-frost', 'Noah', 'Cheer', 'Run happy!'),
     ],
   },
-  mina: {
-    nickname: 'mina',
-    displayName: 'Mina',
+  ayop: {
+    nickname: 'ayop',
+    displayName: 'AYOP',
     ornaments: [
       h('reindeer', 'Jonas', 'Cheer', 'Your Sunday long runs keep me going. Merry Christmas!'),
       h('bauble-cranberry', 'Aiko', 'Love', 'Thanks for always waiting for me at the turnaround.'),
@@ -62,7 +63,7 @@ const SEED: Record<string, Tree> = {
   jonas: {
     nickname: 'jonas',
     displayName: 'Jonas',
-    ornaments: [h('stopwatch', 'Mina', 'Cheer', 'Fastest friend I know. Go get that PB!'), h('sock', 'Leo', 'Funny', 'Warm socks for cold miles.')],
+    ornaments: [h('stopwatch', 'AYOP', 'Cheer', 'Fastest friend I know. Go get that PB!'), h('sock', 'Leo', 'Funny', 'Warm socks for cold miles.')],
   },
 };
 
@@ -94,18 +95,16 @@ const myName = () => {
   return nick.charAt(0).toUpperCase() + nick.slice(1);
 };
 
-const display = (nick: string) => nick.charAt(0).toUpperCase() + nick.slice(1);
-
 /** The demo runner's past door ornaments, shown on the trees of the friends who got them. */
 function demoGiftsTo(nick: string): Hung[] {
   return Object.entries(DEMO_GIVEN)
-    .filter(([, name]) => name.toLowerCase() === nick)
+    .filter(([, name]) => demoNick(name) === nick)
     .map(([n]) => ({
       id: `door-${n}`,
       ornamentId: doorOrnament(Number(n)),
       from: myName(),
       hint: 'Cheer' as Hint,
-      message: `Door ${n} was for you, ${display(nick)}. Keep running!`,
+      message: `Door ${n} was for you, ${demoName(nick)}. Keep running!`,
       createdAt: `2026-12-${String(n).padStart(2, '0')}T08:00:00Z`,
       // the demo runner's gifts belong to the signed-in runner, not to guests
       mine: isMember(),
@@ -116,7 +115,7 @@ export function getTree(nickname: string): Tree {
   const nick = nickname.toLowerCase();
   let base: Tree = SEED[nick] ?? {
     nickname: nick,
-    displayName: nick.charAt(0).toUpperCase() + nick.slice(1),
+    displayName: demoName(nick),
     ornaments: [],
   };
   if (nick === 'demo') {

@@ -13,7 +13,7 @@ Runners log in with Strava, and their runs open the doors. Trees, ornaments and 
 | `/login` | Log in with Strava |
 | `/tree` | My tree, countdown, tap an ornament to see the sealed sheet |
 | `/tree/photo` | Photo booth with your tree |
-| `/t/[nickname]` | A friend's tree (try `/t/mina` for the demo) |
+| `/t/[nickname]` | A friend's tree (try `/t/ayop` for the demo) |
 | `/t/[nickname]/hang` | Hang or edit your ornament (one per tree) |
 | `/t/[nickname]/done` | Ornament hung |
 | `/calendar` | Advent doors with km per day, catch-ups, weekly bonus |
@@ -69,11 +69,21 @@ Supabase setup, migrations and how to look at the data: see [supabase/README.md]
 - `app/api/`: server routes (Strava login, trees, hanging, progress, friends). They use the Supabase secret key through `lib/server/`.
 - `lib/sprites.ts`: all pixel art, drawn in code on one shared 12×12 grid.
 
-## Deploy on Vercel
+## Staging and production
 
-Every push to `main` redeploys. Set the keys marked `Vercel: yes` in `.env.example` under **Project → Settings → Environment Variables** (Production; also Preview if you want login on preview deploys). Leave `NEXT_PUBLIC_ADVENT_MONTH` unset so the calendar runs in December. Set `APP_URL=https://advent-of-running.vercel.app` so Strava always gets that callback, not a preview host.
+| | Staging | Production |
+|---|---|---|
+| Branch | `staging` | `main` |
+| Site | https://advent-of-running-staging.vercel.app | https://advent-of-running.vercel.app |
+| Vercel environment | Preview | Production |
+| Supabase project | `omrqmxoketiukledntok` | `dcmwhlwwawhyggabjnlp` |
+| Strava app | Advent of Running (staging) | Advent of Running |
 
-When merging `develop` into `main`, use **Create a merge commit**, not squash, to avoid conflicts on the next merge.
+Work on a feature branch, merge it into `staging`, check it on the staging site, then merge `staging` into `main` to release. Use **Create a merge commit**, not squash, to avoid conflicts on the next merge. Other branches also deploy as previews and use the staging keys, but Strava login only works on the staging address.
+
+Keys live in Vercel under **Project → Settings → Environment Variables**: the production values on **Production**, the staging values on **Preview**. `.env.example` lists every key. Leave `NEXT_PUBLIC_ADVENT_MONTH` unset on both so the calendar runs in December.
+
+Database changes: add a numbered file in `supabase/migrations/`, run it on the staging project first, and on production once staging works. To set up a new, empty project, run `schema.sql`, `seed.sql`, then every migration in order.
 
 ## Still to do
 

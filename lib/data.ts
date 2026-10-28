@@ -2,6 +2,7 @@
 
 import { demoProgress, type Progress } from './calendar';
 import * as demo from './demo/data';
+import { treeExists as demoTreeExists } from './demo/friends';
 import { DEMO_NICKNAME, getMe } from './me';
 import type { Hint } from './ornaments';
 
@@ -41,7 +42,8 @@ async function source(nickname: string): Promise<Source> {
   const nick = nickname.toLowerCase();
   const [me, res] = await Promise.all([getMe(), fetch(`/api/tree/${encodeURIComponent(nick)}`, { cache: 'no-store' })]);
   const body = res.ok ? await res.json() : { tree: null, real: false };
-  if (!me && !body.real) return { kind: 'demo' };
+  // signed out, trees play as the browser demo; names it doesn't know don't exist
+  if (!me && !body.real && (body.tree || demoTreeExists(nick, DEMO_NICKNAME, false))) return { kind: 'demo' };
   if (!body.tree) {
     return { kind: 'server', tree: { nickname: nick, displayName: nick.charAt(0).toUpperCase() + nick.slice(1), ornaments: [], exists: false } };
   }

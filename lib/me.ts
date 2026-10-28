@@ -99,6 +99,16 @@ export async function deleteAccount(): Promise<boolean> {
 export const stravaLoginUrl = (signup?: { nick: string; tz: string }) =>
   signup ? `/api/strava/connect?${new URLSearchParams(signup)}` : '/api/strava/connect';
 
+/** Sign-up: whether this tree name is free (your own counts as free), or null if it couldn't be checked. */
+export async function nicknameAvailable(nick: string): Promise<boolean | null> {
+  try {
+    const res = await fetch(`/api/nickname?${new URLSearchParams({ name: nick })}`, { cache: 'no-store' });
+    return res.ok ? (await res.json()).available === true : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Whether another runner already has this tree name. */
 export async function nicknameTaken(nick: string) {
   try {

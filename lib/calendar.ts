@@ -140,7 +140,7 @@ export const DEMO_MISSED = [5, 9, 13];
  * straight to a friend's tree: finish the run, unwrap, give.
  */
 export const DEMO_GIVEN: Record<number, string> = {
-  1: 'Mina', 2: 'Jonas', 3: 'Aiko', 4: 'Leo', 6: 'Hana', 7: 'Yuki', 8: 'Ben', 10: 'Kai', 11: 'Lena', 12: 'Rio',
+  1: 'AYOP', 2: 'Jonas', 3: 'Aiko', 4: 'Leo', 6: 'Hana', 7: 'Yuki', 8: 'Ben', 10: 'Kai', 11: 'Lena', 12: 'Rio',
 };
 export const DEMO_TODAY_KM = 0.6;
 

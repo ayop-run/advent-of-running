@@ -6,8 +6,8 @@ import { Suspense, useEffect, useRef, useState } from 'react';
 import { ChevronIcon } from '@/components/Icons';
 import { MusicButton } from '@/components/MusicToggle';
 import Sprite from '@/components/Sprite';
-import { getMe, nicknameTaken, saveProfile, stravaLoginUrl, type Me, type ProfileError } from '@/lib/me';
-import { checkNickname, cleanNickname } from '@/lib/nickname';
+import { getMe, nicknameAvailable, saveProfile, stravaLoginUrl, type Me, type ProfileError } from '@/lib/me';
+import { checkNickname, cleanNickname, type NicknameCheck } from '@/lib/nickname';
 
 const PROFILE_ERROR: Record<ProfileError, string> = {
   nickname_taken: 'That tree name was just taken. Try another.',
@@ -17,6 +17,39 @@ const PROFILE_ERROR: Record<ProfileError, string> = {
 };
 
 const STEPS = ['Tree name', 'Strava', 'Finish'] as const;
+
+type Availability = 'checking' | 'free' | 'taken' | 'error';
+
+/** Checks the tree name against the server as it's typed; `confirm()` waits for a fresh answer. */
+function useAvailability(nick: string, formatOk: boolean) {
+  const [state, setState] = useState<{ nick: string; avail: Availability } | null>(null);
+  const ask = async (name: string) => {
+    const free = await nicknameAvailable(name);
+    const avail: Availability = free === null ? 'error' : free ? 'free' : 'taken';
+    setState((s) => (s?.nick === name ? { nick: name, avail } : s));
+    return avail;
+  };
+  useEffect(() => {
+    if (!formatOk) return setState(null);
+    setState({ nick, avail: 'checking' });
+    const t = setTimeout(() => ask(nick), 350);
+    return () => clearTimeout(t);
+  }, [nick, formatOk]);
+  const avail = state?.nick === nick ? state.avail : formatOk ? 'checking' : null;
+  const confirm = () => {
+    if (avail === 'free') return Promise.resolve<Availability>('free');
+    setState({ nick, avail: 'checking' });
+    return ask(nick);
+  };
+  return { avail, confirm };
+}
+
+const AVAILABILITY: Record<Availability, (nick: string) => NicknameCheck> = {
+  checking: () => ({ ok: false, message: 'Checking…' }),
+  free: () => ({ ok: true, message: 'Looks good, it’s free' }),
+  taken: (nick) => ({ ok: false, message: `“${nick}” is taken. Try another.` }),
+  error: () => ({ ok: false, message: 'Couldn’t check this name. Please try again.' }),
+};
 
 export default function SignUp() {
   return (
@@ -33,7 +66,6 @@ function SignUpInner() {
   const [step, setStep] = useState(finishing ? 2 : 0);
   const [nick, setNick] = useState('');
   const [touched, setTouched] = useState(false);
-  const [taken, setTaken] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [failed, setFailed] = useState<ProfileError | null>(null);
@@ -54,8 +86,12 @@ function SignUpInner() {
   }, [finishing, router]);
 
   const format = checkNickname(nick);
-  const check = taken ? { ok: false, message: `“${nick}” is taken. Try another.` } : format;
+  const { avail, confirm } = useAvailability(nick, format.ok);
+  const check = avail ? AVAILABILITY[avail](nick) : format;
   const showCheck = touched || nick.length >= 3;
+  const checking = avail === 'checking';
+  // a bad or taken name can't go on; a failed check can, so Continue retries it
+  const invalid = !format.ok || avail === 'taken';
 
   const connectStrava = () => {
     setConnecting(true);
@@ -95,10 +131,7 @@ function SignUpInner() {
             e.preventDefault();
             setTouched(true);
             if (!format.ok) return nameInput.current?.focus();
-            if (await nicknameTaken(nick)) {
-              setTaken(true);
-              return nameInput.current?.focus();
-            }
+            if ((await confirm()) !== 'free') return nameInput.current?.focus();
             setStep(1);
           }}
         >
@@ -124,16 +157,13 @@ function SignUpInner() {
                 spellCheck={false}
                 placeholder="yourname"
                 maxLength={20}
-                aria-invalid={showCheck && !check.ok}
+                aria-invalid={showCheck && !check.ok && !checking}
                 aria-describedby="nick-help"
-                onChange={(e) => {
-                  setNick(cleanNickname(e.target.value));
-                  setTaken(false);
-                }}
+                onChange={(e) => setNick(cleanNickname(e.target.value))}
                 onBlur={() => setTouched(true)}
               />
             </div>
-            <span id="nick-help" className={`help${showCheck ? (check.ok ? ' ok' : ' bad') : ''}`} aria-live="polite">
+            <span id="nick-help" className={`help${showCheck && !checking ? (check.ok ? ' ok' : ' bad') : ''}`} aria-live="polite">
               {showCheck ? check.message : 'Lowercase letters, numbers and dashes. 3–20 characters.'}
             </span>
           </label>
@@ -145,7 +175,7 @@ function SignUpInner() {
             </p>
           </div>
 
-          <button className="btn block" type="submit">Continue</button>
+          <button className="btn block" type="submit" aria-busy={checking} disabled={invalid}>Continue</button>
           <p className="center small soft">
             Already have a tree? <Link href="/login" style={{ fontWeight: 800 }}>Log in</Link>
           </p>
@@ -192,6 +222,12 @@ function SignUpInner() {
             if (!format.ok) return setFailed('invalid');
             setSaving(true);
             setFailed(null);
+            const free = await confirm();
+            if (free !== 'free') {
+              setFailed(free === 'taken' ? 'nickname_taken' : 'unknown');
+              setSaving(false);
+              return;
+            }
             const res = await saveProfile({ nickname: nick, timeZone: tz || me.timeZone, hangPolicy: me.hangPolicy, emailOptIn: me.emailOptIn });
             if ('error' in res) {
               setFailed(res.error);
@@ -219,11 +255,16 @@ function SignUpInner() {
                 autoCapitalize="none"
                 spellCheck={false}
                 maxLength={20}
-                aria-invalid={!format.ok}
-                onChange={(e) => setNick(cleanNickname(e.target.value))}
+                aria-invalid={!check.ok && !checking}
+                onChange={(e) => {
+                  setNick(cleanNickname(e.target.value));
+                  setFailed(null);
+                }}
               />
             </div>
-            <span className={`help${format.ok ? '' : ' bad'}`}>{format.ok ? 'Friends use it to find your tree.' : format.message}</span>
+            <span className={`help${checking ? '' : check.ok ? ' ok' : ' bad'}`} aria-live="polite">
+              {check.ok ? 'Free. Friends use it to find your tree.' : check.message}
+            </span>
           </label>
 
           <div className="field">
@@ -235,7 +276,7 @@ function SignUpInner() {
           </div>
 
           {failed && <p className="center small" role="alert">{PROFILE_ERROR[failed]}</p>}
-          <button className="btn block" type="submit" aria-busy={saving} disabled={!me || saving}>{saving ? 'Creating…' : 'Create my tree'}</button>
+          <button className="btn block" type="submit" aria-busy={saving} disabled={!me || saving || invalid}>{saving ? 'Creating…' : 'Create my tree'}</button>
         </form>
       )}
     </main>

@@ -12,7 +12,7 @@ import { BY_ID } from '@/lib/ornaments';
 
 type Props = {
   hung: Hung;
-  /** whose tree it hangs on, for the "only Mina can read it" note */
+  /** whose tree it hangs on, for the "only AYOP can read it" note */
   ownerName: string;
   /** true on your own tree */
   isOwner: boolean;

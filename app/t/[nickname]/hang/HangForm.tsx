@@ -10,6 +10,7 @@ import { useBump } from '@/components/useBump';
 import Link from 'next/link';
 import { editMyOrnament, hangOrnament, myOrnamentOn, type HangError, type Hung } from '@/lib/data';
 import { getMe } from '@/lib/me';
+import { demoName } from '@/lib/demo/names';
 import { BASIC, BY_ID, HINTS, type Hint } from '@/lib/ornaments';
 
 const MAX = 200;
@@ -81,7 +82,7 @@ export default function HangForm() {
   const earned = lockedEarned ?? (preset && BY_ID[preset] && BY_ID[preset].tier !== 'basic' ? preset : null);
   const options = lockedEarned ? [lockedEarned] : earned ? [earned, ...BASIC.map((o) => o.id)] : BASIC.map((o) => o.id);
 
-  const name = nickname.charAt(0).toUpperCase() + nickname.slice(1);
+  const name = demoName(nickname.toLowerCase());
   const chosen = BY_ID[pick];
   const { bump, of } = useBump();
   const choose = (id: string) => {
