@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { appOrigin } from '@/lib/server/app-url';
 import { db } from '@/lib/server/db';
 import { freeNickname } from '@/lib/server/runner';
 import { cookieOptions, sessionCookie } from '@/lib/server/session';
@@ -7,8 +8,9 @@ import { exchangeCode, tokenColumns } from '@/lib/server/strava';
 /** Step 2 of Strava login: Strava sends the runner back here with a one-time code. */
 export async function GET(req: NextRequest) {
   const url = req.nextUrl;
+  const origin = appOrigin(req);
   const fail = (reason: string) => {
-    const res = NextResponse.redirect(new URL(`/login?error=${reason}`, url.origin));
+    const res = NextResponse.redirect(new URL(`/login?error=${reason}`, origin));
     res.cookies.set('aor_oauth_state', '', cookieOptions(0));
     return res;
   };
@@ -74,7 +76,7 @@ export async function GET(req: NextRequest) {
   }
 
   // new runners confirm their tree name and time zone on the last sign-up step
-  const res = NextResponse.redirect(new URL(onboarded ? '/tree' : '/signup?step=finish', url.origin));
+  const res = NextResponse.redirect(new URL(onboarded ? '/tree' : '/signup?step=finish', origin));
   res.cookies.set(...sessionCookie(id));
   res.cookies.set('aor_oauth_state', '', cookieOptions(0));
   res.cookies.set('aor_signup', '', cookieOptions(0));

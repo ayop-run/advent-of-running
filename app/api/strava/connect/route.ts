@@ -1,5 +1,6 @@
 import { randomBytes } from 'crypto';
 import { NextResponse, type NextRequest } from 'next/server';
+import { stravaRedirectUri } from '@/lib/server/app-url';
 import { cookieOptions } from '@/lib/server/session';
 import { authorizeUrl } from '@/lib/server/strava';
 
@@ -9,7 +10,7 @@ import { authorizeUrl } from '@/lib/server/strava';
  */
 export function GET(req: NextRequest) {
   const state = randomBytes(16).toString('hex');
-  const res = NextResponse.redirect(authorizeUrl(`${req.nextUrl.origin}/api/strava/callback`, state));
+  const res = NextResponse.redirect(authorizeUrl(stravaRedirectUri(req), state));
   res.cookies.set('aor_oauth_state', state, cookieOptions(600));
   const nick = req.nextUrl.searchParams.get('nick');
   const tz = req.nextUrl.searchParams.get('tz');

@@ -72,6 +72,7 @@ SUPABASE_SERVICE_ROLE_KEY=sb_secret_...    # Project Settings → API Keys → S
 STRAVA_CLIENT_ID=...                       # strava.com/settings/api
 STRAVA_CLIENT_SECRET=...
 SESSION_SECRET=...                         # any long random string, signs login cookies
+APP_URL=https://advent-of-running.vercel.app  # Local: http://localhost:3000
 ```
 
 The public values are in the dashboard under **Project Settings → API Keys** (the URL is under **Data API**). They are enough to browse trees.

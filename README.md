@@ -49,12 +49,13 @@ SUPABASE_SERVICE_ROLE_KEY=sb_secret_...
 STRAVA_CLIENT_ID=...
 STRAVA_CLIENT_SECRET=...
 SESSION_SECRET=...                 # any long random string
+APP_URL=http://localhost:3000      # Vercel: https://advent-of-running.vercel.app
 
 # Vercel: leave unset so production stays on December
 NEXT_PUBLIC_ADVENT_MONTH=current   # optional, local only
 ```
 
-The Strava app at [strava.com/settings/api](https://www.strava.com/settings/api) must have `localhost` as its Authorization Callback Domain for local login. Until Strava approves the app, only its owner can connect.
+The Strava app at [strava.com/settings/api](https://www.strava.com/settings/api) must have **Authorization Callback Domain** `advent-of-running.vercel.app` (no `https://`, no path). `localhost` is always allowed, so local login still works. Until Strava approves the app, only its owner can connect.
 
 ## Database
 
@@ -70,7 +71,7 @@ Supabase setup, migrations and how to look at the data: see [supabase/README.md]
 
 ## Deploy on Vercel
 
-Every push to `main` redeploys. Set the keys marked `Vercel: yes` in `.env.example` under **Project → Settings → Environment Variables** (Production; also Preview if you want login on preview deploys). Leave `NEXT_PUBLIC_ADVENT_MONTH` unset so the calendar runs in December. For login on the live site, set the Strava callback domain to `advent-of-running.vercel.app`.
+Every push to `main` redeploys. Set the keys marked `Vercel: yes` in `.env.example` under **Project → Settings → Environment Variables** (Production; also Preview if you want login on preview deploys). Leave `NEXT_PUBLIC_ADVENT_MONTH` unset so the calendar runs in December. Set `APP_URL=https://advent-of-running.vercel.app` so Strava always gets that callback, not a preview host.
 
 When merging `develop` into `main`, use **Create a merge commit**, not squash, to avoid conflicts on the next merge.
 
