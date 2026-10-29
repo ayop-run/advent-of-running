@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useRef, useState } from 'react';
 import { ChevronIcon } from '@/components/Icons';
-import { MusicButton } from '@/components/MusicToggle';
+import PageHeader from '@/components/PageHeader';
 import Sprite from '@/components/Sprite';
 import { getMe, nicknameAvailable, saveProfile, stravaLoginUrl, type Me, type ProfileError } from '@/lib/me';
 import { checkNickname, cleanNickname, type NicknameCheck } from '@/lib/nickname';
@@ -104,21 +104,20 @@ function SignUpInner() {
 
   return (
     <main className="screen no-nav">
-      <div className="topbar">
-        {step === 0 ? (
-          <Link href="/" className="textlink"><ChevronIcon dir="left" /> Back</Link>
-        ) : (
-          <button type="button" className="textlink" style={{ background: 'none', border: 0, padding: 0, color: 'var(--gold)' }} onClick={() => setStep(step - 1)}>
-            <ChevronIcon dir="left" /> Back
-          </button>
-        )}
-        <MusicButton />
-      </div>
+      <PageHeader
+        title="Sign up"
+        start={
+          step === 0 ? (
+            <Link href="/" className="icon-btn" aria-label="Back" title="Back"><ChevronIcon dir="left" /></Link>
+          ) : (
+            <button type="button" className="icon-btn" aria-label="Back" title="Back" onClick={() => setStep(step - 1)}>
+              <ChevronIcon dir="left" />
+            </button>
+          )
+        }
+      />
 
-      <p className="brand-mark">Advent of Running</p>
-      <h1 className="title">Sign up</h1>
-
-      <ol className="stepper mt16" aria-label={`Step ${step + 1} of ${STEPS.length}: ${STEPS[step]}`}>
+      <ol className="stepper" aria-label={`Step ${step + 1} of ${STEPS.length}: ${STEPS[step]}`}>
         {STEPS.map((s, i) => (
           <li key={s} className={i < step ? 'done' : i === step ? 'now' : ''} aria-current={i === step ? 'step' : undefined}>
             <i />
@@ -172,7 +171,7 @@ function SignUpInner() {
             </span>
           </label>
 
-          <div className="panel quiet row" style={{ padding: '12px 16px' }}>
+          <div className="panel quiet row link-row">
             <Sprite id="gift-box" px={2} style={{ flexShrink: 0 }} />
             <p className="small soft">
               Your link: <strong style={{ color: 'var(--snow)' }}>{host}/t/{nick || 'yourname'}</strong>
@@ -181,7 +180,7 @@ function SignUpInner() {
 
           <button className="btn block" type="submit" aria-busy={checking} disabled={invalid}>Continue</button>
           <p className="center small soft">
-            Already have a tree? <Link href="/login" style={{ fontWeight: 800 }}>Log in</Link>
+            Already have a tree? <a href={stravaLoginUrl()} style={{ fontWeight: 800 }}>Log in with Strava</a>
           </p>
         </form>
       )}

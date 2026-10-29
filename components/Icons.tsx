@@ -25,6 +25,16 @@ export function ChevronIcon({ dir = 'right' }: { dir?: 'right' | 'left' }) {
   );
 }
 
+/** Pixel finger tapping, for "tap this" notes. 12×12 grid at 2px per pixel. */
+export function TapIcon() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 12 12" shapeRendering="crispEdges" aria-hidden="true" style={{ flexShrink: 0 }}>
+      <path d="M5 2h2v3h2v1h2v6H4v-1H3V6h2z" fill="currentColor" />
+      <path d="M3 0h1v1H3zM8 0h1v1H8zM1 2h1v1H1zM10 2h1v1h-1z" fill="var(--gold)" />
+    </svg>
+  );
+}
+
 /** Pixel "share" icon: an arrow out of a box, 12×12 grid at 2px per pixel. */
 export function ShareIcon() {
   return (

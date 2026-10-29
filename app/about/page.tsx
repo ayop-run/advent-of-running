@@ -1,8 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import BackLink from '@/components/BackLink';
 import { ChevronIcon } from '@/components/Icons';
-import { MusicButton } from '@/components/MusicToggle';
+import PageHeader from '@/components/PageHeader';
 import Sprite from '@/components/Sprite';
 
 export const metadata: Metadata = { title: 'About' };
@@ -31,7 +30,7 @@ const STEPS = [
 ];
 
 const RULES = [
-  ['What counts', 'Outdoor, trail and treadmill runs synced from Strava. Manual entries don’t.'],
+  ['What counts', 'Runs, walks and hikes synced from Strava, outdoors or on a treadmill. Manual entries don’t.'],
   ['Daily doors', '1 km opens the day’s door. Doors close at 23:59 in your time zone.'],
   ['Weekly challenges', 'Finish a week’s goal to win a rare ornament. What it is stays a surprise.'],
   ['Giving', 'When you unwrap an ornament, give it straight to a friend. It goes on their tree right away.'],
@@ -42,16 +41,11 @@ const RULES = [
 export default function About() {
   return (
     <main className="screen no-nav">
-      <div className="topbar">
-        <BackLink fallback="/" />
-        <MusicButton />
-      </div>
+      <PageHeader back="/" title="About" />
 
       <div className="center">
         <Sprite id="star-gold" px={4} style={{ margin: '0 auto' }} />
-        <p className="brand-mark mt12">About</p>
-        <h1 className="h1 mt4">Advent of Running</h1>
-        <p className="soft mt8">
+        <p className="soft mt12">
           A cozy running challenge for December. Friends fill your tree with sealed messages, and you
           run every day of Advent to unwrap ornaments of your own.
         </p>
@@ -60,7 +54,7 @@ export default function About() {
       <h2 className="h2 mt32">How it works</h2>
       <ol className="stack mt12" style={{ listStyle: 'none', padding: 0, margin: '12px 0 0', gap: 8 }}>
         {STEPS.map((s, i) => (
-          <li key={s.title} className="panel quiet row" style={{ alignItems: 'flex-start', padding: '14px 16px' }}>
+          <li key={s.title} className="panel quiet row" style={{ alignItems: 'flex-start' }}>
             <Sprite id={s.sprite} px={2} style={{ flexShrink: 0 }} />
             <div className="grow">
               <p className="eyebrow">Step {i + 1}</p>
@@ -90,7 +84,7 @@ export default function About() {
         </span>
       </div>
 
-      <Link href="/ornaments" className="panel quiet row mt24" style={{ color: 'var(--snow)', padding: '12px 16px' }}>
+      <Link href="/ornaments" className="panel quiet row link-row section">
         <Sprite id="snow-globe" px={2} />
         <span className="grow small" style={{ fontWeight: 700 }}>Browse the ornament directory</span>
         <ChevronIcon />

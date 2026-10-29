@@ -11,7 +11,7 @@ export default function DisconnectButton() {
   const [busy, setBusy] = useState(false);
   if (me === undefined) return null;
   if (me === null) {
-    return <a href={stravaLoginUrl()} className="btn block strava mt12">Log in with Strava</a>;
+    return <a href={stravaLoginUrl()} className="btn block strava mt8">Log in with Strava</a>;
   }
 
   const disconnect = async () => {
@@ -24,7 +24,7 @@ export default function DisconnectButton() {
 
   return (
     <>
-      <button className="btn red block mt12" onClick={disconnect} aria-busy={busy} disabled={busy}>Disconnect Strava</button>
+      <button className="btn red block mt8" onClick={disconnect} aria-busy={busy} disabled={busy}>Disconnect Strava</button>
       <p className="center tiny muted mt8">Deletes your tree, ornaments and synced runs.</p>
     </>
   );

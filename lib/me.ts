@@ -95,9 +95,7 @@ export async function deleteAccount(): Promise<boolean> {
   return res.ok;
 }
 
-/** Strava login. Sign-up passes the chosen tree name and time zone along. */
-export const stravaLoginUrl = (signup?: { nick: string; tz: string }) =>
-  signup ? `/api/strava/connect?${new URLSearchParams(signup)}` : '/api/strava/connect';
+export { stravaLoginUrl } from './login';
 
 /** Sign-up: whether this tree name is free (your own counts as free), or null if it couldn't be checked. */
 export async function nicknameAvailable(nick: string): Promise<boolean | null> {

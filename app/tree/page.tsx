@@ -8,7 +8,8 @@ import OrnamentSheet from '@/components/OrnamentSheet';
 import PictureSheet from '@/components/PictureSheet';
 import PixelTree, { Avatar } from '@/components/PixelTree';
 import { CameraIcon, ChevronIcon, ShareIcon } from '@/components/Icons';
-import { MusicButton } from '@/components/MusicToggle';
+import PageHeader from '@/components/PageHeader';
+import Sk from '@/components/Skeleton';
 import { avatarSrc } from '@/lib/avatar';
 import { getTree, type Hung, type Tree } from '@/lib/data';
 import { myNickname, useMe } from '@/lib/me';
@@ -51,39 +52,73 @@ export default function MyTree() {
 
   return (
     <main className="screen">
-      <div className="topbar">
-        <div>
-          <p className="brand-mark">Advent of Running</p>
-          <div className="row" style={{ gap: 6, minWidth: 0 }}>
-            <Avatar owner={owner} size={24} />
-            <h1 className="title clip">{displayName}&apos;s tree</h1>
-          </div>
-        </div>
-        <div className="topbar-end">
-          <button type="button" className="icon-btn" onClick={() => setPicture(true)} aria-label="Picture of my tree" title="Picture of my tree" disabled={!tree}>
-            <CameraIcon />
-          </button>
-          <button type="button" className="icon-btn" onClick={share} aria-label="Share my tree" title="Share my tree">
-            <ShareIcon />
-          </button>
-          <MusicButton />
-        </div>
-      </div>
+      <PageHeader
+        title={
+          // until we know who you are, a placeholder: never a flash of someone else's name
+          account === undefined ? (
+            <div className="row" style={{ gap: 6, height: 28 }} aria-busy="true">
+              <Sk w={24} h={24} />
+              <Sk w={150} h={20} />
+            </div>
+          ) : (
+            <div className="row loaded" style={{ gap: 6, minWidth: 0 }}>
+              <Avatar owner={owner} size={24} />
+              <h1 className="title clip">{displayName}&apos;s tree</h1>
+            </div>
+          )
+        }
+      >
+        <button type="button" className="icon-btn" onClick={() => setPicture(true)} aria-label="Picture of my tree" title="Picture of my tree" disabled={!tree}>
+          <CameraIcon />
+        </button>
+        <button type="button" className="icon-btn" onClick={share} aria-label="Share my tree" title="Share my tree">
+          <ShareIcon />
+        </button>
+      </PageHeader>
 
       <div className="countdown-strip">
         <span className="eyebrow">Messages open in</span>
         <CountdownTiles />
       </div>
 
-      {tree && (
-        <div className="tree-stage">
-          <PixelTree ornaments={tree.ornaments} owner={owner} onSelect={setOpen} label={`Your tree with ${tree.ornaments.length} sealed ornaments`} />
-          <p className="center small soft mt12">
-            <strong style={{ color: 'var(--snow)' }}>{tree.ornaments.length} sealed ornaments</strong> from friends. Names and messages unlock on Christmas.
-          </p>
-          <p className="center mt4"><Link href="/friends" className="textlink" style={{ fontSize: 14 }}>Ask friends to hang one <ChevronIcon /></Link></p>
+      {/* the tree stands in place, dimmed, while its ornaments load */}
+      <div className="tree-stage" aria-busy={!tree}>
+        <div className={tree ? undefined : 'tree-waiting'} style={account === undefined ? { paddingBottom: 30 } : undefined}>
+          <PixelTree
+            ornaments={tree?.ornaments ?? []}
+            owner={account === undefined ? undefined : owner}
+            onSelect={setOpen}
+            label={`Your tree with ${tree?.ornaments.length ?? 0} sealed ornaments`}
+            decorative={!tree}
+          />
         </div>
-      )}
+        {tree ? (
+          <div className="loaded">
+            {/* everyone hangs one ornament per tree, so ornaments are friends */}
+            <p className="center small soft mt12">
+              <strong style={{ color: 'var(--snow)' }}>
+                {tree.ornaments.length === 0
+                  ? 'Your tree is waiting for its first ornament.'
+                  : tree.ornaments.length === 1
+                    ? 'A friend hung a little wish on your tree.'
+                    : `${tree.ornaments.length} friends are thinking of you.`}
+              </strong>
+              <br />
+              {tree.ornaments.length === 0 ? 'Each one hides a note from a friend.' : 'Their names and notes stay wrapped.'}
+              <br />
+              Opens on Christmas morning.
+            </p>
+            <p className="center mt4"><Link href="/friends" className="textlink" style={{ fontSize: 14 }}>Ask friends to hang one <ChevronIcon /></Link></p>
+          </div>
+        ) : (
+          <div className="mt12" style={{ display: 'grid', justifyItems: 'center', gap: 8 }}>
+            <Sk w={230} h={14} />
+            <Sk w={210} h={12} />
+            <Sk w={170} h={12} />
+            <Sk w={150} h={14} className="mt4" />
+          </div>
+        )}
+      </div>
 
       {open && (
         <OrnamentSheet

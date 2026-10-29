@@ -2,33 +2,43 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import Sk from '@/components/Skeleton';
 import { DOORS } from '@/lib/calendar';
 import { getProgress } from '@/lib/data';
 import { getFriends } from '@/lib/friends';
 
+const TILES = [
+  { label: 'Ornaments given', href: '/me/given' },
+  { label: 'Days run' },
+  { label: 'Friends' },
+];
+
 /** Ornaments given, days run and friends, from your calendar (or the demo's). */
 export default function MeStats() {
-  const [stats, setStats] = useState<{ label: string; value: string; href?: string }[] | null>(null);
+  // one value per tile; null while loading
+  const [values, setValues] = useState<string[] | null>(null);
   useEffect(() => {
     Promise.all([getProgress(), getFriends()]).then(([res, friends]) => {
-      if (!('progress' in res)) return;
+      if (!('progress' in res)) return setValues(['–', '–', `${friends.length}`]);
       const p = res.progress;
       const daysSoFar = Math.min(Math.max(p.today - (p.doors[p.today - 1] === 'today' ? 1 : 0), 0), DOORS);
-      setStats([
-        { label: 'Ornaments given', value: `${Object.keys(p.given).length}`, href: '/me/given' },
-        { label: 'Days run', value: `${p.doors.filter((s) => s === 'opened').length}/${daysSoFar}` },
-        { label: 'Friends', value: `${friends.length}` },
-      ]);
+      setValues([`${Object.keys(p.given).length}`, `${p.doors.filter((s) => s === 'opened').length}/${daysSoFar}`, `${friends.length}`]);
     });
   }, []);
 
+  // the labels show right away and only the numbers wait, so the tiles never change height
   return (
-    <div className="steps mt16" aria-busy={!stats}>
-      {(stats ?? []).map((s) => {
-        const body = (<><b>{s.value}</b><span>{s.label}</span></>);
-        return s.href
-          ? <Link key={s.label} href={s.href} className="step link">{body}</Link>
-          : <div key={s.label} className="step">{body}</div>;
+    <div className="steps mt12" aria-busy={!values}>
+      {TILES.map((t, i) => {
+        const body = (
+          <>
+            {values ? <b className="loaded">{values[i]}</b> : <b><Sk inline w="1.6em" h="1em" style={{ verticalAlign: 'top' }} /></b>}
+            <span>{t.label}</span>
+          </>
+        );
+        return t.href && values
+          ? <Link key={t.label} href={t.href} className="step link">{body}</Link>
+          : <div key={t.label} className={`step${t.href ? ' link' : ''}`}>{body}</div>;
       })}
     </div>
   );

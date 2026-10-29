@@ -6,8 +6,8 @@ import { ChevronIcon } from '@/components/Icons';
 import { canGoBack, willReplace } from '@/components/NavHistory';
 
 /**
- * Goes back to the previous page of this app, or to `fallback` when there isn't one
- * (opened from a link, a new tab or another site).
+ * The back arrow at the start of the top bar. Goes back to the previous page of this app,
+ * or to `fallback` when there isn't one (opened from a link, a new tab or another site).
  */
 export default function BackLink({ fallback = '/', label = 'Back' }: { fallback?: string; label?: string }) {
   const router = useRouter();
@@ -15,7 +15,9 @@ export default function BackLink({ fallback = '/', label = 'Back' }: { fallback?
     <Link
       href={fallback}
       replace
-      className="textlink"
+      className="icon-btn"
+      aria-label={label}
+      title={label}
       onClick={(e) => {
         if (canGoBack()) {
           e.preventDefault();
@@ -23,7 +25,7 @@ export default function BackLink({ fallback = '/', label = 'Back' }: { fallback?
         } else willReplace();
       }}
     >
-      <ChevronIcon dir="left" /> {label}
+      <ChevronIcon dir="left" />
     </Link>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { getMe } from '@/lib/me';
+import Sk from './Skeleton';
 
 /** The runner's settings. */
 export default function MeSettings() {
@@ -12,10 +13,10 @@ export default function MeSettings() {
   }, []);
 
   return (
-    <div className="panel quiet flush mt12">
+    <div className="panel quiet flush">
       <div className="setting">
         <p className="setting-title">Time zone</p>
-        <p className="setting-help">{tz || 'Detecting…'} · your doors close at 23:59 and your tree opens at midnight on December 25 here.</p>
+        <p className="setting-help">{tz || <Sk inline w={110} h={12} />} · your doors close at 23:59 and your tree opens at midnight on December 25 here.</p>
       </div>
     </div>
   );

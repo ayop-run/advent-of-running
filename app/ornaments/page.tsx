@@ -2,8 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import BackLink from '@/components/BackLink';
-import { MusicButton } from '@/components/MusicToggle';
+import PageHeader from '@/components/PageHeader';
 import Sprite from '@/components/Sprite';
 import SpriteFx from '@/components/SpriteFx';
 import { animFor, animName, useBump } from '@/components/useBump';
@@ -31,15 +30,9 @@ export default function OrnamentDirectory() {
 
   return (
     <main className="screen no-nav">
-      <div className="topbar">
-        <BackLink fallback="/me" />
-        <MusicButton />
-      </div>
+      <PageHeader back="/me" title="Ornaments" />
 
-      <p className="brand-mark">Advent of Running</p>
-      <h1 className="title">Ornaments</h1>
-
-      <section className="panel gold mt16">
+      <section className="panel gold">
         <div className="panel-head">
           <p className="eyebrow" style={{ color: 'var(--gold)' }}>The collection</p>
           <span className="pix" style={{ color: 'var(--gold)' }}>{ORNAMENTS.length}</span>

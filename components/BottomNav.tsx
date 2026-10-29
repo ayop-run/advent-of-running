@@ -22,10 +22,10 @@ const TABS = [
 export default function BottomNav() {
   const path = usePathname();
   const router = useRouter();
-  // the nav only appears on member pages: logged-out visitors go to log in first
+  // the nav only appears on member pages: logged-out visitors go to the start page to log in
   useEffect(() => {
     getMe().then((me) => {
-      if (!me && isLoggedOut()) router.replace('/login');
+      if (!me && isLoggedOut()) router.replace('/');
       else markInApp();
     });
   }, [router]);

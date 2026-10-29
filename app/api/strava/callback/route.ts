@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
   const url = req.nextUrl;
   const origin = appOrigin(req);
   const fail = (reason: string) => {
-    const res = NextResponse.redirect(new URL(`/login?error=${reason}`, origin));
+    const res = NextResponse.redirect(new URL(`/?login_error=${reason}`, origin));
     res.cookies.set('aor_oauth_state', '', cookieOptions(0));
     return res;
   };

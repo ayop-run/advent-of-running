@@ -2,7 +2,8 @@ import { BASIC } from './ornaments';
 
 /**
  * Advent calendar rules, shared by the server (computing a runner's progress from synced
- * Strava runs) and the pages. Outdoor, trail and treadmill runs count; manual entries don't.
+ * Strava runs) and the pages. Runs (outdoor, trail, treadmill), walks and hikes all count as
+ * runs; manual entries don't.
  *
  * Rules: every door opens with 1 km run that day. A missed door N can be caught up on a later
  * day by running N km in one go on top of that day's 1 km (missed door 6 → 6 km run, 7 km that

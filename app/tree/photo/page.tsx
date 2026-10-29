@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import BackLink from '@/components/BackLink';
+import PageHeader from '@/components/PageHeader';
 import { getTree, type Hung } from '@/lib/data';
 import { avatarSrc } from '@/lib/avatar';
 import { getMe, myNickname } from '@/lib/me';
@@ -70,13 +70,9 @@ export default function PhotoBooth() {
 
   return (
     <main className="screen no-nav">
-      <div className="topbar">
-        <BackLink fallback="/tree" />
-      </div>
-      <p className="brand-mark">Advent of Running</p>
-      <h1 className="title">Photo with your tree</h1>
+      <PageHeader back="/tree" title="Photo with your tree" />
 
-      <div className="booth mt16">
+      <div className="booth">
         <div className="booth-view" hidden={state !== 'live'}>
           <video ref={video} playsInline muted />
           <canvas ref={overlay} className="booth-tree" aria-hidden="true" />

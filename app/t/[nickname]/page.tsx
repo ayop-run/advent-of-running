@@ -3,11 +3,11 @@
 import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import BackLink from '@/components/BackLink';
 import BottomNav from '@/components/BottomNav';
 import OrnamentSheet from '@/components/OrnamentSheet';
-import { MusicButton } from '@/components/MusicToggle';
+import PageHeader from '@/components/PageHeader';
 import PixelTree from '@/components/PixelTree';
+import Sk from '@/components/Skeleton';
 import Sprite from '@/components/Sprite';
 import { getTree, type Hung, type Tree } from '@/lib/data';
 import { BY_ID } from '@/lib/ornaments';
@@ -40,24 +40,50 @@ export default function FriendTree() {
 
   return (
     <main className={`screen${member ? '' : ' no-nav'}`}>
-      <div className="topbar">
-        {member ? <BackLink fallback="/friends" /> : <Link href="/" className="brand">Advent of Running</Link>}
-        <MusicButton />
-      </div>
+      {/* members get a back arrow; guests from a shared link land here first, so no way back */}
+      <PageHeader
+        back={member ? '/friends' : undefined}
+        title={
+          tree ? (
+            <h1 className="title loaded">{tree.exists ? `${tree.displayName}'s tree` : 'Tree not found'}</h1>
+          ) : (
+            <Sk w={150} h={22} />
+          )
+        }
+      />
+
+      {!tree && (
+        <div aria-busy="true">
+          <div style={{ display: 'grid', justifyItems: 'center', gap: 8 }}>
+            <Sk w={220} h={14} />
+            <Sk w={260} h={14} />
+          </div>
+          <div className="tree-stage tree-waiting">
+            <PixelTree ornaments={[]} label="" decorative />
+          </div>
+        </div>
+      )}
 
       {tree && !tree.exists && (
-        <div className="center mt24">
-          <h1 className="title">No tree called “{nickname}”</h1>
+        <div className="center mt16 loaded">
+          <h2 className="h2">No tree called “{nickname}”</h2>
           <p className="soft mt8">Check the spelling of the link, or ask your friend to send it again.</p>
         </div>
       )}
 
       {tree?.exists && (
         <>
-          <h1 className="title center mt8">
-            {tree.ornaments.length === 0 ? `Be the first on ${tree.displayName}'s tree` : `${tree.ornaments.length} sealed ornaments so far`}
-          </h1>
-          <p className="small muted center mt4">Every message stays hidden until Christmas morning.</p>
+          <p className="small soft center loaded">
+            <strong style={{ color: 'var(--snow)' }}>
+              {tree.ornaments.length === 0
+                ? `Be the first to hang one for ${tree.displayName}.`
+                : tree.ornaments.length === 1
+                  ? '1 friend has hung an ornament.'
+                  : `${tree.ornaments.length} friends have hung an ornament.`}
+            </strong>
+            <br />
+            Every message stays hidden until Christmas morning.
+          </p>
           <div className="tree-stage">
             <PixelTree
               ornaments={tree.ornaments}

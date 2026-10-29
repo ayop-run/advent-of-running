@@ -3,10 +3,10 @@
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
-import BackLink from '@/components/BackLink';
 import BottomNav from '@/components/BottomNav';
-import { MusicButton } from '@/components/MusicToggle';
+import PageHeader from '@/components/PageHeader';
 import { Avatar } from '@/components/PixelTree';
+import Sk from '@/components/Skeleton';
 import Sprite from '@/components/Sprite';
 import { canGiveTo, friendNote, getFriends, type Friend } from '@/lib/friends';
 import { DEMO_NICKNAME, getMe, myNickname } from '@/lib/me';
@@ -20,12 +20,16 @@ function FriendsInner() {
 
   const [me, setMe] = useState(DEMO_NICKNAME);
   const [friends, setFriends] = useState<Friend[]>([]);
+  const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState('');
   const [asked, setAsked] = useState<string[]>([]);
   const [incoming, setIncoming] = useState<string[]>([]);
   useEffect(() => {
     getMe().then((m) => setMe(myNickname(m)));
-    getFriends().then(setFriends);
+    getFriends().then((list) => {
+      setFriends(list);
+      setLoading(false);
+    });
     setAsked(getAsked());
     incomingRequests().then(setIncoming);
   }, []);
@@ -62,31 +66,28 @@ function FriendsInner() {
 
   return (
     <main className="screen">
-      <div className="topbar">
-        <BackLink fallback={giving ? '/gift' : '/me'} />
-        <MusicButton />
-      </div>
-      <p className="brand-mark">Advent of Running</p>
-      <h1 className="title">{giving ? 'Give it to…' : 'Friends'}</h1>
+      <PageHeader back={giving ? '/gift' : '/me'} title={giving ? 'Give it to…' : 'Friends'} />
 
-      {giving && (
+      {giving ? (
         <div className="panel gold row">
           <Sprite id={giving.id} px={2} style={{ flexShrink: 0 }} />
           <p className="small soft">Pick who gets your <strong style={{ color: 'var(--snow)' }}>{giving.name.replace('Advent Runner: ', '')}</strong>. You can give one ornament to each friend&apos;s tree.</p>
         </div>
+      ) : (
+        <p className="small soft">Everyone on Advent of Running. People you swap ornaments with come first.</p>
       )}
 
       {!giving && incoming.length > 0 && (
-        <section className="mt24" aria-labelledby="requests">
-          <div className="panel-head">
+        <section className="section" aria-labelledby="requests">
+          <div className="panel-head section-head">
             <h2 id="requests" className="h2">Requests</h2>
             <span className="num" style={{ color: 'var(--gold)' }}>{incoming.length}</span>
           </div>
-          <ul className="stack mt12" style={{ listStyle: 'none', padding: 0, margin: '12px 0 0', gap: 8 }}>
+          <ul className="list">
             {incoming.map((nick) => {
               const who = nick.charAt(0).toUpperCase() + nick.slice(1);
               return (
-                <li key={nick} className="panel gold row" style={{ padding: '10px 12px 10px 12px' }}>
+                <li key={nick} className="panel gold row item">
                   <Avatar owner={{ name: who }} size={38} />
                   <div className="grow" style={{ minWidth: 0 }}>
                     <div style={{ fontWeight: 800 }}>{who}</div>
@@ -100,15 +101,23 @@ function FriendsInner() {
         </section>
       )}
 
-      <div className="panel-head mt24">
-        <h2 className="h2">Runners</h2>
-        <span className="num muted">{shown.length}</span>
-      </div>
-      <p className="small soft mt4">Everyone on Advent of Running. People you swap ornaments with come first.</p>
+      {!giving && incoming.length > 0 && (
+        <div className="panel-head section">
+          <h2 className="h2">Runners</h2>
+          <span className="num muted">{shown.length}</span>
+        </div>
+      )}
 
-      <ul className="stack mt12" style={{ listStyle: 'none', padding: 0, margin: '12px 0 0', gap: 8 }}>
+      <ul className="list mt12" aria-busy={loading}>
+        {loading && [0, 1, 2, 3].map((i) => (
+          <li key={i} className="panel quiet row item">
+            <Sk w={38} h={38} />
+            <div className="grow"><Sk w="45%" h={14} /><Sk w="70%" h={12} className="mt8" /></div>
+            <Sk w={64} h={36} />
+          </li>
+        ))}
         {shown.map((f) => (
-          <li key={f.nickname} className="panel quiet row" style={{ padding: '12px 12px 12px 14px' }}>
+          <li key={f.nickname} className="panel quiet row item loaded">
             <Avatar owner={{ name: f.name, avatarUrl: f.avatarUrl ?? undefined }} size={38} />
             <div className="grow" style={{ minWidth: 0 }}>
               <div style={{ fontWeight: 800 }}>{f.name}</div>
@@ -122,10 +131,10 @@ function FriendsInner() {
             {blocked(f.nickname) ? <span className="tag">Has yours</span> : <Link href={visitHref(f.nickname)} className="btn sm">{action}</Link>}
           </li>
         ))}
-        {shown.length === 0 && <li className="small soft">Nobody else is here yet. Invite your running friends below.</li>}
+        {!loading && shown.length === 0 && <li className="small soft loaded">Nobody else is here yet. Invite your running friends below.</li>}
       </ul>
 
-      <section className="panel quiet mt24" style={{ padding: '14px 16px' }}>
+      <section className="panel quiet section">
         <div className="row">
           <Sprite id="bauble-snow" px={2} style={{ flexShrink: 0 }} />
           <div className="grow">

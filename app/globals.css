@@ -102,7 +102,24 @@ p { margin: 0; }
   padding: 0 20px calc(96px + env(safe-area-inset-bottom));
 }
 .screen.no-nav { padding-bottom: calc(72px + env(safe-area-inset-bottom)); } /* clears the snow drifts */
-.topbar { display: flex; justify-content: space-between; align-items: center; min-height: 68px; gap: 12px; }
+.topbar { display: flex; justify-content: space-between; align-items: center; min-height: 68px; gap: 12px; margin-bottom: 8px; }
+/* back arrow + page title, one line; long titles end in "…" */
+.topbar-title { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.topbar-heading { min-width: 0; }
+.topbar-heading .title { overflow: hidden; text-overflow: ellipsis; }
+
+/*
+ * Spacing scale, used the same way on every page:
+ *   8px  header → first content, cards in a list, buttons in a stack
+ *   12px section heading → its content
+ *   4px  heading → its one-line description
+ *   32px section → section
+ */
+.section { margin-top: 32px; }
+.section-head + * { margin-top: 12px; }
+.section-head + .lead { margin-top: 4px; }
+.lead + * { margin-top: 12px; }
+.list { display: flex; flex-direction: column; gap: 8px; list-style: none; padding: 0; margin: 0; }
 .brand { font-family: var(--display); font-weight: 600; font-size: var(--fs-pixel); color: var(--snow); letter-spacing: .01em; }
 .brand:hover { color: var(--snow); }
 .title { font-family: var(--display); font-weight: 600; font-size: var(--fs-pixel); line-height: 1.1; margin: 0; text-shadow: 0 2px 0 rgba(7,13,31,.35); }
@@ -125,11 +142,19 @@ p { margin: 0; }
 .mt4 { margin-top: 4px; } .mt8 { margin-top: 8px; } .mt12 { margin-top: 12px; } .mt16 { margin-top: 16px; } .mt24 { margin-top: 24px; } .mt32 { margin-top: 32px; }
 
 /* ---------- pixel panels ---------- */
-.panel { background: var(--panel); clip-path: var(--px8); padding: 18px; }
-.panel.gold { border: 4px solid transparent; padding: 14px; background: linear-gradient(var(--panel), var(--panel)) padding-box, var(--gold) border-box; }
+/* every panel has 16px inside, borders included */
+.panel { background: var(--panel); clip-path: var(--px8); padding: 16px; }
+.panel.gold { border: 4px solid transparent; padding: 12px; background: linear-gradient(var(--panel), var(--panel)) padding-box, var(--gold) border-box; }
+/* rows: a link with an icon and a chevron, or a person in a list */
+.panel.link-row { padding: 12px 16px; color: var(--snow); }
+.panel.item { padding: 12px; }
+.panel.gold.item { padding: 8px; }
 .panel.quiet { background: rgba(26,42,79,.6); }
-.panel.hint { display: flex; gap: 12px; align-items: flex-start; border: 2px solid transparent; padding: 14px 16px; background: linear-gradient(#1b3358, #1b3358) padding-box, rgba(143,211,255,.45) border-box; }
+.panel.hint { display: flex; gap: 12px; align-items: flex-start; border: 2px solid transparent; padding: 14px; background: linear-gradient(#1b3358, #1b3358) padding-box, rgba(143,211,255,.45) border-box; }
 .panel.flush { padding: 0 16px; }
+/* a one-line tip: hint colours, tighter, icon centred on the text */
+.panel.hint.note { align-items: center; padding: 10px 14px; color: var(--frost); } /* a one-liner stays compact */
+.panel.hint.note p { margin: 0; line-height: 1.4; color: var(--snow); }
 .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .panel-head > .num, .panel-head > .pix { white-space: nowrap; }
 .brand-mark { font-weight: 800; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--gold); margin-bottom: 2px; }
@@ -377,7 +402,43 @@ button.orn:focus-visible > svg { outline: 4px solid var(--frost); outline-offset
 .pick.empty { color: #6f7fa6; justify-content: center; min-height: 100px; box-shadow: inset 0 0 0 2px rgba(47,69,115,.6); background: transparent; }
 
 /* ---------- calendar ---------- */
-.doors { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
+/* one row per bonus week, so the doors line up with the weekly totals */
+.doors { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+/* taller than wide: number on top, ornament in the middle, km underneath */
+.doors .door { aspect-ratio: 3 / 4; padding: 18px 0 14px; }
+.week-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.week-head .eyebrow { color: var(--soft); }
+.week-dates { color: var(--muted); font-weight: 700; letter-spacing: 0; text-transform: none; }
+.week-km { display: inline-flex; align-items: center; gap: 8px; font-weight: 800; font-size: 13px; font-variant-numeric: tabular-nums; color: var(--snow); white-space: nowrap; }
+.week-won { padding: 2px 6px; clip-path: var(--px4); background: var(--gold); color: #2b1d07; font-size: 11px; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; list-style: none; padding: 0; margin: 0; font-size: 12px; font-weight: 700; color: var(--muted); }
+.legend li { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 12px; height: 12px; background: rgba(26,42,79,.55); }
+.legend i.opened { background: var(--panel-2); box-shadow: inset 0 3px 0 var(--snow); }
+.legend i.today { background: var(--night-deep); box-shadow: inset 0 0 0 2px var(--gold); }
+.legend i.missed { background: transparent; box-shadow: inset 0 0 0 2px var(--line); }
+
+/* distance: December total, a bar per day, and today / this week / best day */
+.dist-total { display: flex; align-items: baseline; gap: 8px; }
+/* numbers use the body font: in the pixel font a 5 reads like an 8 */
+.dist-total b { font: 800 36px/1 var(--body); font-variant-numeric: tabular-nums; color: var(--gold); text-shadow: 0 2px 0 rgba(7,13,31,.35); }
+.dist-total .small { font-weight: 800; }
+.bars { position: relative; display: grid; grid-template-columns: repeat(24, minmax(0, 1fr)); gap: 2px; align-items: end; height: 64px; }
+/* the 1 km goal, a dotted pixel line behind the bars */
+.bars::before { content: ''; position: absolute; left: 0; right: 0; bottom: var(--goal); height: 2px; background: repeating-linear-gradient(90deg, rgba(255,247,236,.35) 0 4px, transparent 4px 8px); }
+.bars i { position: relative; display: block; height: 2px; background: var(--line); }
+.bars i.met { background: var(--frost); box-shadow: inset 0 2px 0 rgba(255,255,255,.45); }
+.bars i.short { background: #6f7fa6; }
+.bars i.today { background: var(--gold); box-shadow: inset 0 2px 0 rgba(255,255,255,.45); }
+.bars i.future { background: rgba(47,69,115,.6); }
+.bars-axis { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; font-weight: 700; color: var(--muted); }
+.goal-key { display: inline-flex; align-items: center; gap: 6px; }
+.goal-key::before { content: ''; width: 16px; height: 2px; background: repeating-linear-gradient(90deg, rgba(255,247,236,.5) 0 4px, transparent 4px 8px); }
+.dist-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 2px; padding-top: 12px; border-top: 2px solid rgba(47,69,115,.6); }
+.dist-row > div { display: flex; flex-direction: column; gap: 6px; }
+.dist-row > div + div { padding-left: 10px; border-left: 2px solid rgba(47,69,115,.6); }
+.dist-row b { font: 800 18px/1 var(--body); font-variant-numeric: tabular-nums; color: var(--snow); white-space: nowrap; }
+.dist-row span { font-size: 12px; font-weight: 700; color: var(--muted); }
 .door {
   position: relative; aspect-ratio: 1; display: grid; place-items: center; padding: 8px 0 0; border: 0; clip-path: var(--px4);
   background: rgba(26,42,79,.55); color: var(--muted); transition: transform .12s ease;
@@ -387,9 +448,10 @@ button.orn:focus-visible > svg { outline: 4px solid var(--frost); outline-offset
   position: absolute; left: 0; top: 0; min-width: 18px; padding: 2px 4px; line-height: 1;
   font: 800 11px var(--body); font-variant-numeric: tabular-nums; color: var(--muted); background: rgba(10,17,36,.6);
 }
+/* km strip along the bottom, under the ornament */
 .door .km {
-  position: absolute; right: 0; bottom: 0; padding: 1px 3px; line-height: 1;
-  font: 800 9px var(--body); font-variant-numeric: tabular-nums; color: var(--snow); background: rgba(10,17,36,.6);
+  position: absolute; left: 0; right: 0; bottom: 0; padding: 2px 0 3px; line-height: 1; text-align: center; white-space: nowrap;
+  font: 800 9px var(--body); font-variant-numeric: tabular-nums; color: var(--snow); background: rgba(10,17,36,.55);
 }
 /* opened later by a long run: says which day */
 .door .km.caught { color: #2b1d07; background: var(--gold); }
@@ -592,3 +654,21 @@ a.list-row:hover { color: var(--gold); }
 }
 .launch-countdown .pix { font-size: 28px; color: var(--gold); }
 .launch-countdown .unit { font-size: 11px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+
+/* ---------- loading ---------- */
+/* placeholders in the shape of what's coming, with a slow stepped (pixel) shimmer */
+.sk { position: relative; display: block; overflow: hidden; clip-path: var(--px4); background: rgba(47,69,115,.45); }
+.sk::after {
+  content: ''; position: absolute; inset: 0; transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255,247,236,.09) 50%, transparent);
+  animation: shimmer 1.6s steps(16) infinite;
+}
+.sk.inline { display: inline-block; vertical-align: middle; }
+.sk.round { clip-path: none; border-radius: 0; }
+.doors .sk { aspect-ratio: 3 / 4; }
+@keyframes shimmer { to { transform: translateX(100%); } }
+/* what just arrived fades in instead of popping (opacity only, so fixed sheets inside still work) */
+.loaded { animation: fade .3s ease-out both; }
+/* the tree stands in place while its ornaments load */
+.tree-waiting { opacity: .45; filter: saturate(.6); transition: opacity .3s ease, filter .3s ease; }
+@media (prefers-reduced-motion: reduce) { .sk::after, .loaded { animation: none; } .tree-waiting { transition: none; } }

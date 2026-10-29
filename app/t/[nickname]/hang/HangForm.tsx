@@ -2,8 +2,8 @@
 
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import BackLink from '@/components/BackLink';
-import { MusicButton } from '@/components/MusicToggle';
+import PageHeader from '@/components/PageHeader';
+import Sk from '@/components/Skeleton';
 import Sprite from '@/components/Sprite';
 import SpriteFx from '@/components/SpriteFx';
 import { useBump } from '@/components/useBump';
@@ -100,20 +100,30 @@ export default function HangForm() {
   };
   const preview = of(pick, pick);
 
-  if (!ready) return <main className="screen no-nav" aria-busy="true" />;
+  if (!ready) {
+    return (
+      <main className="screen no-nav" aria-busy="true">
+        <PageHeader back={`/t/${nickname}`} title={<Sk w={200} h={22} />} />
+        <div className="row" style={{ alignItems: 'stretch' }}>
+          <Sk w={88} h={88} />
+          <Sk h={88} style={{ flex: 1 }} />
+        </div>
+        <Sk w={120} h={14} className="mt24" />
+        <Sk h={100} className="mt8" />
+        <Sk w={120} h={14} className="mt24" />
+        <Sk h={120} className="mt8" />
+      </main>
+    );
+  }
 
   if (already && !editing) {
     const o = BY_ID[already.ornamentId];
     return (
       <main className="screen no-nav">
-        <div className="topbar">
-          <BackLink fallback={`/t/${nickname}`} />
-          <MusicButton />
-        </div>
-        <div className="center mt24">
+        <PageHeader back={`/t/${nickname}`} title="One per tree" />
+        <div className="center mt16">
           <div className="showcase"><Sprite id={already.ornamentId} px={4} label={o?.name} /></div>
-          <p className="brand-mark mt16">One per tree</p>
-          <h1 className="title mt4">You already hung one on {name}&apos;s tree</h1>
+          <h2 className="h2 mt16">You already hung one on {name}&apos;s tree</h2>
           <p className="soft mt8">Your {o ? short(o.name) : 'ornament'} is there, sealed until Christmas. Everyone can hang one ornament on each tree.</p>
         </div>
         <Link href={`/t/${nickname}/hang?edit=1`} className="btn block mt32">Edit my message</Link>
@@ -125,17 +135,11 @@ export default function HangForm() {
 
   return (
     <main className="screen no-nav">
-      <div className="topbar">
-        <BackLink fallback={`/t/${nickname}`} />
-        <MusicButton />
-      </div>
-
-      <p className="brand-mark">Advent of Running</p>
-      <h1 className="title">{editing ? 'Edit your ornament' : `Hang on ${name}’s tree`}</h1>
-      {editing && <p className="small soft mt4">You can change it until December 24 at 23:59.</p>}
+      <PageHeader back={`/t/${nickname}`} title={editing ? 'Edit your ornament' : `Hang on ${name}’s tree`} />
+      {editing && <p className="small soft">You can change it until December 24 at 23:59.</p>}
 
       {/* live preview: the ornament and its gift tag, as it will hang */}
-      <section className="hang-preview mt16" aria-label="Preview">
+      <section className={`hang-preview${editing ? ' mt12' : ''}`} aria-label="Preview">
         <div className="hang-art">
           <span key={preview.k} className="bump">
             <span className={preview.anim}><Sprite id={pick} px={4} label={chosen.name} /></span>
