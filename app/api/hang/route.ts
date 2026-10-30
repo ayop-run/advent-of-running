@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/server/db';
-import { editToken, sessionRunnerId, validEditToken } from '@/lib/server/session';
+import { notify } from '@/lib/server/notify';
+import { sessionRunnerId, validEditToken } from '@/lib/server/session';
 import { BY_ID, HINTS } from '@/lib/ornaments';
 
 const str = (v: unknown, max: number) => typeof v === 'string' && v.trim().length > 0 && v.trim().length <= max;
@@ -22,43 +23,39 @@ function closed(timeZone: string) {
 }
 
 /**
- * Hang an ornament. One per tree: a signed-in runner who already hung one gets that one back.
- * Special and rare ornaments must be earned (an unwrapped door or weekly prize, not given yet).
- * Guests get an edit token for their own ornament.
+ * Hang an ornament. Only signed-in runners, and only ornaments they earned by running (an
+ * unwrapped door or weekly prize, not given yet): run → unwrap → give. One per tree: a runner
+ * who already hung one gets that one back.
  */
 export async function POST(req: Request) {
   const b = await req.json().catch(() => null);
   if (!validBody(b)) return NextResponse.json({ error: 'invalid' }, { status: 400 });
   const ornament = BY_ID[b.ornamentId];
   const runnerId = await sessionRunnerId();
+  if (!runnerId) return NextResponse.json({ error: 'sign_in_required' }, { status: 401 });
   const owner = await treeOwner(b.nickname);
   if (!owner) return NextResponse.json({ error: 'tree_not_found' }, { status: 404 });
 
-  if (runnerId) {
-    const { data: existing } = await db()
-      .from('ornaments_hung')
-      .select('id')
-      .eq('tree_owner', owner.id)
-      .eq('from_runner', runnerId)
-      .maybeSingle();
-    if (existing) return NextResponse.json({ id: existing.id, existing: true });
-  }
+  const { data: existing } = await db()
+    .from('ornaments_hung')
+    .select('id')
+    .eq('tree_owner', owner.id)
+    .eq('from_runner', runnerId)
+    .maybeSingle();
+  if (existing) return NextResponse.json({ id: existing.id, existing: true });
 
-  let pouchId: string | null = null;
-  if (ornament.tier !== 'basic') {
-    if (!runnerId) return NextResponse.json({ error: 'not_earned' }, { status: 403 });
-    const { data: slot } = await db()
-      .from('pouch')
-      .select('id')
-      .eq('runner_id', runnerId)
-      .eq('ornament_id', ornament.id)
-      .eq('used', false)
-      .order('earned_on')
-      .limit(1)
-      .maybeSingle();
-    if (!slot) return NextResponse.json({ error: 'not_earned' }, { status: 403 });
-    pouchId = slot.id;
-  }
+  // every ornament comes from a run: a pouch slot that hasn't been given yet
+  const { data: slot } = await db()
+    .from('pouch')
+    .select('id')
+    .eq('runner_id', runnerId)
+    .eq('ornament_id', ornament.id)
+    .eq('used', false)
+    .order('earned_on')
+    .limit(1)
+    .maybeSingle();
+  if (!slot) return NextResponse.json({ error: 'not_earned' }, { status: 403 });
+  const pouchId = slot.id;
 
   const { data, error } = await db().rpc('hang_ornament', {
     nick: b.nickname,
@@ -73,11 +70,15 @@ export async function POST(req: Request) {
     const known = ['tree_not_found', 'sign_in_required', 'hanging_closed'].find((k) => error.message.includes(k));
     return NextResponse.json({ error: known ?? 'unknown' }, { status: known ? 403 : 500 });
   }
-  if (pouchId) await db().from('pouch').update({ used: true, hung_id: data }).eq('id', pouchId);
-  return NextResponse.json({ id: data, editToken: runnerId ? undefined : editToken(data) });
+  await db().from('pouch').update({ used: true, hung_id: data }).eq('id', pouchId);
+  await notify(owner.id, runnerId, 'hung', data);
+  return NextResponse.json({ id: data });
 }
 
-/** Edit your ornament on a tree until hanging closes. An earned ornament stays; free ones can be swapped. */
+/**
+ * Edit the message on your ornament until hanging closes. The ornament itself stays: it was
+ * earned for this tree. Guests who hung one before the rule change still edit with their token.
+ */
 export async function PATCH(req: Request) {
   const b = await req.json().catch(() => null);
   if (!validBody(b)) return NextResponse.json({ error: 'invalid' }, { status: 400 });
@@ -94,10 +95,7 @@ export async function PATCH(req: Request) {
       : { data: null };
   if (!mine) return NextResponse.json({ error: 'not_yours' }, { status: 403 });
 
-  const earned = BY_ID[mine.ornament_id]?.tier !== 'basic';
-  if (earned ? b.ornamentId !== mine.ornament_id : BY_ID[b.ornamentId].tier !== 'basic') {
-    return NextResponse.json({ error: 'not_earned' }, { status: 403 });
-  }
+  if (b.ornamentId !== mine.ornament_id) return NextResponse.json({ error: 'not_earned' }, { status: 403 });
   const { error } = await db()
     .from('ornaments_hung')
     .update({ ornament_id: b.ornamentId, from_name: b.from.trim(), hint: b.hint, message: b.message.trim() })

@@ -5,15 +5,16 @@ import { sessionRunnerId } from '@/lib/server/session';
 export const dynamic = 'force-dynamic';
 
 /**
- * A tree and its sealed ornaments. Messages stay in the database, except the one the
- * signed-in runner hung themself (so they can read and edit it). `real` is false for the
- * seed trees, which signed-out visitors see as the browser demo instead.
+ * A tree and its sealed ornaments. Messages stay in the database and senders show only as an
+ * initial, except on the one the signed-in runner hung themself (so they can read and edit it).
+ * The owner reads everything at /api/christmas. `real` is false for the
+ * seed trees (official accounts like AYOP are real), which signed-out visitors see as the browser demo instead.
  */
 export async function GET(_req: Request, { params }: { params: Promise<{ nickname: string }> }) {
   const nick = (await params).nickname.toLowerCase();
   const { data: owner } = await db()
     .from('runners')
-    .select('id, nickname, display_name, avatar_url, strava_athlete_id')
+    .select('id, nickname, display_name, avatar_url, strava_athlete_id, official')
     .eq('nickname', nick)
     .maybeSingle();
   if (!owner) return NextResponse.json({ tree: null, real: false });
@@ -27,7 +28,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ nicknam
     .order('created_at');
 
   return NextResponse.json({
-    real: owner.strava_athlete_id > 0,
+    real: owner.strava_athlete_id > 0 || owner.official,
     tree: {
       nickname: owner.nickname,
       displayName: owner.display_name,
@@ -37,7 +38,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ nicknam
         return {
           id: r.id,
           ornamentId: r.ornament_id,
-          from: r.from_name,
+          from: mine ? r.from_name : Array.from(r.from_name.trim())[0] ?? '',
           hint: r.hint,
           createdAt: r.created_at,
           mine,

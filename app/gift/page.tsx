@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { Avatar } from '@/components/PixelTree';
+import Sk from '@/components/Skeleton';
 import Sprite from '@/components/Sprite';
 import { DOORS, type Progress } from '@/lib/calendar';
 import { getProgress } from '@/lib/data';
@@ -44,7 +45,20 @@ export default function GiftOpened() {
   const o = gift ? BY_ID[gift.ornamentId] : null;
   const label = gift?.door ? `Door ${gift.door} of ${DOORS}` : 'Weekly prize';
 
-  if (!p) return <main className="screen no-nav" aria-busy="true" />;
+  if (!p) {
+    return (
+      <main className="screen no-nav" aria-busy="true">
+        <div className="topbar"><Sk w={96} h={26} /><Sk w={44} h={18} /></div>
+        <div className="showcase mt8 tree-waiting"><Sprite id="gift-box" px={4} /></div>
+        <div className="mt16" style={{ display: 'grid', justifyItems: 'center', gap: 10 }}>
+          <Sk w={200} h={24} />
+          <Sk w={260} h={14} />
+          <Sk w={220} h={14} />
+        </div>
+        <Sk h={56} className="mt24" />
+      </main>
+    );
+  }
   if (!o) {
     return (
       <main className="screen no-nav">
@@ -93,7 +107,7 @@ export default function GiftOpened() {
           {friends.length === 0 && <p className="small soft mt12">Everyone on your list has one already. Find someone new below.</p>}
           <div className="stack mt12" style={{ gap: 8 }}>
             {friends.map((f) => (
-              <div key={f.nickname} className="panel quiet row" style={{ padding: '12px 12px 12px 14px' }}>
+              <div key={f.nickname} className="panel quiet row item">
                 <Avatar owner={{ name: f.name, avatarUrl: f.avatarUrl ?? undefined }} size={38} />
                 <div className="grow" style={{ minWidth: 0 }}>
                   <div style={{ fontWeight: 800 }}>{f.name}</div>
@@ -103,7 +117,7 @@ export default function GiftOpened() {
               </div>
             ))}
           </div>
-          <Link href={`/friends?give=${o.id}`} className="panel quiet row mt8" style={{ color: 'var(--snow)', padding: '12px 16px' }}>
+          <Link href={`/friends?give=${o.id}`} className="panel quiet row link-row mt8">
             <span className="grow small" style={{ fontWeight: 700 }}>Someone else? See all runners</span>
             <ChevronIcon />
           </Link>

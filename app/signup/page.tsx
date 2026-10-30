@@ -4,52 +4,22 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useRef, useState } from 'react';
 import { ChevronIcon } from '@/components/Icons';
-import { MusicButton } from '@/components/MusicToggle';
+import PageHeader from '@/components/PageHeader';
+import { StravaLogin } from '@/components/Strava';
 import Sprite from '@/components/Sprite';
-import { getMe, nicknameAvailable, saveProfile, stravaLoginUrl, type Me, type ProfileError } from '@/lib/me';
-import { checkNickname, cleanNickname, type NicknameCheck } from '@/lib/nickname';
+import { getMe, saveProfile, stravaLoginUrl, type Me, type ProfileError } from '@/lib/me';
+import { checkNickname, cleanNickname } from '@/lib/nickname';
+import { AVAILABILITY, useAvailability } from '@/lib/useNickname';
 
 const PROFILE_ERROR: Record<ProfileError, string> = {
   nickname_taken: 'That tree name was just taken. Try another.',
   invalid: 'Check your tree name.',
+  timezone_locked: 'Your time zone can’t change during Advent.',
   signed_out: 'Your Strava login expired. Please connect again.',
   unknown: 'Couldn’t save. Please try again.',
 };
 
 const STEPS = ['Tree name', 'Strava', 'Finish'] as const;
-
-type Availability = 'checking' | 'free' | 'taken' | 'error';
-
-/** Checks the tree name against the server as it's typed; `confirm()` waits for a fresh answer. */
-function useAvailability(nick: string, formatOk: boolean) {
-  const [state, setState] = useState<{ nick: string; avail: Availability } | null>(null);
-  const ask = async (name: string) => {
-    const free = await nicknameAvailable(name);
-    const avail: Availability = free === null ? 'error' : free ? 'free' : 'taken';
-    setState((s) => (s?.nick === name ? { nick: name, avail } : s));
-    return avail;
-  };
-  useEffect(() => {
-    if (!formatOk) return setState(null);
-    setState({ nick, avail: 'checking' });
-    const t = setTimeout(() => ask(nick), 350);
-    return () => clearTimeout(t);
-  }, [nick, formatOk]);
-  const avail = state?.nick === nick ? state.avail : formatOk ? 'checking' : null;
-  const confirm = () => {
-    if (avail === 'free') return Promise.resolve<Availability>('free');
-    setState({ nick, avail: 'checking' });
-    return ask(nick);
-  };
-  return { avail, confirm };
-}
-
-const AVAILABILITY: Record<Availability, (nick: string) => NicknameCheck> = {
-  checking: () => ({ ok: false, message: 'Checking…' }),
-  free: () => ({ ok: true, message: 'Looks good, it’s free' }),
-  taken: (nick) => ({ ok: false, message: `“${nick}” is taken. Try another.` }),
-  error: () => ({ ok: false, message: 'Couldn’t check this name. Please try again.' }),
-};
 
 export default function SignUp() {
   return (
@@ -104,21 +74,20 @@ function SignUpInner() {
 
   return (
     <main className="screen no-nav">
-      <div className="topbar">
-        {step === 0 ? (
-          <Link href="/" className="textlink"><ChevronIcon dir="left" /> Back</Link>
-        ) : (
-          <button type="button" className="textlink" style={{ background: 'none', border: 0, padding: 0, color: 'var(--gold)' }} onClick={() => setStep(step - 1)}>
-            <ChevronIcon dir="left" /> Back
-          </button>
-        )}
-        <MusicButton />
-      </div>
+      <PageHeader
+        title="Sign up"
+        start={
+          step === 0 ? (
+            <Link href="/" className="icon-btn" aria-label="Back" title="Back"><ChevronIcon dir="left" /></Link>
+          ) : (
+            <button type="button" className="icon-btn" aria-label="Back" title="Back" onClick={() => setStep(step - 1)}>
+              <ChevronIcon dir="left" />
+            </button>
+          )
+        }
+      />
 
-      <p className="brand-mark">Advent of Running</p>
-      <h1 className="title">Sign up</h1>
-
-      <ol className="stepper mt16" aria-label={`Step ${step + 1} of ${STEPS.length}: ${STEPS[step]}`}>
+      <ol className="stepper" aria-label={`Step ${step + 1} of ${STEPS.length}: ${STEPS[step]}`}>
         {STEPS.map((s, i) => (
           <li key={s} className={i < step ? 'done' : i === step ? 'now' : ''} aria-current={i === step ? 'step' : undefined}>
             <i />
@@ -172,7 +141,7 @@ function SignUpInner() {
             </span>
           </label>
 
-          <div className="panel quiet row" style={{ padding: '12px 16px' }}>
+          <div className="panel quiet row link-row">
             <Sprite id="gift-box" px={2} style={{ flexShrink: 0 }} />
             <p className="small soft">
               Your link: <strong style={{ color: 'var(--snow)' }}>{host}/t/{nick || 'yourname'}</strong>
@@ -181,7 +150,7 @@ function SignUpInner() {
 
           <button className="btn block" type="submit" aria-busy={checking} disabled={invalid}>Continue</button>
           <p className="center small soft">
-            Already have a tree? <Link href="/login" style={{ fontWeight: 800 }}>Log in</Link>
+            Already have a tree? <a href={stravaLoginUrl()} style={{ fontWeight: 800 }}>Log in with Strava</a>
           </p>
         </form>
       )}
@@ -200,7 +169,7 @@ function SignUpInner() {
             {[
               ['We read', 'Your runs from December 1 to 24: distance and date.'],
               ['Friends see', 'Only the ornaments on your tree. Never your runs.'],
-              ['You can leave', 'Disconnect any time. It deletes everything.'],
+              ['You can leave', 'Delete your tree any time from Me. It removes everything.'],
             ].map(([k, v]) => (
               <li key={k} className="list-row small" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 2, padding: '12px 0' }}>
                 <span style={{ fontWeight: 800 }}>{k}</span>
@@ -209,10 +178,7 @@ function SignUpInner() {
             ))}
           </ul>
 
-          {/* Phase 2: replace with Strava's official "Connect with Strava" button artwork. */}
-          <button className="btn block strava" onClick={connectStrava} aria-busy={connecting}>
-            {connecting ? 'Connecting…' : 'Connect with Strava'}
-          </button>
+          <StravaLogin onClick={connectStrava} busy={connecting} />
         </div>
       )}
 
@@ -232,7 +198,7 @@ function SignUpInner() {
               setSaving(false);
               return;
             }
-            const res = await saveProfile({ nickname: nick, timeZone: tz || me.timeZone, hangPolicy: me.hangPolicy, emailOptIn: me.emailOptIn });
+            const res = await saveProfile({ nickname: nick, timeZone: tz || me.timeZone, emailOptIn: me.emailOptIn });
             if ('error' in res) {
               setFailed(res.error);
               setSaving(false);

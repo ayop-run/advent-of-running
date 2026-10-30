@@ -102,7 +102,26 @@ p { margin: 0; }
   padding: 0 20px calc(96px + env(safe-area-inset-bottom));
 }
 .screen.no-nav { padding-bottom: calc(72px + env(safe-area-inset-bottom)); } /* clears the snow drifts */
-.topbar { display: flex; justify-content: space-between; align-items: center; min-height: 68px; gap: 12px; }
+/* roomy screens (tablets, big monitors): a wider page, so the tree can draw at 3× (see useTreeScale) */
+@media (min-width: 600px) and (min-height: 940px) { .screen { max-width: 560px; } }
+.topbar { display: flex; justify-content: space-between; align-items: center; min-height: 68px; gap: 12px; margin-bottom: 8px; }
+/* back arrow + page title, one line; long titles end in "…" */
+.topbar-title { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.topbar-heading { min-width: 0; }
+.topbar-heading .title { overflow: hidden; text-overflow: ellipsis; }
+
+/*
+ * Spacing scale, used the same way on every page:
+ *   8px  header → first content, cards in a list, buttons in a stack
+ *   12px section heading → its content
+ *   4px  heading → its one-line description
+ *   32px section → section
+ */
+.section { margin-top: 32px; }
+.section-head + * { margin-top: 12px; }
+.section-head + .lead { margin-top: 4px; }
+.lead + * { margin-top: 12px; }
+.list { display: flex; flex-direction: column; gap: 8px; list-style: none; padding: 0; margin: 0; }
 .brand { font-family: var(--display); font-weight: 600; font-size: var(--fs-pixel); color: var(--snow); letter-spacing: .01em; }
 .brand:hover { color: var(--snow); }
 .title { font-family: var(--display); font-weight: 600; font-size: var(--fs-pixel); line-height: 1.1; margin: 0; text-shadow: 0 2px 0 rgba(7,13,31,.35); }
@@ -125,11 +144,21 @@ p { margin: 0; }
 .mt4 { margin-top: 4px; } .mt8 { margin-top: 8px; } .mt12 { margin-top: 12px; } .mt16 { margin-top: 16px; } .mt24 { margin-top: 24px; } .mt32 { margin-top: 32px; }
 
 /* ---------- pixel panels ---------- */
-.panel { background: var(--panel); clip-path: var(--px8); padding: 18px; }
-.panel.gold { border: 4px solid transparent; padding: 14px; background: linear-gradient(var(--panel), var(--panel)) padding-box, var(--gold) border-box; }
+/* every panel has 16px inside, borders included */
+.panel { background: var(--panel); clip-path: var(--px8); padding: 16px; }
+.panel.gold { border: 4px solid transparent; padding: 12px; background: linear-gradient(var(--panel), var(--panel)) padding-box, var(--gold) border-box; }
+/* rows: a link with an icon and a chevron, or a person in a list */
+.panel.link-row { padding: 12px 16px; color: var(--snow); }
+.panel.link-row.locked { opacity: .55; cursor: default; }
+.panel.sealed { padding: 32px 16px; display: flex; flex-direction: column; align-items: center; }
+.panel.item { padding: 12px; }
+.panel.gold.item { padding: 8px; }
 .panel.quiet { background: rgba(26,42,79,.6); }
-.panel.hint { display: flex; gap: 12px; align-items: flex-start; border: 2px solid transparent; padding: 14px 16px; background: linear-gradient(#1b3358, #1b3358) padding-box, rgba(143,211,255,.45) border-box; }
+.panel.hint { display: flex; gap: 12px; align-items: flex-start; border: 2px solid transparent; padding: 14px; background: linear-gradient(#1b3358, #1b3358) padding-box, rgba(143,211,255,.45) border-box; }
 .panel.flush { padding: 0 16px; }
+/* a one-line tip: hint colours, tighter, icon centred on the text */
+.panel.hint.note { align-items: center; padding: 10px 14px; color: var(--frost); } /* a one-liner stays compact */
+.panel.hint.note p { margin: 0; line-height: 1.4; color: var(--snow); }
 .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .panel-head > .num, .panel-head > .pix { white-space: nowrap; }
 .brand-mark { font-weight: 800; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--gold); margin-bottom: 2px; }
@@ -170,20 +199,44 @@ p { margin: 0; }
 .stepper .now span { color: var(--gold); }
 .stepper .done span { color: var(--soft); }
 .input-prefix { display: flex; align-items: stretch; }
+/* search field: a magnifier in front of the input, like the tree-link prefix */
+.search { display: flex; align-items: stretch; }
+.search > span { display: grid; place-items: center; padding: 0 2px 0 12px; clip-path: var(--px4); background: var(--night-deep); color: var(--muted); box-shadow: inset 0 0 0 2px var(--line); margin-right: -2px; }
+.search .input { flex: 1; min-width: 0; padding-left: 8px; }
+.search .input::-webkit-search-cancel-button { filter: invert(.7); }
+/* a friend's avatar and name open their tree */
+.friend-link { display: block; flex-shrink: 0; line-height: 0; }
+.friend-name { color: var(--snow); font-weight: 800; }
+.friend-name:hover { color: var(--gold); }
+/* name and badge wrap as a pair, never indented */
+.friend-title { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+.badge.official { padding: 2px 8px; font-size: 12px; }
 .input-prefix > span { display: grid; place-items: center; padding: 0 4px 0 14px; clip-path: var(--px4); background: var(--night-deep); color: var(--muted); font-weight: 700; box-shadow: inset 0 0 0 2px var(--line); margin-right: -2px; }
 .input-prefix .input { flex: 1; min-width: 0; padding-left: 8px; }
 .field .help.ok { color: #7fe0a6; }
 .field .help.ok::before { content: '✓ '; }
 .field .help.bad { color: #ff9aa8; }
-/* Strava orange; phase 2 swaps in Strava's official button artwork */
+/* Strava orange, our own pixel button (only the Powered by logo is Strava's artwork) */
+.powered-by-strava { display: inline-block; height: 14px; width: auto; }
 .btn.strava { background: #fc5200; color: #fff; box-shadow: inset 0 -6px 0 #b83b00, inset 0 4px 0 rgba(255,255,255,.3); }
 .btn.strava:hover { color: #fff; }
 
 /* ---------- settings ---------- */
 .setting { display: block; padding: 14px 0; border-bottom: 2px solid rgba(47,69,115,.6); gap: 12px; }
 .setting:last-child { border-bottom: 0; }
+.privacy-row { padding: 14px 0; border-bottom: 2px solid rgba(47,69,115,.6); }
+.privacy-row:last-child { border-bottom: 0; }
 .setting-title { font-weight: 800; font-size: 15px; }
 .setting-help { font-size: 13px; color: var(--muted); margin-top: 2px; }
+.setting.field { display: flex; }
+select.input { appearance: none; cursor: pointer; padding-right: 40px; background: var(--night-deep) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' shape-rendering='crispEdges'%3E%3Cpath d='M0 0h4v2h4V0h4v4h-2v2H8v2H4V6H2V4H0z' fill='%238fa3cf'/%3E%3C/svg%3E") no-repeat right 16px center; }
+select.input:disabled { cursor: not-allowed; opacity: .6; }
+/* on/off switch, pixel style */
+.switch { appearance: none; flex-shrink: 0; width: 52px; height: 28px; margin: 0; cursor: pointer; clip-path: var(--px4); background: var(--night-deep); box-shadow: inset 0 0 0 2px var(--line); position: relative; }
+.switch::after { content: ''; position: absolute; top: 6px; left: 6px; width: 16px; height: 16px; background: var(--muted); transition: transform .15s; }
+.switch:checked { background: #2f8f5f; box-shadow: none; }
+.switch:checked::after { transform: translateX(24px); background: #fff; }
+.switch:focus-visible { outline: 3px solid var(--frost); outline-offset: 2px; }
 
 /* ---------- hang form ---------- */
 .hang-preview { display: flex; align-items: center; gap: 14px; padding: 14px; clip-path: var(--px8); background: rgba(26,42,79,.6); }
@@ -242,10 +295,57 @@ p { margin: 0; }
 .btn.block { width: 100%; }
 .btn.red { background: var(--cranberry); color: var(--snow); box-shadow: inset 0 -6px 0 var(--cranberry-dark), inset 0 4px 0 rgba(255,255,255,.3); }
 .btn.red:hover { color: var(--snow); }
+/* a quiet way into something destructive: red text, the real warning comes in the sheet */
+.danger-link { display: block; margin-left: auto; margin-right: auto; min-height: 44px; padding: 0 12px; border: 0; background: none; color: #ff9aa8; font: 800 14px var(--body); cursor: pointer; }
+.danger-link:hover { color: #ffc2cb; text-decoration: underline; }
+.gone-list { display: grid; gap: 6px; padding: 0; list-style: none; }
+.gone-list li { position: relative; padding-left: 18px; font-size: 14px; color: var(--snow); }
+.gone-list li::before { content: ''; position: absolute; left: 2px; top: .5em; width: 6px; height: 6px; background: var(--cranberry); }
 .btn.ghost { background: var(--panel-2); color: var(--snow); box-shadow: inset 0 -6px 0 #142347, inset 0 2px 0 rgba(255,255,255,.12); }
 .btn.ghost:hover { color: var(--snow); }
 .btn.sm { min-height: 44px; padding: 0 16px 4px; box-shadow: inset 0 -4px 0 var(--gold-dark), inset 0 2px 0 rgba(255,255,255,.4); }
 .btn.ghost.sm { box-shadow: inset 0 -4px 0 #142347, inset 0 2px 0 rgba(255,255,255,.12); }
+/* follow chip: small enough to sit next to a name; gold to follow, an outline once you do */
+.follow-chip {
+  flex-shrink: 0; min-width: 78px; height: 28px; padding: 0 10px 2px; border: 0; clip-path: var(--px4); white-space: nowrap;
+  background: var(--gold); color: #2b1d07; font: 800 12px/1 var(--body);
+  box-shadow: inset 0 -3px 0 var(--gold-dark); transition: transform .06s ease;
+}
+.follow-chip.on { background: transparent; color: var(--soft); box-shadow: inset 0 0 0 2px var(--line); }
+.follow-chip:hover { filter: brightness(1.08); }
+.follow-chip:active { transform: translateY(1px); }
+.follow-chip:focus-visible { outline: none; box-shadow: inset 0 0 0 3px var(--frost); }
+/* sealed letters on a tree: an envelope and a count */
+.letters-wrap { position: relative; display: inline-block; }
+.letters { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 12px 0 10px; border: 0; clip-path: var(--px4); background: rgba(10,17,36,.55); color: var(--snow); }
+.letters b { font: 800 15px/1 var(--body); font-variant-numeric: tabular-nums; }
+.letters:hover, .letters[aria-expanded='true'] { background: rgba(10,17,36,.8); }
+/* a speech bubble to the right of the badge, pointing back at it; it never covers the tree */
+.bubble {
+  position: absolute; top: 50%; left: calc(100% + 10px); transform: translateY(-50%); z-index: 6;
+  width: max-content; max-width: 122px; margin: 0; padding: 6px 9px;
+  background: var(--snow); color: var(--night); clip-path: var(--px4); box-shadow: inset 0 -3px 0 #c7d3f0;
+  font: 700 12px/1.3 var(--body); text-align: left; animation: fade .15s ease;
+}
+.letters-wrap:has(.bubble)::after {
+  content: ''; position: absolute; top: 50%; left: calc(100% + 4px); transform: translateY(-50%); z-index: 6;
+  width: 6px; height: 12px; background: var(--snow); clip-path: polygon(0 50%, 100% 0, 100% 100%);
+}
+@media (prefers-reduced-motion: reduce) { .bubble, .name-tip { animation: none; } }
+/* a long tree name: "…" in the header, the full name in a bubble underneath */
+.name-wrap { position: relative; display: flex; min-width: 0; }
+.name-wrap.clipped .title { cursor: help; }
+.name-wrap .title:focus-visible { outline: 3px solid var(--frost); outline-offset: 2px; }
+.name-tip {
+  position: absolute; top: calc(100% + 10px); left: 0; z-index: 30;
+  width: max-content; max-width: min(320px, calc(100vw - 32px)); padding: 6px 10px;
+  background: var(--snow); color: var(--night); clip-path: var(--px4); box-shadow: inset 0 -3px 0 #c7d3f0;
+  font: 700 14px/1.3 var(--body); white-space: normal; animation: fade .15s ease;
+}
+.name-wrap:has(.name-tip)::after { content: ''; position: absolute; top: calc(100% + 4px); left: 14px; z-index: 30; width: 12px; height: 6px; background: var(--snow); clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+/* a title with something after it: the title shortens with "…", the chip never does */
+.title-row { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.title-row .title { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .btn:disabled { opacity: .4; cursor: not-allowed; filter: grayscale(.4); }
 .btn:focus-visible { outline: none; filter: brightness(1.15); box-shadow: inset 0 0 0 4px var(--snow), inset 0 -6px 0 var(--gold-dark); }
 
@@ -291,6 +391,13 @@ p { margin: 0; }
 .nav a:active svg { transform: translateY(2px); }
 .nav a[aria-current='page'] { color: var(--gold); background: var(--panel-2); box-shadow: inset 0 -4px 0 var(--gold), inset 0 2px 0 rgba(255,255,255,.08); }
 .nav a[aria-current='page'] svg { transform: translateY(-2px); }
+.nav a { position: relative; }
+/* unread notifications: a red pixel dot on the Me tab, a count on Me's row */
+.nav-dot { position: absolute; top: 10px; left: calc(50% + 8px); width: 10px; height: 10px; background: #ff5a6e; box-shadow: 0 0 0 2px var(--night); }
+.unread { min-width: 22px; height: 22px; padding: 0 6px; display: inline-grid; place-items: center; clip-path: var(--px4); background: #ff5a6e; color: #fff; font: 800 12px/1 var(--body); }
+.panel.notif.new { background: #22386a; box-shadow: inset 4px 0 0 var(--gold); }
+.notif-name { color: var(--snow); font-weight: 800; }
+.notif-ornament { display: grid; place-items: center; width: 38px; height: 38px; flex-shrink: 0; }
 .nav a:focus-visible { outline: none; box-shadow: inset 0 0 0 4px var(--frost); }
 @media (prefers-reduced-motion: reduce) { .nav a, .nav a svg { transition: none; } }
 
@@ -344,18 +451,16 @@ button.orn:focus-visible > svg { outline: 4px solid var(--frost); outline-offset
 /* owner's name tag, resting on the snow in front of the pot */
 .nametag {
   position: absolute; left: 50%; bottom: -30px; transform: translateX(-50%); z-index: 4;
-  display: flex; align-items: center; gap: 10px; padding: 5px 14px 5px 5px; white-space: nowrap;
+  display: flex; align-items: center; gap: 10px; padding: 5px 14px 5px 5px; white-space: nowrap; max-width: calc(100% - 16px);
   background: var(--snow); color: var(--night); clip-path: var(--px4);
   font: 600 var(--fs-pixel)/1 var(--display); box-shadow: inset 0 -4px 0 #c7d3f0;
 }
+.nametag span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .avatar-img {
   display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; object-fit: cover;
   clip-path: var(--px4); color: var(--night); font-family: var(--body); font-weight: 800; line-height: 1;
 }
 
-.legend { display: flex; justify-content: center; gap: 18px; font-size: 13px; font-weight: 700; }
-.legend span { display: inline-flex; align-items: center; gap: 6px; }
-.legend i { width: 8px; height: 8px; display: inline-block; }
 
 /* ---------- sheet ---------- */
 .scrim { position: fixed; inset: 0; background: rgba(5,9,22,.7); z-index: 40; display: flex; align-items: flex-end; justify-content: center; animation: fade .15s ease; }
@@ -377,7 +482,47 @@ button.orn:focus-visible > svg { outline: 4px solid var(--frost); outline-offset
 .pick.empty { color: #6f7fa6; justify-content: center; min-height: 100px; box-shadow: inset 0 0 0 2px rgba(47,69,115,.6); background: transparent; }
 
 /* ---------- calendar ---------- */
-.doors { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
+/* today's goals: the daily door and the weekly bonus share one card layout */
+.goal-head { display: flex; align-items: center; gap: 12px; }
+.goal-icon { position: relative; flex-shrink: 0; width: 56px; height: 56px; display: grid; place-items: center; clip-path: var(--px4); background: var(--night-deep); box-shadow: inset 0 0 0 2px var(--line); }
+.goal-icon .dir-q { position: absolute; color: var(--gold); }
+.goal-icon .silhouette svg { filter: brightness(0) invert(1); opacity: .28; }
+.panel.gold .goal-icon { box-shadow: inset 0 0 0 2px var(--gold); }
+.panel.gold.goal .eyebrow { color: var(--gold); }
+.goal-title { margin: 2px 0 0; font: 800 16px/1.25 var(--body); color: var(--snow); }
+.goal-value { flex-shrink: 0; font-size: 14px; color: var(--snow); white-space: nowrap; }
+
+/* one row per bonus week, so the doors line up with the weekly totals */
+.doors { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+/* taller than wide: number on top, ornament in the middle, km underneath */
+.doors .door { aspect-ratio: 3 / 4; padding: 22px 0 14px; } /* art sits below the number tag */
+.week-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.week-head .eyebrow { color: var(--soft); }
+.week-dates { color: var(--muted); font-weight: 700; letter-spacing: 0; text-transform: none; }
+.week-km { display: inline-flex; align-items: center; gap: 8px; font-weight: 800; font-size: 13px; font-variant-numeric: tabular-nums; color: var(--snow); white-space: nowrap; }
+.week-won { padding: 2px 6px; clip-path: var(--px4); background: var(--gold); color: #2b1d07; font-size: 11px; }
+
+/* distance: December total, a bar per day, and today / this week / best day */
+.dist-total { display: flex; align-items: baseline; gap: 8px; }
+/* numbers use the body font: in the pixel font a 5 reads like an 8 */
+.dist-total b { font: 800 36px/1 var(--body); font-variant-numeric: tabular-nums; color: var(--gold); text-shadow: 0 2px 0 rgba(7,13,31,.35); }
+.dist-total .small { font-weight: 800; }
+.bars { position: relative; display: grid; grid-template-columns: repeat(24, minmax(0, 1fr)); gap: 2px; align-items: end; height: 64px; }
+/* the 1 km goal, a dotted pixel line behind the bars */
+.bars::before { content: ''; position: absolute; left: 0; right: 0; bottom: var(--goal); height: 2px; background: repeating-linear-gradient(90deg, rgba(255,247,236,.35) 0 4px, transparent 4px 8px); }
+.bars i { position: relative; display: block; height: 2px; background: var(--line); }
+.bars i.met { background: var(--frost); box-shadow: inset 0 2px 0 rgba(255,255,255,.45); }
+.bars i.short { background: #6f7fa6; }
+.bars i.today { background: var(--gold); box-shadow: inset 0 2px 0 rgba(255,255,255,.45); }
+.bars i.future { background: rgba(47,69,115,.6); }
+.bars-axis { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; font-weight: 700; color: var(--muted); }
+.goal-key { display: inline-flex; align-items: center; gap: 6px; }
+.goal-key::before { content: ''; width: 16px; height: 2px; background: repeating-linear-gradient(90deg, rgba(255,247,236,.5) 0 4px, transparent 4px 8px); }
+.dist-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 2px; padding-top: 12px; border-top: 2px solid rgba(47,69,115,.6); }
+.dist-row > div { display: flex; flex-direction: column; gap: 6px; }
+.dist-row > div + div { padding-left: 10px; border-left: 2px solid rgba(47,69,115,.6); }
+.dist-row b { font: 800 18px/1 var(--body); font-variant-numeric: tabular-nums; color: var(--snow); white-space: nowrap; }
+.dist-row span { font-size: 12px; font-weight: 700; color: var(--muted); }
 .door {
   position: relative; aspect-ratio: 1; display: grid; place-items: center; padding: 8px 0 0; border: 0; clip-path: var(--px4);
   background: rgba(26,42,79,.55); color: var(--muted); transition: transform .12s ease;
@@ -387,9 +532,10 @@ button.orn:focus-visible > svg { outline: 4px solid var(--frost); outline-offset
   position: absolute; left: 0; top: 0; min-width: 18px; padding: 2px 4px; line-height: 1;
   font: 800 11px var(--body); font-variant-numeric: tabular-nums; color: var(--muted); background: rgba(10,17,36,.6);
 }
+/* km strip along the bottom, under the ornament */
 .door .km {
-  position: absolute; right: 0; bottom: 0; padding: 1px 3px; line-height: 1;
-  font: 800 9px var(--body); font-variant-numeric: tabular-nums; color: var(--snow); background: rgba(10,17,36,.6);
+  position: absolute; left: 0; right: 0; bottom: 0; padding: 2px 0 3px; line-height: 1; text-align: center; white-space: nowrap;
+  font: 800 9px var(--body); font-variant-numeric: tabular-nums; color: var(--snow); background: rgba(10,17,36,.55);
 }
 /* opened later by a long run: says which day */
 .door .km.caught { color: #2b1d07; background: var(--gold); }
@@ -592,3 +738,21 @@ a.list-row:hover { color: var(--gold); }
 }
 .launch-countdown .pix { font-size: 28px; color: var(--gold); }
 .launch-countdown .unit { font-size: 11px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+
+/* ---------- loading ---------- */
+/* placeholders in the shape of what's coming, with a slow stepped (pixel) shimmer */
+.sk { position: relative; display: block; overflow: hidden; clip-path: var(--px4); background: rgba(47,69,115,.45); }
+.sk::after {
+  content: ''; position: absolute; inset: 0; transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255,247,236,.09) 50%, transparent);
+  animation: shimmer 1.6s steps(16) infinite;
+}
+.sk.inline { display: inline-block; vertical-align: middle; }
+.sk.round { clip-path: none; border-radius: 0; }
+.doors .sk { aspect-ratio: 3 / 4; }
+@keyframes shimmer { to { transform: translateX(100%); } }
+/* what just arrived fades in instead of popping (opacity only, so fixed sheets inside still work) */
+.loaded { animation: fade .3s ease-out both; }
+/* the tree stands in place while its ornaments load */
+.tree-waiting { opacity: .45; filter: saturate(.6); transition: opacity .3s ease, filter .3s ease; }
+@media (prefers-reduced-motion: reduce) { .sk::after, .loaded { animation: none; } .tree-waiting { transition: none; } }

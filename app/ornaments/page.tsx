@@ -1,16 +1,14 @@
 'use client';
 
-import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import BackLink from '@/components/BackLink';
-import { MusicButton } from '@/components/MusicToggle';
+import PageHeader from '@/components/PageHeader';
 import Sprite from '@/components/Sprite';
 import SpriteFx from '@/components/SpriteFx';
 import { animFor, animName, useBump } from '@/components/useBump';
 import { HOW_TO_GET, ORNAMENTS, type Ornament, type Tier } from '@/lib/ornaments';
 
 const SECTIONS: { tier: Tier; title: string; note: string }[] = [
-  { tier: 'basic', title: 'Free ornaments', note: 'Anyone can hang these on a friend’s tree.' },
+  { tier: 'basic', title: 'Starter ornaments', note: 'In everyone’s collection from day one. The ones you hang come from your runs.' },
   { tier: 'special', title: 'Daily doors', note: 'Run on a day of Advent to unwrap one.' },
   { tier: 'rare', title: 'Weekly prizes', note: 'Finish a weekly challenge to win one.' },
 ];
@@ -31,21 +29,15 @@ export default function OrnamentDirectory() {
 
   return (
     <main className="screen no-nav">
-      <div className="topbar">
-        <BackLink fallback="/me" />
-        <MusicButton />
-      </div>
+      <PageHeader back="/me" title="Ornaments" />
 
-      <p className="brand-mark">Advent of Running</p>
-      <h1 className="title">Ornaments</h1>
-
-      <section className="panel gold mt16">
+      <section className="panel gold">
         <div className="panel-head">
           <p className="eyebrow" style={{ color: 'var(--gold)' }}>The collection</p>
           <span className="pix" style={{ color: 'var(--gold)' }}>{ORNAMENTS.length}</span>
         </div>
         <p className="small soft mt8">
-          {count('basic')} free ornaments to hang for friends, {count('special')} behind the daily doors and{' '}
+          {count('basic')} starter ornaments, {count('special')} behind the daily doors and{' '}
           {count('rare')} rare prizes. Tap any of them to see it move.
         </p>
       </section>
@@ -104,10 +96,7 @@ export default function OrnamentDirectory() {
               <p className="small soft mt8">{picked.blurb}</p>
             </div>
 
-            {picked.tier === 'basic' && (
-              <Link href={`/t/ayop/hang?o=${picked.id}`} className="btn block mt16">Hang it on a friend&apos;s tree</Link>
-            )}
-            <button className="btn ghost block mt8" onClick={() => setPicked(null)}>Close</button>
+            <button className="btn ghost block mt16" onClick={() => setPicked(null)}>Close</button>
           </div>
         </div>
       )}

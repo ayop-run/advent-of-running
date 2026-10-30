@@ -1,7 +1,7 @@
 import { DEMO_GIVEN } from '../calendar';
 import { getTree, myOrnamentOn } from './data';
 import { DEMO_NICKNAME } from './me';
-import { demoName, demoNick } from './names';
+import { OFFICIAL, demoName, demoNick } from './names';
 
 /**
  * PROTOTYPE FRIENDS
@@ -18,9 +18,39 @@ export type Friend = {
   /** ornaments you gave them */
   given: number;
   visited: boolean;
+  following: boolean;
+  official?: boolean;
 };
 
 const VISITED_KEY = 'aor:visited';
+const FOLLOWING_KEY = 'aor:following';
+
+function getFollowing(): string[] {
+  try {
+    return JSON.parse(window.localStorage.getItem(FOLLOWING_KEY) ?? '[]');
+  } catch {
+    return [];
+  }
+}
+
+/** Follow or unfollow a demo tree, remembered in this browser. */
+export function setFollowing(nickname: string, follow: boolean) {
+  const nick = nickname.toLowerCase();
+  const list = getFollowing().filter((n) => n !== nick);
+  try {
+    window.localStorage.setItem(FOLLOWING_KEY, JSON.stringify(follow ? [nick, ...list] : list));
+  } catch {
+    /* storage blocked */
+  }
+}
+
+/** Demo trees whose name contains the query. */
+export function searchRunners(query: string, me: string): Friend[] {
+  const q = query.trim().toLowerCase();
+  const friends = new Map(getFriends(me).map((f) => [f.nickname, f]));
+  return DEMO_TREES.filter((n) => n !== me.toLowerCase() && (n.includes(q) || demoName(n).toLowerCase().includes(q)))
+    .map((n) => ({ ...(friends.get(n) ?? { nickname: n, name: demoName(n), hung: 0, given: 0, visited: false, following: false }), official: OFFICIAL.has(n) }));
+}
 /** Trees that exist in the demo besides your friends'. */
 const DEMO_TREES = ['ayop', 'jonas', 'aiko', 'leo', 'hana', 'tom', 'ella', 'sam', 'noah', 'yuki', 'ben', 'kai', 'lena', 'rio', 'momo', 'zara'];
 
@@ -48,7 +78,7 @@ export function getFriends(me: string): Friend[] {
   const byNick = new Map<string, Friend>();
   const get = (nick: string) => {
     const key = demoNick(nick);
-    if (!byNick.has(key)) byNick.set(key, { nickname: key, name: demoName(key), hung: 0, given: 0, visited: false });
+    if (!byNick.has(key)) byNick.set(key, { nickname: key, name: demoName(key), hung: 0, given: 0, visited: false, following: false, official: OFFICIAL.has(key) });
     return byNick.get(key)!;
   };
   for (const h of getTree(DEMO_NICKNAME).ornaments) get(h.from).hung += 1;
@@ -59,6 +89,7 @@ export function getFriends(me: string): Friend[] {
     // ornaments you hung while visiting (not from a door) count as given too
     if (!f.given && myOrnamentOn(nick)) f.given = 1;
   }
+  for (const nick of getFollowing()) get(nick).following = true;
   byNick.delete(me.toLowerCase());
   return [...byNick.values()].sort((a, b) => b.hung + b.given - (a.hung + a.given) || a.name.localeCompare(b.name));
 }

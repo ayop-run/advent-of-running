@@ -15,7 +15,6 @@ export type Me = {
   displayName: string;
   avatarUrl: string | null;
   timeZone: string;
-  hangPolicy: 'anyone' | 'signed_in';
   emailOptIn: boolean;
   /** False until the runner finished sign-up (confirmed tree name and time zone). */
   onboarded: boolean;
@@ -69,10 +68,10 @@ export async function logOut() {
   cached = Promise.resolve(null);
 }
 
-export type ProfileError = 'nickname_taken' | 'invalid' | 'signed_out' | 'unknown';
+export type ProfileError = 'nickname_taken' | 'invalid' | 'timezone_locked' | 'signed_out' | 'unknown';
 
 export async function saveProfile(
-  profile: Pick<Me, 'nickname' | 'timeZone' | 'hangPolicy' | 'emailOptIn'>,
+  profile: Pick<Me, 'nickname' | 'timeZone' | 'emailOptIn'>,
 ): Promise<{ ok: true } | { error: ProfileError }> {
   try {
     const res = await fetch('/api/me', {
@@ -95,9 +94,7 @@ export async function deleteAccount(): Promise<boolean> {
   return res.ok;
 }
 
-/** Strava login. Sign-up passes the chosen tree name and time zone along. */
-export const stravaLoginUrl = (signup?: { nick: string; tz: string }) =>
-  signup ? `/api/strava/connect?${new URLSearchParams(signup)}` : '/api/strava/connect';
+export { stravaLoginUrl } from './login';
 
 /** Sign-up: whether this tree name is free (your own counts as free), or null if it couldn't be checked. */
 export async function nicknameAvailable(nick: string): Promise<boolean | null> {

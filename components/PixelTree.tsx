@@ -19,7 +19,7 @@ export type Owner = {
   name: string;
   /** Strava profile photo in phase 2. Falls back to a pixel initial. */
   avatarUrl?: string;
-  /** "Your tree" instead of "AYOP's tree". */
+  /** "Your tree" instead of the owner's name. */
   isYou?: boolean;
 };
 
@@ -106,7 +106,7 @@ export default function PixelTree({ ornaments, owner, onSelect, highlightId, lab
         {owner && (
           <div className="nametag">
             <Avatar owner={owner} size={30} />
-            <span>{owner.isYou ? 'Your tree' : `${owner.name}'s tree`}</span>
+            <span>{owner.isYou ? 'Your tree' : owner.name}</span>
           </div>
         )}
       </div>

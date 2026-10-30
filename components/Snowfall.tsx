@@ -57,8 +57,11 @@ export default function Snowfall() {
       };
     };
 
+    // Resizing keeps every flake where it is (phones resize whenever the address bar slides),
+    // so the snow never jumps: flakes outside the new size go, new space gets fresh flakes.
     const resize = () => {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const [oldW, oldH] = [w, h];
       w = window.innerWidth;
       h = window.innerHeight;
       canvas.width = w * dpr;
@@ -67,7 +70,16 @@ export default function Snowfall() {
       canvas.style.height = `${h}px`;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       const target = Math.min(180, Math.round((w * h) / 4200));
-      flakes = Array.from({ length: target }, () => make(true));
+      flakes = flakes.filter((f) => f.x < w + 16).slice(0, target);
+      while (flakes.length < target) {
+        const f = make(true);
+        // fill the newly uncovered strip first, so the old area doesn't get denser
+        if (w > oldW && oldW > 0 && Math.random() < (w - oldW) / w) f.x = oldW + Math.random() * (w - oldW);
+        else if (h > oldH && oldH > 0 && Math.random() < (h - oldH) / h) f.y = oldH + Math.random() * (h - oldH);
+        flakes.push(f);
+      }
+      // setting the canvas size clears it; redraw now so it never flashes empty
+      draw();
     };
 
     const draw = () => {

@@ -128,6 +128,7 @@ export default function ComingSoon() {
           </form>
         )}
       </section>
+      <p className="center tiny muted mt16">We only use your email to tell you we&apos;re open. <a href="/privacy" style={{ fontWeight: 800 }}>Privacy</a></p>
     </main>
   );
 }

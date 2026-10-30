@@ -76,9 +76,10 @@ export type StravaActivity = {
   start_date_local: string;
 };
 
-const COUNTED = ['Run', 'TrailRun', 'VirtualRun'];
+// walks and hikes count as runs too
+const COUNTED = ['Run', 'TrailRun', 'VirtualRun', 'Walk', 'Hike'];
 
-/** Outdoor, trail and treadmill runs; manual entries don't count. */
+/** Runs (outdoor, trail, treadmill), walks and hikes; manual entries don't count. */
 export const isCountedRun = (a: StravaActivity) => COUNTED.includes(a.sport_type ?? a.type) && !a.manual;
 
 /** All of the athlete's activities between two Unix timestamps. */

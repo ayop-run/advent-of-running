@@ -1,5 +1,7 @@
 /** Demo friends are known by name ("AYOP") and their trees by nickname ("ayop"). */
-const SPECIAL: Record<string, string> = { ayop: 'AYOP' };
+const SPECIAL: Record<string, string> = { ayop: 'AYOP | At Your Own Pace' };
+/** Official accounts in the demo (the database marks them with runners.official). */
+export const OFFICIAL = new Set(['ayop']);
 
 export const demoNick = (name: string) => name.trim().toLowerCase().replace(/\s+/g, '-');
 

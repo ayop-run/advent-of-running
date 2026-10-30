@@ -2,7 +2,8 @@ import { BASIC } from './ornaments';
 
 /**
  * Advent calendar rules, shared by the server (computing a runner's progress from synced
- * Strava runs) and the pages. Outdoor, trail and treadmill runs count; manual entries don't.
+ * Strava runs) and the pages. Runs (outdoor, trail, treadmill), walks and hikes all count as
+ * runs; manual entries don't.
  *
  * Rules: every door opens with 1 km run that day. A missed door N can be caught up on a later
  * day by running N km in one go on top of that day's 1 km (missed door 6 → 6 km run, 7 km that
@@ -174,6 +175,16 @@ export function demoProgress(): Progress {
     found: [...demoFound(BASIC.map((o) => o.id))],
     syncedAt: null,
   };
+}
+
+/**
+ * Whether a tree's messages are open: from 00:00 on the 25th of the advent month, in the
+ * owner's time zone, until the next campaign (December's stay open through spring).
+ */
+export function christmasOpen({ month, day }: { month: number; day: number }) {
+  const m = adventMonth(month);
+  if (month === m) return day >= 25;
+  return m === 12 ? month < 6 : month > m;
 }
 
 /** Time until the 25th of the advent month, 00:00 in the viewer's local time zone. */

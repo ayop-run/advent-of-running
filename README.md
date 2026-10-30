@@ -8,17 +8,16 @@ Runners log in with Strava, and their runs open the doors. Trees, ornaments and 
 
 | Route | Screen |
 |---|---|
-| `/` | Landing |
+| `/` | Landing: sign up, or log in with Strava (straight to Strava, no login page) |
 | `/signup` | Pick a tree name → connect Strava → confirm time zone |
-| `/login` | Log in with Strava |
 | `/tree` | My tree, countdown, tap an ornament to see the sealed sheet |
 | `/tree/photo` | Photo booth with your tree |
-| `/t/[nickname]` | A friend's tree (try `/t/ayop` for the demo) |
+| `/t/[nickname]` | A friend's tree (try `/t/ayop`, the official AYOP tree) |
 | `/t/[nickname]/hang` | Hang or edit your ornament (one per tree) |
 | `/t/[nickname]/done` | Ornament hung |
 | `/calendar` | Advent doors with km per day, catch-ups, weekly bonus |
 | `/gift` | Unwrap an earned ornament → give it to a friend |
-| `/friends` | All runners, requests, invite link |
+| `/friends` | Search runners, follow / unfollow trees, requests, invite link |
 | `/me`, `/me/given` | Stats, ornaments given, settings, log out, disconnect Strava |
 | `/ornaments` | Catalogue of every ornament |
 | `/christmas` | Dec 25 unlock preview (demo messages) |
@@ -26,9 +25,9 @@ Runners log in with Strava, and their runs open the doors. Trees, ornaments and 
 
 ## Rules
 
-- Each door opens with 1 km run that day. Runs, trail runs and treadmill runs count; manual entries don't.
+- Each door opens with 1 km run that day. Runs (outdoor, trail, treadmill), walks and hikes all count as runs; manual entries don't.
 - A missed door N can be caught up later: run N km in one go on top of that day's 1 km (missed the 6th → 7 km that day). Caught-up doors show which day did it.
-- The ornament behind an opened door goes to a friend's tree. Everyone can hang one ornament per tree, and edit it until December 24.
+- Every ornament you hang is one you earned by running (a door or a weekly prize). Hanging needs an account: no free ornaments, no guest hanging. Everyone can hang one ornament per tree, and edit its message until December 24.
 - Weekly bonus: week 1 "run 3 times", week 2 "run 10 km" win rare ornaments. Weeks 3–4 "run together with a friend" are not tracked yet.
 
 ## Run locally
@@ -53,6 +52,7 @@ APP_URL=http://localhost:3000      # Vercel: https://advent.ayop.run (staging: h
 
 # Vercel: leave unset so production stays on December
 NEXT_PUBLIC_ADVENT_MONTH=current   # optional, local only
+CHRISTMAS_OPEN=1                   # optional: open every tree's messages now (never on Production)
 ```
 
 The Strava app at [strava.com/settings/api](https://www.strava.com/settings/api) must have **Authorization Callback Domain** `ayop.run`, which covers both `advent.ayop.run` and `staging-advent.ayop.run` (no `https://`, no path). `localhost` is always allowed, so local login still works. Until Strava approves the app, only its owner can connect.

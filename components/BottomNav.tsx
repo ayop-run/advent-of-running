@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { getMe, isLoggedOut, markInApp } from '@/lib/me';
+import { useUnread } from '@/lib/notifications';
 
 /** Nav icons share one 12×12 grid, drawn at 2px per pixel, in the link's text colour. */
 const ICONS = {
@@ -22,14 +23,15 @@ const TABS = [
 export default function BottomNav() {
   const path = usePathname();
   const router = useRouter();
-  // the nav only appears on member pages: logged-out visitors go to log in first
+  // the nav only appears on member pages: logged-out visitors go to the start page to log in
   useEffect(() => {
     getMe().then((me) => {
-      if (!me && isLoggedOut()) router.replace('/login');
+      if (!me && isLoggedOut()) router.replace('/');
       else markInApp();
     });
   }, [router]);
-  const active = (href: string) => path.startsWith(href);
+  const unread = useUnread();
+  const active = (href: string) => path.startsWith(href) || (href === '/me' && path.startsWith('/notifications'));
   return (
     <nav className="nav" aria-label="Main">
       <div className="nav-inner">
@@ -39,6 +41,7 @@ export default function BottomNav() {
               <path d={t.icon} fill="currentColor" fillRule="evenodd" />
             </svg>
             {t.label}
+            {t.href === '/me' && unread > 0 && !path.startsWith('/notifications') && <i className="nav-dot" aria-label={`${unread} new notifications`} />}
           </Link>
         ))}
       </div>

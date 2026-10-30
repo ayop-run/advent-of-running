@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/server/db';
+import { adventMonth } from '@/lib/calendar';
 import { checkNickname } from '@/lib/nickname';
+import { localDate } from '@/lib/server/progress';
 import { currentRunner } from '@/lib/server/runner';
 import { clearedSessionCookie } from '@/lib/server/session';
 import { accessToken, deauthorize } from '@/lib/server/strava';
@@ -25,7 +27,16 @@ const validTimeZone = (tz: unknown) => {
   }
 };
 
-/** Onboarding / settings: nickname, time zone, who can hang, email opt-in. */
+/** Days 1–25 of Advent in this time zone, when doors and runs are counted by local date. */
+function duringAdvent(timeZone: string) {
+  const { month, day } = localDate(timeZone);
+  return month === adventMonth(month) && day <= 25;
+}
+
+/**
+ * Sign-up and Me settings: tree name, time zone, email opt-in. The time zone is locked during
+ * Advent, since moving it would shift which day each run counts for.
+ */
 export async function PATCH(req: Request) {
   const me = await currentRunner();
   if (!me) return NextResponse.json({ error: 'signed_out' }, { status: 401 });
@@ -34,14 +45,16 @@ export async function PATCH(req: Request) {
   if (
     !checkNickname(nickname).ok ||
     !validTimeZone(body.timeZone) ||
-    !['anyone', 'signed_in'].includes(body.hangPolicy) ||
     typeof body.emailOptIn !== 'boolean'
   ) {
     return NextResponse.json({ error: 'invalid' }, { status: 400 });
   }
+  if (me.onboarded && body.timeZone !== me.timeZone && (duringAdvent(me.timeZone) || duringAdvent(body.timeZone))) {
+    return NextResponse.json({ error: 'timezone_locked' }, { status: 409 });
+  }
   const { error } = await db()
     .from('runners')
-    .update({ nickname, time_zone: body.timeZone, hang_policy: body.hangPolicy, email_opt_in: body.emailOptIn, onboarded: true })
+    .update({ nickname, time_zone: body.timeZone, email_opt_in: body.emailOptIn, onboarded: true })
     .eq('id', me.id);
   if (error?.code === '23505') return NextResponse.json({ error: 'nickname_taken' }, { status: 409 });
   if (error) return NextResponse.json({ error: 'unknown' }, { status: 500 });
