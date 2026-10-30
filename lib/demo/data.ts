@@ -49,17 +49,8 @@ const SEED: Record<string, Tree> = {
       h('bauble-frost', 'Noah', 'Cheer', 'Run happy!'),
     ],
   },
-  ayop: {
-    nickname: 'ayop',
-    displayName: 'AYOP',
-    ornaments: [
-      h('reindeer', 'Jonas', 'Cheer', 'Your Sunday long runs keep me going. Merry Christmas!'),
-      h('bauble-cranberry', 'Aiko', 'Love', 'Thanks for always waiting for me at the turnaround.'),
-      h('snowflake', 'Leo', 'Thanks', 'One day I will beat your 5K. Not this year, though.'),
-      h('santa-shoe', 'Tom', 'Cheer', 'See you at the Christmas Eve fun run!'),
-      h('bauble-snow', 'Ella', 'Funny', 'Hot cocoa after the next icy one? You are buying.'),
-    ],
-  },
+  // the official account: a real tree with nothing on it yet
+  ayop: { nickname: 'ayop', displayName: demoName('ayop'), ornaments: [] },
   jonas: {
     nickname: 'jonas',
     displayName: 'Jonas',

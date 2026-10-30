@@ -33,6 +33,8 @@ export type Tree = {
   ornaments: Hung[];
   /** false when no runner has this tree name */
   exists: boolean;
+  /** the browser demo's copy of the tree (signed out), not the real one */
+  demo?: boolean;
 };
 
 /** Where a tree's data comes from for this visitor. */
@@ -52,7 +54,7 @@ async function source(nickname: string): Promise<Source> {
 
 export async function getTree(nickname: string): Promise<Tree> {
   const s = await source(nickname);
-  return s.kind === 'demo' ? { ...demo.getTree(nickname), exists: true } : s.tree;
+  return s.kind === 'demo' ? { ...demo.getTree(nickname), exists: true, demo: true } : s.tree;
 }
 
 /* Ornaments a guest (no account) hung on real trees, remembered in their browser. */
@@ -155,3 +157,25 @@ export async function getProgress(): Promise<{ progress: Progress; demo: boolean
 
 /** The demo tree with its messages, for the Christmas morning preview. */
 export const christmasPreview = () => demo.getTree(DEMO_NICKNAME).ornaments;
+
+/**
+ * Your own tree on Christmas morning. Signed out: the demo preview. Signed in, before the 25th
+ * in your time zone: only how many ornaments wait; from the 25th: names, messages and replies.
+ */
+export type Christmas =
+  | { kind: 'preview'; ornaments: Hung[] }
+  | { kind: 'sealed'; count: number }
+  | { kind: 'open'; ornaments: Hung[] }
+  | { kind: 'error' };
+
+export async function getChristmas(): Promise<Christmas> {
+  if (!(await getMe())) return { kind: 'preview', ornaments: christmasPreview() };
+  try {
+    const res = await fetch('/api/christmas', { cache: 'no-store' });
+    if (!res.ok) return { kind: 'error' };
+    const body = await res.json();
+    return body.open ? { kind: 'open', ornaments: body.ornaments } : { kind: 'sealed', count: body.count };
+  } catch {
+    return { kind: 'error' };
+  }
+}

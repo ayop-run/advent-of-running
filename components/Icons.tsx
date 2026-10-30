@@ -35,6 +35,29 @@ export function TapIcon() {
   );
 }
 
+/** Pixel magnifying glass for search fields. 12×12 grid at 2px per pixel. */
+export function SearchIcon() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 12 12" shapeRendering="crispEdges" aria-hidden="true" style={{ flexShrink: 0 }}>
+      <path fillRule="evenodd" d="M3 0h4v1h1v1h1v4H8v1H7v1H3V7H2V6H1V2h1V1h1zM3 2h4v4H3z" fill="currentColor" />
+      <path d="M8 7h1v1h1v1h1v2h-2v-1H9V9H8z" fill="currentColor" />
+    </svg>
+  );
+}
+
+/** Pixel envelope: cream paper, a soft fold and a red wax seal. 12×10 grid at 2px per pixel. */
+export function LetterIcon({ px = 2 }: { px?: number }) {
+  return (
+    <svg width={12 * px} height={10 * px} viewBox="0 0 12 10" shapeRendering="crispEdges" aria-hidden="true" style={{ flexShrink: 0 }}>
+      <path d="M1 1h10v1h1v6h-1v1H1V8H0V2h1z" fill="#fff7ec" />
+      <path d="M1 8h10v1H1z" fill="#c7d3f0" />
+      <path d="M1 2h1v1H1zM2 3h1v1H2zM3 4h1v1H3zM10 2h1v1h-1zM9 3h1v1H9zM8 4h1v1H8z" fill="#b9c7ea" />
+      <path d="M5 4h2v1h1v2H7v1H5V7H4V5h1z" fill="var(--cranberry)" />
+      <path d="M5 5h1v1H5z" fill="#ff9aa8" />
+    </svg>
+  );
+}
+
 /** Pixel "share" icon: an arrow out of a box, 12×12 grid at 2px per pixel. */
 export function ShareIcon() {
   return (

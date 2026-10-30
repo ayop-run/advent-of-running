@@ -9,13 +9,16 @@ import PictureSheet from '@/components/PictureSheet';
 import PixelTree, { Avatar } from '@/components/PixelTree';
 import { CameraIcon, ChevronIcon, ShareIcon } from '@/components/Icons';
 import PageHeader from '@/components/PageHeader';
+import TreeTitle from '@/components/TreeTitle';
 import Sk from '@/components/Skeleton';
+import { useTreeScale } from '@/components/useTreeScale';
 import { avatarSrc } from '@/lib/avatar';
 import { getTree, type Hung, type Tree } from '@/lib/data';
 import { myNickname, useMe } from '@/lib/me';
 
 
 export default function MyTree() {
+  const scale = useTreeScale();
   const [tree, setTree] = useState<Tree | null>(null);
   const [open, setOpen] = useState<Hung | null>(null);
   const [toast, setToast] = useState('');
@@ -63,7 +66,7 @@ export default function MyTree() {
           ) : (
             <div className="row loaded" style={{ gap: 6, minWidth: 0 }}>
               <Avatar owner={owner} size={24} />
-              <h1 className="title clip">{displayName}&apos;s tree</h1>
+              <TreeTitle name={displayName} />
             </div>
           )
         }
@@ -90,6 +93,7 @@ export default function MyTree() {
             onSelect={setOpen}
             label={`Your tree with ${tree?.ornaments.length ?? 0} sealed ornaments`}
             decorative={!tree}
+            scale={scale}
           />
         </div>
         {tree ? (

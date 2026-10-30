@@ -177,6 +177,16 @@ export function demoProgress(): Progress {
   };
 }
 
+/**
+ * Whether a tree's messages are open: from 00:00 on the 25th of the advent month, in the
+ * owner's time zone, until the next campaign (December's stay open through spring).
+ */
+export function christmasOpen({ month, day }: { month: number; day: number }) {
+  const m = adventMonth(month);
+  if (month === m) return day >= 25;
+  return m === 12 ? month < 6 : month > m;
+}
+
 /** Time until the 25th of the advent month, 00:00 in the viewer's local time zone. */
 export function untilChristmas(now = new Date()) {
   const month = adventMonth(now.getMonth() + 1) - 1;

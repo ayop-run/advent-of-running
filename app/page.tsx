@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { PoweredByStrava, StravaLogin } from '@/components/Strava';
 import { MusicButton } from '@/components/MusicToggle';
 import PixelTree from '@/components/PixelTree';
 import Sprite from '@/components/Sprite';
@@ -45,14 +46,14 @@ export default async function Landing({ searchParams }: { searchParams: Promise<
       <div style={{ flex: '0 1 48px' }} />
 
       <div className="stack mt24">
-        {/* Phase 2: Strava's official "Connect with Strava" button + OAuth. */}
         <Link href="/signup" className="btn block">Sign up</Link>
-        <a href={stravaLoginUrl()} className="btn strava block">Log in with Strava</a>
+        <StravaLogin href={stravaLoginUrl()} />
       </div>
       {error && <p className="center small mt8" role="alert">{LOGIN_ERROR[error] ?? LOGIN_ERROR.strava}</p>}
       <p className="center tiny muted mt12">
-        <Link href="/t/ayop" style={{ fontWeight: 800 }}>See a demo tree</Link> · <Link href="/about" style={{ fontWeight: 800 }}>How it works</Link> · <Link href="/ornaments" style={{ fontWeight: 800 }}>Ornaments</Link>
+        <Link href="/t/ayop" style={{ fontWeight: 800 }}>Visit AYOP&apos;s tree</Link> · <Link href="/about" style={{ fontWeight: 800 }}>How it works</Link> · <Link href="/ornaments" style={{ fontWeight: 800 }}>Ornaments</Link> · <Link href="/privacy" style={{ fontWeight: 800 }}>Privacy</Link>
       </p>
+      <p className="center mt16"><PoweredByStrava /></p>
     </main>
   );
 }
