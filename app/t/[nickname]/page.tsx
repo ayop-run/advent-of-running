@@ -5,30 +5,45 @@ import { useParams, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import BottomNav from '@/components/BottomNav';
 import OrnamentSheet from '@/components/OrnamentSheet';
+import FollowButton from '@/components/FollowButton';
+import { LetterIcon } from '@/components/Icons';
 import PageHeader from '@/components/PageHeader';
+import TreeTitle from '@/components/TreeTitle';
 import PixelTree from '@/components/PixelTree';
 import Sk from '@/components/Skeleton';
 import Sprite from '@/components/Sprite';
+import { useTreeScale } from '@/components/useTreeScale';
 import { getTree, type Hung, type Tree } from '@/lib/data';
 import { BY_ID } from '@/lib/ornaments';
-import { rememberVisit } from '@/lib/friends';
-import { isMember } from '@/lib/me';
+import { isFollowing, rememberVisit, setFollowing } from '@/lib/friends';
+import { getMe, isMember, myNickname } from '@/lib/me';
 
 export default function FriendTree() {
   const { nickname } = useParams<{ nickname: string }>();
+  const scale = useTreeScale();
   const [tree, setTree] = useState<Tree | null>(null);
   // members browsing friends get the app's nav; guests from a shared link get a simple page
   const [member, setMember] = useState(false);
   const [mine, setMine] = useState<Hung | null>(null);
   const [open, setOpen] = useState<Hung | null>(null);
+  // null until we know; never shown on your own tree or to guests
+  const [following, setFollowingState] = useState<boolean | null>(null);
+  const [letterTip, setLetterTip] = useState(false);
+  useEffect(() => {
+    if (!letterTip) return;
+    const id = setTimeout(() => setLetterTip(false), 3200);
+    return () => clearTimeout(id);
+  }, [letterTip]);
   const saved = useSearchParams().get('saved') === '1';
   const [toast, setToast] = useState('');
   useEffect(() => {
-    if (!saved) return;
-    setToast('Saved. Your message is updated.');
+    if (saved) setToast('Saved. Your message is updated.');
+  }, [saved]);
+  useEffect(() => {
+    if (!toast) return;
     const id = setTimeout(() => setToast(''), 2400);
     return () => clearTimeout(id);
-  }, [saved]);
+  }, [toast]);
   useEffect(() => {
     getTree(nickname).then((t) => {
       setTree(t);
@@ -36,7 +51,22 @@ export default function FriendTree() {
       if (t.exists) rememberVisit(nickname);
     }, console.error);
     isMember().then(setMember);
+    getMe().then(async (me) => {
+      if (myNickname(me) === nickname.toLowerCase()) return;
+      setFollowingState(await isFollowing(nickname));
+    });
   }, [nickname]);
+
+  const toggleFollow = async () => {
+    if (following === null || !tree) return;
+    const next = !following;
+    setFollowingState(next);
+    if (await setFollowing(nickname, next)) setToast(next ? `Following ${tree.displayName}’s tree` : `Unfollowed ${tree.displayName}`);
+    else {
+      setFollowingState(!next);
+      setToast('Couldn’t update. Please try again.');
+    }
+  };
 
   return (
     <main className={`screen${member ? '' : ' no-nav'}`}>
@@ -45,7 +75,11 @@ export default function FriendTree() {
         back={member ? '/friends' : undefined}
         title={
           tree ? (
-            <h1 className="title loaded">{tree.exists ? `${tree.displayName}'s tree` : 'Tree not found'}</h1>
+            // the follow chip sits right after the name; not on your own tree, and not for guests
+            <div className="title-row loaded">
+              <TreeTitle name={tree.exists ? tree.displayName : 'Tree not found'} />
+              {member && tree.exists && following !== null && <FollowButton following={following} onClick={toggleFollow} />}
+            </div>
           ) : (
             <Sk w={150} h={22} />
           )
@@ -59,7 +93,7 @@ export default function FriendTree() {
             <Sk w={260} h={14} />
           </div>
           <div className="tree-stage tree-waiting">
-            <PixelTree ornaments={[]} label="" decorative />
+            <PixelTree ornaments={[]} label="" decorative scale={scale} />
           </div>
         </div>
       )}
@@ -73,22 +107,32 @@ export default function FriendTree() {
 
       {tree?.exists && (
         <>
-          <p className="small soft center loaded">
-            <strong style={{ color: 'var(--snow)' }}>
-              {tree.ornaments.length === 0
-                ? `Be the first to hang one for ${tree.displayName}.`
-                : tree.ornaments.length === 1
-                  ? '1 friend has hung an ornament.'
-                  : `${tree.ornaments.length} friends have hung an ornament.`}
-            </strong>
-            <br />
-            Every message stays hidden until Christmas morning.
-          </p>
+          {/* how many sealed letters hang here; tap for a little bubble saying when they open */}
+          <div className="center loaded">
+            <div className="letters-wrap">
+              <button
+                type="button"
+                className="letters"
+                aria-expanded={letterTip}
+                aria-label={`${tree.ornaments.length} sealed ${tree.ornaments.length === 1 ? 'letter' : 'letters'}`}
+                onClick={() => setLetterTip((v) => !v)}
+              >
+                <LetterIcon />
+                <b>{tree.ornaments.length}</b>
+              </button>
+              {letterTip && (
+                <p className="bubble" role="status">
+                  {tree.ornaments.length === 0 ? 'No letters yet. Be the first!' : 'Sealed until Christmas'}
+                </p>
+              )}
+            </div>
+          </div>
           <div className="tree-stage">
             <PixelTree
               ornaments={tree.ornaments}
               owner={{ name: tree.displayName, avatarUrl: tree.avatarUrl ?? undefined }}
               onSelect={setOpen}
+              scale={scale}
               label={`${tree.displayName}'s tree with ${tree.ornaments.length} sealed ornaments. Tap one to take a look.`}
             />
           </div>

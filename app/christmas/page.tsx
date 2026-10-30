@@ -2,23 +2,29 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ChevronIcon } from '@/components/Icons';
+import { CountdownTiles } from '@/components/Countdown';
+import { ChevronIcon, LetterIcon } from '@/components/Icons';
 import { MusicButton } from '@/components/MusicToggle';
+import Sk from '@/components/Skeleton';
 import Sprite from '@/components/Sprite';
 import SpriteFx from '@/components/SpriteFx';
 import { animFor, animName } from '@/components/useBump';
-import { christmasPreview, type Hung } from '@/lib/data';
+import { adventMonth, monthName } from '@/lib/calendar';
+import { getChristmas, type Christmas } from '@/lib/data';
 import { BY_ID } from '@/lib/ornaments';
 
-const REACTIONS = ['Thank you', 'Made my day', 'Run together soon'];
-
 export default function ChristmasUnlock() {
-  const [list, setList] = useState<Hung[]>([]);
+  // signed out: the demo's letters as a preview; signed in: yours, sealed until the 25th
+  const [data, setData] = useState<Christmas | null>(null);
   const [i, setI] = useState(0);
-  const [sent, setSent] = useState<Record<string, string>>({});
   const track = useRef<HTMLDivElement>(null);
-  // a preview with the demo tree's messages; real ones open on December 25
-  useEffect(() => setList(christmasPreview()), []);
+  const load = useCallback(() => {
+    setData(null);
+    getChristmas().then(setData);
+  }, []);
+  useEffect(load, [load]);
+  const list = data?.kind === 'preview' || data?.kind === 'open' ? data.ornaments : [];
+  const day = `${monthName(adventMonth(new Date().getMonth() + 1))} 25`;
 
   /** Scroll the carousel to message n (swiping and the buttons share one scroll position). */
   const go = useCallback(
@@ -58,17 +64,75 @@ export default function ChristmasUnlock() {
     return () => window.removeEventListener('keydown', onKey);
   }, [go, i, list.length]);
 
-  return (
-    <main className="screen no-nav">
-      <div className="topbar">
-        <span className="small muted">Preview of December 25</span>
-        <div className="topbar-end">
-          <MusicButton />
-          <Link href="/tree" className="textlink">Close</Link>
-        </div>
+  const label = !data ? '' : data.kind === 'preview' ? `Preview of ${day}` : data.kind === 'open' ? day : `Sealed until ${day}`;
+  const topbar = (
+    <div className="topbar">
+      <span className="small muted">{label}</span>
+      <div className="topbar-end">
+        <MusicButton />
+        <Link href="/tree" className="textlink">Close</Link>
       </div>
+    </div>
+  );
+
+  if (!data) {
+    return (
+      <main className="screen no-nav" aria-busy="true">
+        {topbar}
+        <Sk w={240} h={40} />
+        <Sk w="80%" h={16} className="mt8" />
+        <Sk h={260} className="mt24" />
+      </main>
+    );
+  }
+
+  if (data.kind === 'error') {
+    return (
+      <main className="screen no-nav">
+        {topbar}
+        <h1 className="h1">Your letters</h1>
+        <p className="soft mt8">Couldn&apos;t load your letters right now.</p>
+        <button className="btn block mt24" onClick={load}>Try again</button>
+      </main>
+    );
+  }
+
+  if (data.kind === 'sealed') {
+    const n = data.count;
+    return (
+      <main className="screen no-nav loaded">
+        {topbar}
+        <section className="panel center sealed">
+          <LetterIcon px={6} />
+          <h1 className="h1 mt16">{n === 0 ? 'No letters yet' : `${n} ${n === 1 ? 'letter' : 'letters'} waiting`}</h1>
+          <p className="soft mt8">
+            {n === 0
+              ? 'Share your tree so friends can hang an ornament with a letter for you.'
+              : `Sealed until ${day}. Names and messages open at midnight.`}
+          </p>
+          <div className="row mt24" style={{ justifyContent: 'center' }}><CountdownTiles /></div>
+        </section>
+        <Link href="/tree" className="btn block section">{n === 0 ? 'Share your tree' : 'See your tree'}</Link>
+      </main>
+    );
+  }
+
+  if (list.length === 0) {
+    return (
+      <main className="screen no-nav loaded">
+        {topbar}
+        <h1 className="h1 xl">Merry Christmas!</h1>
+        <p className="soft mt8">No letters on your tree this year. Next Advent, share your tree early.</p>
+        <Link href="/tree" className="btn block section">See your tree</Link>
+      </main>
+    );
+  }
+
+  return (
+    <main className="screen no-nav loaded">
+      {topbar}
       <h1 className="h1 xl">Merry Christmas!</h1>
-      <p className="soft mt8">{list.length} messages from friends are open. Swipe to read them.</p>
+      <p className="soft mt8">{list.length} {list.length === 1 ? 'letter' : 'letters'} from friends {list.length === 1 ? 'is' : 'are'} open. Swipe to read them.</p>
 
       <div
         ref={track}
@@ -103,17 +167,6 @@ export default function ChristmasUnlock() {
                 </div>
               </div>
               <p className="mt16" style={{ fontSize: 20, lineHeight: 1.45, fontWeight: 700 }}>&ldquo;{h.message}&rdquo;</p>
-
-              <div className="grow" />
-              <p className="small mt24" style={{ fontWeight: 800 }}>Send {h.from} a reply</p>
-              <div className="row wrap mt8" style={{ gap: 8 }}>
-                {REACTIONS.map((r) => (
-                  <button key={r} className="pill" tabIndex={active ? 0 : -1} aria-pressed={sent[h.id] === r} onClick={() => setSent({ ...sent, [h.id]: r })}>{r}</button>
-                ))}
-              </div>
-              <p className="tiny soft mt8" style={{ minHeight: '1.5em' }}>
-                {sent[h.id] ? <>Sent. {h.from} will see your reply: &ldquo;{sent[h.id]}&rdquo;.</> : ' '}
-              </p>
             </section>
           );
         })}

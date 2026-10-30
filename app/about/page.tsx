@@ -15,7 +15,7 @@ const STEPS = [
   {
     sprite: 'bauble-snow',
     title: 'Friends hang ornaments',
-    text: 'Anyone with your link can hang an ornament with a message. Every message stays sealed.',
+    text: 'Runner friends hang ornaments they earned on your tree, each with a message. Every message stays sealed.',
   },
   {
     sprite: 'gift-box',
@@ -33,7 +33,7 @@ const RULES = [
   ['What counts', 'Runs, walks and hikes synced from Strava, outdoors or on a treadmill. Manual entries don’t.'],
   ['Daily doors', '1 km opens the day’s door. Doors close at 23:59 in your time zone.'],
   ['Weekly challenges', 'Finish a week’s goal to win a rare ornament. What it is stays a surprise.'],
-  ['Giving', 'When you unwrap an ornament, give it straight to a friend. It goes on their tree right away.'],
+  ['Giving', 'Every ornament you hang comes from a run: unwrap it, then give it to a friend. It goes on their tree right away.'],
   ['One per tree', 'You can hang one ornament on each friend’s tree, so spread them around.'],
   ['Missed days', 'No run, no ornament that day. The door stays wrapped.'],
 ];
@@ -80,8 +80,25 @@ export default function About() {
         <Sprite id="lock" px={2} style={{ flexShrink: 0 }} />
         <span>
           Friends only ever see ornaments. Your distances, doors and calendar are visible to you alone.
-          Disconnecting Strava deletes your tree and every synced run.
+          Deleting your tree (on Me) also disconnects Strava and removes every synced run.
         </span>
+      </div>
+
+      <h2 className="h2 mt32">Behind Advent of Running</h2>
+      <div className="panel quiet small soft mt12 stack" style={{ gap: 10 }}>
+        <p>
+          Advent of Running is made by Sujin. It was inspired by{' '}
+          <a href="https://colormytree.me/" target="_blank" rel="noopener noreferrer" style={{ fontWeight: 800 }}>Color My Tree</a>,
+          where friends decorate your tree with messages, and turns that idea into a running challenge
+          for December.
+        </p>
+        <p>
+          Friends from AYOP (At Your Own Pace) tested it along the way and added many of its ideas.
+        </p>
+        <p>
+          Most of it was built with Claude Code, Anthropic&apos;s AI coding tool. Questions or ideas? Say hi on Instagram:{' '}
+          <a href="https://www.instagram.com/sujinleeme/" target="_blank" rel="noopener noreferrer" style={{ fontWeight: 800 }}>@sujinleeme</a>.
+        </p>
       </div>
 
       <Link href="/ornaments" className="panel quiet row link-row section">
@@ -95,7 +112,6 @@ export default function About() {
       <p className="center tiny muted mt24">
         Pixel art drawn in code · “Jingle Bells” (J. L. Pierpont, 1857, public domain) played as chiptune
       </p>
-      <p className="center tiny muted mt4">This is a prototype with demo data.</p>
     </main>
   );
 }

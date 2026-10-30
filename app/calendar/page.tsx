@@ -3,22 +3,49 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import BottomNav from '@/components/BottomNav';
-import { ChevronIcon, Meter, TapIcon } from '@/components/Icons';
+import { Meter, TapIcon } from '@/components/Icons';
 import PageHeader from '@/components/PageHeader';
 import Sprite from '@/components/Sprite';
 import Sk from '@/components/Skeleton';
 import SpriteFx from '@/components/SpriteFx';
+import { PoweredByStrava } from '@/components/Strava';
 import { useBump } from '@/components/useBump';
 import { getProgress } from '@/lib/data';
-import { stravaLoginUrl } from '@/lib/me';
 import { BY_ID } from '@/lib/ornaments';
 import { DAILY_GOAL_KM, DOORS, WEEKLY, doorOrnament, monthName, type DoorState, type Progress } from '@/lib/calendar';
 
 const STATE_LABEL: Record<DoorState, string> = { opened: 'Unwrapped', today: 'Today', missed: 'Missed', locked: 'Coming up' };
 
+/** A goal you're running for right now: icon, what it is, progress, one line of detail. */
+function Goal({ tone, icon, label, title, value, progress, detail, children }: {
+  tone: 'gold' | 'quiet';
+  icon: React.ReactNode;
+  label: string;
+  title: string;
+  value?: string;
+  progress?: [number, number];
+  detail: string;
+  children?: React.ReactNode;
+}) {
+  return (
+    <section className={`panel ${tone} goal`}>
+      <div className="goal-head">
+        <span className="goal-icon" aria-hidden="true">{icon}</span>
+        <div className="grow" style={{ minWidth: 0 }}>
+          <p className="eyebrow">{label}</p>
+          <h3 className="goal-title">{title}</h3>
+        </div>
+        {value && <span className="num goal-value">{value}</span>}
+      </div>
+      {progress && <div className="mt12"><Meter value={Math.min(progress[0], progress[1])} max={progress[1]} /></div>}
+      <p className="tiny soft mt8">{detail}</p>
+      {children}
+    </section>
+  );
+}
+
 export default function Calendar() {
   const [p, setP] = useState<Progress | null>(null);
-  const [demo, setDemo] = useState(false);
   const [failed, setFailed] = useState(false);
   const [picked, setPicked] = useState<number | null>(null);
   const { bump, of } = useBump();
@@ -26,7 +53,6 @@ export default function Calendar() {
     getProgress().then((res) => {
       if ('error' in res) return setFailed(true);
       setP(res.progress);
-      setDemo(res.demo);
     });
   }, []);
 
@@ -39,7 +65,9 @@ export default function Calendar() {
         ) : (
           // the calendar's shape while Strava syncs, so nothing jumps when it arrives
           <div aria-busy="true" aria-label="Syncing your runs">
-            <Sk h={168} />
+            <div className="panel-head"><Sk w={90} h={22} /><Sk w={56} h={14} /></div>
+            <Sk h={225} className="mt12" />
+            <Sk h={159} className="mt8" />
             <div className="panel-head mt32"><Sk w={150} h={22} /><Sk w={56} h={14} /></div>
             <Sk h={236} className="mt12" />
             <Sk h={46} className="mt16" />
@@ -60,8 +88,8 @@ export default function Calendar() {
   const month = monthName(p.month);
   const doors = Array.from({ length: DOORS }, (_, i) => i + 1);
   const state = (n: number) => p.doors[n - 1];
-  // only unwrapped doors reveal their ornament; everything else stays a surprise
-  const revealed = (n: number) => state(n) === 'opened';
+  // unwrapped and missed doors show their ornament (missed ones faded); upcoming ones stay a surprise
+  const revealed = (n: number) => state(n) === 'opened' || state(n) === 'missed';
   const shownSprite = (n: number) => (revealed(n) ? doorOrnament(n) : 'gift-box');
   const shownName = (n: number) => (revealed(n) ? BY_ID[doorOrnament(n)].name.replace('Advent Runner: ', '') : 'A wrapped surprise');
   const km = (n: number) => p.km[n - 1];
@@ -95,10 +123,11 @@ export default function Calendar() {
   const total = kmOver(1, DOORS);
   const daysRun = p.km.filter((k) => k > 0).length;
   const best = p.km.reduce((b, k, i) => (k > p.km[b] ? i : b), 0) + 1;
-  const thisWeek = WEEKLY.find((w) => p.today >= w.from && p.today <= w.to);
+  // the month as a whole (today and this week are in the goal cards above)
+  const daysSoFar = Math.min(p.today, DOORS);
   const stats = [
-    ...(running ? [{ label: 'Today', value: `${p.todayKm.toFixed(1)} km` }] : []),
-    ...(thisWeek ? [{ label: `Week ${thisWeek.week}`, value: `${kmOver(thisWeek.from, thisWeek.to).toFixed(1)} km` }] : []),
+    { label: 'Days run', value: `${daysRun} / ${daysSoFar}` },
+    { label: 'Daily average', value: daysSoFar > 0 ? `${(total / daysSoFar).toFixed(1)} km` : '–' },
     { label: total > 0 ? `Best · ${month.slice(0, 3)} ${best}` : 'Best day', value: total > 0 ? `${km(best).toFixed(1)} km` : '–' },
   ];
   // bar heights: the best day fills the chart, but never less than twice the daily goal
@@ -129,7 +158,7 @@ export default function Calendar() {
         {p.caughtUp[n] ? (
           <span className="km caught">↺ day {p.caughtUp[n]}</span>
         ) : (
-          km(n) > 0 && <span className="km">{km(n)} km</span>
+          km(n) > 0 && <span className="km">{km(n).toFixed(1)} km</span>
         )}
       </button>
     );
@@ -140,31 +169,58 @@ export default function Calendar() {
       <PageHeader title="Calendar" />
 
       <div className="loaded">
-        {/* 1. today's mission: run → unwrap → give */}
+        {/* 1. today: the two goals you're running for right now, as matching cards */}
+        <div className="panel-head">
+          <h2 className="h2">Today</h2>
+          {running && <span className="num muted">{month.slice(0, 3)} {p.today}</span>}
+        </div>
         {running ? (
-          <section className="panel gold" aria-labelledby="mission">
-            <div className="panel-head">
-              <p className="eyebrow" style={{ color: 'var(--gold)' }}>Today&apos;s mission</p>
-              <span className="num" style={{ color: 'var(--gold)' }}>{p.todayKm.toFixed(1)} / {DAILY_GOAL_KM.toFixed(1)} km</span>
-            </div>
-            <div className="row mt8">
-              <Sprite id="gift-box" px={4} style={{ flexShrink: 0 }} />
-              <div className="grow">
-                <h2 id="mission" className="h2">Run {DAILY_GOAL_KM.toFixed(0)} km</h2>
-                <p className="small soft mt4">By 23:59. Door {p.today} opens when you finish, then give the ornament inside to a friend.</p>
-              </div>
-            </div>
-            <div className="mt12"><Meter value={Math.min(p.todayKm, DAILY_GOAL_KM)} max={DAILY_GOAL_KM} /></div>
-            {ready ? (
-              <Link href="/gift" className="btn block mt12">{demo ? 'Try a demo unwrap' : 'Unwrap and give'}</Link>
-            ) : (
-              <div className="panel-head mt8">
-                <span className="small soft"><strong style={{ color: 'var(--snow)' }}>{left.toFixed(1)} km</strong> to go</span>
-              </div>
+          <div className="list mt12">
+            <Goal
+              tone="gold"
+              icon={<Sprite id={p.todayKm >= DAILY_GOAL_KM ? doorOrnament(p.today) : 'gift-box'} px={2} />}
+              label={`Door ${p.today}`}
+              title={`Run ${DAILY_GOAL_KM.toFixed(0)} km`}
+              value={`${p.todayKm.toFixed(1)} / ${DAILY_GOAL_KM.toFixed(1)} km`}
+              progress={[p.todayKm, DAILY_GOAL_KM]}
+              detail={
+                p.todayKm >= DAILY_GOAL_KM
+                  ? `Done! Door ${p.today} is unwrapped.`
+                  : `${left.toFixed(1)} km to go, by 23:59. Then give its ornament to a friend.`
+              }
+            >
+              {ready && <Link href="/gift" className="btn block mt12">Unwrap your gift</Link>}
+            </Goal>
+            {week && (
+              <Goal
+                tone="quiet"
+                icon={
+                  week.done ? (
+                    <Sprite id={week.reward} px={2} />
+                  ) : (
+                    // the prize's shadow: a hint of its shape, revealed when you win it
+                    <>
+                      <span className="silhouette"><Sprite id={week.reward} px={2} /></span>
+                      <span className="dir-q pix">?</span>
+                    </>
+                  )
+                }
+                label={`Week ${week.week} bonus`}
+                title={week.done ? `You won the ${BY_ID[week.reward].name}!` : week.title.replace(/ this week$/, '')}
+                value={week.unit === 'runs together' ? undefined : `${week.progress} / ${week.goal} ${week.unit}`}
+                progress={week.unit === 'runs together' ? undefined : [week.progress, week.goal]}
+                detail={
+                  week.unit === 'runs together'
+                    ? 'Runs together are counted soon.'
+                    : week.done
+                      ? 'Give it to a friend like your door ornaments.'
+                      : `Wins a rare ornament, a surprise until you do. Ends ${p.today === week.to ? 'tonight' : `${month} ${week.to}`}.`
+                }
+              />
             )}
-          </section>
+          </div>
         ) : (
-          <section className="panel gold">
+          <section className="panel gold mt12">
             <p className="eyebrow" style={{ color: 'var(--gold)' }}>{p.today === 0 ? 'Coming soon' : 'Advent is over'}</p>
             <p className="small soft mt8">
               {p.today === 0 ? `Door 1 opens on ${month} 1.` : `You unwrapped ${p.doors.filter((s) => s === 'opened').length} of ${DOORS} doors.`}
@@ -174,15 +230,15 @@ export default function Calendar() {
         )}
 
         {/* 2. the Advent doors, one row per bonus week */}
-        <div className="panel-head mt32">
+        <div className="panel-head section">
           <h2 className="h2">Your Advent</h2>
-          <span className="num muted">{given} given</span>
+          <span className="num muted">{given} {given === 1 ? 'ornament' : 'ornaments'} given</span>
         </div>
 
         <section className="panel quiet mt12 dist" aria-labelledby="distance">
           <div className="panel-head">
             <p id="distance" className="eyebrow">Distance</p>
-            <span className="tiny muted">{daysRun} {daysRun === 1 ? 'day' : 'days'} on the move</span>
+            <span className="tiny muted">{month.slice(0, 3)} 1–{DOORS}</span>
           </div>
           <p className="mt8 dist-total">
             <b>{total.toFixed(1)}</b>
@@ -234,7 +290,7 @@ export default function Calendar() {
               </div>
               {picked !== null && picked >= w.from && picked <= w.to && (
                 <div className="panel quiet row mt8 fade-in" aria-live="polite">
-                  <Sprite id={shownSprite(picked)} px={4} style={{ flexShrink: 0, opacity: state(picked) === 'missed' ? 0.5 : 1 }} />
+                  <Sprite id={shownSprite(picked)} px={4} style={{ flexShrink: 0, ...(state(picked) === 'missed' && { opacity: 0.5, filter: 'grayscale(1)' }) }} />
                   <div className="grow">
                     <p className="eyebrow">Door {picked} · {p.caughtUp[picked] ? `Caught up on day ${p.caughtUp[picked]}` : STATE_LABEL[state(picked)]}</p>
                     <h2 className="h2 mt4">{shownName(picked)}</h2>
@@ -245,54 +301,11 @@ export default function Calendar() {
             </section>
           );
         })}
-        <ul className="legend mt12" aria-label="Door colours">
-          <li><i className="opened" />Unwrapped</li>
-          <li><i className="today" />Today</li>
-          <li><i className="missed" />Missed</li>
-          <li><i className="locked" />Coming up</li>
-        </ul>
-        <p className="tiny muted mt8">
-          Only you can see your calendar.{' '}
-          {demo ? (
-            <>This is the demo. <a href={stravaLoginUrl()} className="textlink" style={{ fontSize: 13 }}>Log in with Strava <ChevronIcon /></a></>
-          ) : p.syncedAt ? (
-            `Synced from Strava at ${new Date(p.syncedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.`
-          ) : null}
+        <p className="tiny muted center mt16">
+          Only you can see your calendar.
+          {p.syncedAt && ` Synced from Strava at ${new Date(p.syncedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.`}
         </p>
-
-        {/* 3. a small weekly bonus */}
-        {week && (
-          <section className="panel quiet section">
-            <div className="panel-head">
-              <p className="eyebrow">Weekly bonus</p>
-              {week.unit !== 'runs together' && <span className="num muted">{week.progress} / {week.goal} {week.unit}</span>}
-            </div>
-            <div className="row mt8" style={{ alignItems: 'center' }}>
-              {week.done ? (
-                <Sprite id={week.reward} px={2} style={{ flexShrink: 0 }} />
-              ) : (
-                // the prize's shadow: a hint of its shape, revealed when you win it
-                <span className="prize-shadow" aria-hidden="true">
-                  <span className="silhouette"><Sprite id={week.reward} px={2} /></span>
-                  <span className="dir-q pix">?</span>
-                </span>
-              )}
-              <div className="grow">
-                <p className="small" style={{ fontWeight: 800 }}>
-                  {week.done ? `You won the ${BY_ID[week.reward].name}!` : `${week.title} to win this rare ornament`}
-                </p>
-                <p className="tiny muted mt4">
-                  {week.unit === 'runs together'
-                    ? 'Runs together are counted soon.'
-                    : week.done
-                      ? 'Give it to a friend like your door ornaments.'
-                      : `What it is stays a surprise until you do. Ends ${p.today === week.to ? 'tonight' : `${month} ${week.to}`}.`}
-                </p>
-              </div>
-            </div>
-            {week.unit !== 'runs together' && <div className="mt8"><Meter value={Math.min(week.progress, week.goal)} max={week.goal} /></div>}
-          </section>
-        )}
+        <p className="center mt12"><PoweredByStrava /></p>
 
       </div>
 

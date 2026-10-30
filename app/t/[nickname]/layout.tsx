@@ -10,7 +10,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const invite = `Hang an ornament on ${name}'s tree 🎄 · Advent of Running`;
   const about = `Leave ${name} a sealed message. They read every one on Christmas morning.`;
   return {
-    title: `${name}'s tree`,
+    title: name,
     description: about,
     openGraph: { title: invite, description: about },
     twitter: { card: 'summary', title: invite, description: about },

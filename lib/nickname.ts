@@ -1,7 +1,7 @@
 /** Tree names: lowercase letters, numbers and dashes, 3–20 characters. Shared by pages and server. */
 
 /** Names that would clash with pages or confuse people. */
-const RESERVED = new Set(['admin', 'api', 'about', 'calendar', 'christmas', 'demo', 'friends', 'gift', 'login', 'me', 'ornaments', 'signup', 'tree']);
+const RESERVED = new Set(['admin', 'api', 'about', 'calendar', 'christmas', 'demo', 'friends', 'gift', 'login', 'me', 'notifications', 'ornaments', 'privacy', 'signup', 'tree']);
 
 export const cleanNickname = (s: string) => s.toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 20);
 

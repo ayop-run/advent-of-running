@@ -6,7 +6,7 @@ import { accessToken, fetchActivities, isCountedRun } from './strava';
 const SYNC_EVERY_MS = 10 * 60_000;
 
 /** Today's date in a time zone. */
-function localDate(timeZone: string) {
+export function localDate(timeZone: string) {
   const [year, month, day] = new Intl.DateTimeFormat('en-CA', { timeZone }).format(new Date()).split('-').map(Number);
   return { year, month, day };
 }
@@ -123,30 +123,4 @@ export async function runnerProgress(runnerId: string, timeZone: string): Promis
     found: [...new Set([...BASIC.map((o) => o.id), ...(pouch ?? []).map((p) => p.ornament_id)])],
     syncedAt,
   };
-}
-
-type Friend = import('@/lib/friends').Friend;
-
-/**
- * Every runner on the app (signed up with Strava), with how you're connected through ornaments.
- * Strava's API can't list who you follow, so everyone with a tree counts. Names and tree links only.
- */
-export async function friendsOf(runnerId: string): Promise<Friend[]> {
-  const [{ data: runners }, { data: toMe }, { data: fromMe }] = await Promise.all([
-    db().from('runners').select('id, nickname, display_name, avatar_url').gt('strava_athlete_id', 0).eq('onboarded', true).neq('id', runnerId),
-    db().from('ornaments_hung').select('from_runner').eq('tree_owner', runnerId).not('from_runner', 'is', null),
-    db().from('ornaments_hung').select('tree_owner').eq('from_runner', runnerId),
-  ]);
-  const hung = new Map<string, number>();
-  for (const r of toMe ?? []) hung.set(r.from_runner as string, (hung.get(r.from_runner as string) ?? 0) + 1);
-  const given = new Set((fromMe ?? []).map((r) => r.tree_owner as string));
-
-  return (runners ?? []).map((r) => ({
-    nickname: r.nickname,
-    name: r.display_name,
-    avatarUrl: r.avatar_url,
-    hung: hung.get(r.id) ?? 0,
-    given: given.has(r.id) ? 1 : 0,
-    visited: false,
-  }));
 }
