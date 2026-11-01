@@ -23,7 +23,7 @@ export default async function Landing({ searchParams }: { searchParams: Promise<
   return (
     <main className="screen no-nav">
       <div className="topbar">
-        <span className="brand">Advent of Running</span>
+        <span className="brand">Advent of Running <span className="beta">Beta</span></span>
         <div className="topbar-end">
           <a href={stravaLoginUrl()} className="textlink">Log in</a>
           <MusicButton />
