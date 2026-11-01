@@ -10,6 +10,7 @@ import Sprite from '@/components/Sprite';
 import { getMe, saveProfile, stravaLoginUrl, type Me, type ProfileError } from '@/lib/me';
 import { checkNickname, cleanNickname } from '@/lib/nickname';
 import { AVAILABILITY, useAvailability } from '@/lib/useNickname';
+import { adventStart, christmasLabel, dayLabel, lastDayLabel } from '@/lib/calendar';
 
 const PROFILE_ERROR: Record<ProfileError, string> = {
   nickname_taken: 'That tree name was just taken. Try another.',
@@ -167,7 +168,7 @@ function SignUpInner() {
 
           <ul className="panel quiet flush" style={{ listStyle: 'none', margin: 0 }}>
             {[
-              ['We read', 'Your runs from December 1 to 24: distance and date.'],
+              ['We read', `Your runs from ${dayLabel(adventStart(), 1, 'long')} to ${lastDayLabel()}: distance and date.`],
               ['Friends see', 'Only the ornaments on your tree. Never your runs.'],
               ['You can leave', 'Delete your tree any time from Me. It removes everything.'],
             ].map(([k, v]) => (
@@ -242,7 +243,7 @@ function SignUpInner() {
             <div className="panel quiet row between" style={{ padding: 14 }}>
               <span>{tz || 'Detecting…'}</span>
             </div>
-            <span className="help">Your messages open at midnight on December 25 in this time zone.</span>
+            <span className="help">Your messages open at midnight on {christmasLabel()} in this time zone.</span>
           </div>
 
           {failed && <p className="center small" role="alert">{PROFILE_ERROR[failed]}</p>}

@@ -11,7 +11,7 @@ import type { Hung } from '@/lib/data';
 export const maskName = (name: string) => `${Array.from(name.trim())[0] ?? '?'}***`;
 
 /** What the tooltip says instead of the message, picked per ornament so neighbours differ. */
-const SEALED_LINES = ['Sealed until Christmas', 'No peeking yet!', 'Opens on Dec 25', 'Wrapped up tight', 'A secret for Christmas', 'Save it for Christmas'];
+const SEALED_LINES = ['Sealed until Christmas', 'No peeking yet!', 'Opens on Christmas', 'Wrapped up tight', 'A secret for Christmas', 'Save it for Christmas'];
 const sealedLine = (id: string) => SEALED_LINES[[...id].reduce((n, c) => (n * 31 + c.charCodeAt(0)) >>> 0, 7) % SEALED_LINES.length];
 
 

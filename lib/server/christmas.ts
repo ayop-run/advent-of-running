@@ -1,5 +1,4 @@
-import { christmasOpen } from '@/lib/calendar';
-import { localDate } from './progress';
+import { christmasOpen, todayIn } from '@/lib/calendar';
 
 /**
  * Whether this owner's messages are open, in their time zone. CHRISTMAS_OPEN=1 opens every
@@ -7,5 +6,5 @@ import { localDate } from './progress';
  */
 export function treeIsOpen(timeZone: string) {
   if (process.env.CHRISTMAS_OPEN === '1') return true;
-  return christmasOpen(localDate(timeZone));
+  return christmasOpen(todayIn(timeZone));
 }

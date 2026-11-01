@@ -12,8 +12,9 @@ import { BASIC } from './ornaments';
  * ~200 m of each other, each running at least 1 km). The ornament behind an opened door goes
  * straight to a friend's tree: run, unwrap, give.
  *
- * The calendar runs in December. For testing, NEXT_PUBLIC_ADVENT_MONTH moves it to another
- * month (1–12) or to the current month ("current"); "Christmas" is then the 25th of that month.
+ * Advent starts on December 1. For testing, NEXT_PUBLIC_ADVENT_START (YYYY-MM-DD) moves the
+ * start to any day; every date follows from it: door N is start + N − 1 days, and "Christmas"
+ * (letters open, hanging closes) is day 25.
  */
 export const DOORS = 24;
 export const DAILY_GOAL_KM = 1;
@@ -33,17 +34,62 @@ export const WEEKLY = [
 
 export type Week = (typeof WEEKLY)[number];
 
-const TEST_MONTH = process.env.NEXT_PUBLIC_ADVENT_MONTH;
+/* ---------------------------------------------------------------------------
+ * The season: every date is a day number counted from the start date.
+ * Dates are plain 'YYYY-MM-DD' strings in the runner's own time zone.
+ * ------------------------------------------------------------------------- */
 
-/** Month (1–12) the calendar runs in, given today's month. */
-export function adventMonth(currentMonth: number) {
-  if (TEST_MONTH === 'current') return currentMonth;
-  const m = Number(TEST_MONTH);
-  return m >= 1 && m <= 12 ? m : 12;
+const START = process.env.NEXT_PUBLIC_ADVENT_START;
+/** Day 25: letters open, hanging closes. */
+export const CHRISTMAS_DAY = DOORS + 1;
+const DAY_MS = 86_400_000;
+const utc = (date: string) => Date.UTC(Number(date.slice(0, 4)), Number(date.slice(5, 7)) - 1, Number(date.slice(8, 10)));
+
+/** Today's date in a time zone (the viewer's own when left out). */
+export function todayIn(timeZone?: string) {
+  return new Intl.DateTimeFormat('en-CA', { timeZone }).format(new Date());
 }
 
-export const monthName = (month: number, style: 'long' | 'short' = 'long') =>
-  new Date(2000, month - 1, 1).toLocaleString('en', { month: style });
+/** First day of the season `date` belongs to: December 1, or NEXT_PUBLIC_ADVENT_START. */
+export function adventStart(date = todayIn()) {
+  if (START && /^\d{4}-\d{2}-\d{2}$/.test(START)) return START;
+  // until June, last December's season still counts (its letters stay open through spring)
+  const [y, m] = date.split('-').map(Number);
+  return `${m < 6 ? y - 1 : y}-12-01`;
+}
+
+/** Which day of Advent `date` is: 1 on the start date, 25 is Christmas, 0 or less before. */
+export function adventDay(date: string, start = adventStart(date)) {
+  return Math.round((utc(date) - utc(start)) / DAY_MS) + 1;
+}
+
+/** The date of day n. */
+export function adventDate(start: string, n: number) {
+  return new Date(utc(start) + (n - 1) * DAY_MS).toISOString().slice(0, 10);
+}
+
+/** "Dec 1" (short) or "December 1" (long) for day n. */
+export function dayLabel(start: string, n: number, style: 'short' | 'long' = 'short') {
+  return new Date(utc(adventDate(start, n))).toLocaleDateString('en', { month: style, day: 'numeric', timeZone: 'UTC' });
+}
+
+/** "Dec 1–7", or "Nov 29–Dec 5" across months. */
+export function rangeLabel(start: string, from: number, to: number) {
+  const a = dayLabel(start, from);
+  const b = dayLabel(start, to);
+  return a.split(' ')[0] === b.split(' ')[0] ? `${a}–${b.split(' ')[1]}` : `${a}–${b}`;
+}
+
+/** "December 25" for this season, in the viewer's time zone. */
+export const christmasLabel = (style: 'short' | 'long' = 'long') => dayLabel(adventStart(), CHRISTMAS_DAY, style);
+/** "December 24", the last door and the last day to hang an ornament. */
+export const lastDayLabel = (style: 'short' | 'long' = 'long') => dayLabel(adventStart(), DOORS, style);
+
+/** Days 1–25, when doors and runs count by local date (so the time zone is locked). */
+export const duringAdvent = (timeZone: string) => {
+  const d = adventDay(todayIn(timeZone));
+  return d >= 1 && d <= CHRISTMAS_DAY;
+};
 
 /** One day of synced runs. */
 export type DayRuns = { day: number; km: number; runs: number; longestKm: number };
@@ -52,9 +98,9 @@ export type DayRuns = { day: number; km: number; runs: number; longestKm: number
 export type Unwrapped = { ornamentId: string; door: number | null };
 
 export type Progress = {
-  year: number;
-  month: number;
-  /** Day of the advent month in the runner's time zone; 0 before the month, 99 after it. */
+  /** The season's first day, 'YYYY-MM-DD'; door n is `adventDate(start, n)`. */
+  start: string;
+  /** Day of Advent in the runner's time zone; 0 before the start, 99 after door 24. */
   today: number;
   /** Index 0 is door 1. */
   doors: DoorState[];
@@ -81,8 +127,7 @@ export type Progress = {
 export function computeProgress(
   days: DayRuns[],
   today: number,
-  year: number,
-  month: number,
+  start: string,
 ): Omit<Progress, 'given' | 'unwrapped' | 'found' | 'syncedAt'> {
   const byDay = new Map(days.map((d) => [d.day, d]));
   const km = (d: number) => byDay.get(d)?.km ?? 0;
@@ -117,8 +162,7 @@ export function computeProgress(
   const current = WEEKLY.find((w) => today >= w.from && today <= w.to);
 
   return {
-    year,
-    month,
+    start,
     today,
     doors,
     caughtUp,
@@ -168,7 +212,7 @@ export function demoProgress(): Progress {
     .map((day) => ({ day, km: day >= 8 ? 1.2 : 3, runs: 1, longestKm: day >= 8 ? 1.2 : 3 }));
   days.push({ day: DEMO_TODAY, km: DEMO_TODAY_KM, runs: 1, longestKm: DEMO_TODAY_KM });
   return {
-    ...computeProgress(days, DEMO_TODAY, 2026, 12),
+    ...computeProgress(days, DEMO_TODAY, adventStart()),
     given: DEMO_GIVEN,
     // the demo lets you try unwrapping today's door before finishing the run
     unwrapped: [{ ornamentId: doorOrnament(DEMO_TODAY), door: DEMO_TODAY }],
@@ -177,25 +221,17 @@ export function demoProgress(): Progress {
   };
 }
 
-/**
- * Whether a tree's messages are open: from 00:00 on the 25th of the advent month, in the
- * owner's time zone, until the next campaign (December's stay open through spring).
- */
-export function christmasOpen({ month, day }: { month: number; day: number }) {
-  const m = adventMonth(month);
-  if (month === m) return day >= 25;
-  return m === 12 ? month < 6 : month > m;
+/** Whether a tree's messages are open: from 00:00 on day 25, in the owner's time zone (`date`). */
+export function christmasOpen(date: string) {
+  return adventDay(date) >= CHRISTMAS_DAY;
 }
 
-/** Time until the 25th of the advent month, 00:00 in the viewer's local time zone. */
+/** Time until 00:00 on day 25 in the viewer's local time zone. */
 export function untilChristmas(now = new Date()) {
-  const month = adventMonth(now.getMonth() + 1) - 1;
-  let year = now.getFullYear();
-  // In test mode ("current") the month never rolls over, so the countdown stays at zero after the 25th.
-  if (TEST_MONTH !== 'current' && now > new Date(year, month, 26)) year += 1;
-  const ms = Math.max(0, new Date(year, month, 25).getTime() - now.getTime());
-  const d = Math.floor(ms / 86400000);
+  const [y, m, d] = adventDate(adventStart(), CHRISTMAS_DAY).split('-').map(Number);
+  const ms = Math.max(0, new Date(y, m - 1, d).getTime() - now.getTime());
+  const days = Math.floor(ms / 86400000);
   const h = Math.floor((ms % 86400000) / 3600000);
-  const m = Math.floor((ms % 3600000) / 60000);
-  return { d, h, m, done: ms === 0 };
+  const min = Math.floor((ms % 3600000) / 60000);
+  return { d: days, h, m: min, done: ms === 0 };
 }

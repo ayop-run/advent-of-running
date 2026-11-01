@@ -51,7 +51,7 @@ SESSION_SECRET=...                 # any long random string
 APP_URL=http://localhost:3000      # Vercel: https://advent.ayop.run (staging: https://staging-advent.ayop.run)
 
 # Vercel: leave unset so production stays on December
-NEXT_PUBLIC_ADVENT_MONTH=current   # optional, local only
+NEXT_PUBLIC_ADVENT_START=2026-11-01   # optional: test with Advent starting on this day
 CHRISTMAS_OPEN=1                   # optional: open every tree's messages now (never on Production)
 ```
 
@@ -81,7 +81,7 @@ Supabase setup, migrations and how to look at the data: see [supabase/README.md]
 
 Work on a feature branch, merge it into `staging`, check it on the staging site, then merge `staging` into `main` to release. Use **Create a merge commit**, not squash, to avoid conflicts on the next merge. Other branches also deploy as previews and use the staging keys, but Strava login only works on the two `ayop.run` addresses.
 
-Keys live in Vercel under **Project → Settings → Environment Variables**: the production values on **Production**, the staging values on **Preview**. `.env.example` lists every key. Leave `NEXT_PUBLIC_ADVENT_MONTH` unset on both so the calendar runs in December.
+Keys live in Vercel under **Project → Settings → Environment Variables**: the production values on **Production**, the staging values on **Preview**. `.env.example` lists every key. Leave `NEXT_PUBLIC_ADVENT_START` unset on Production so Advent starts on December 1; staging can set it to test from any day.
 
 Before launch, production shows only a coming-soon page (door 1, a countdown to December 1 in the visitor's time zone, and an email sign-up for the launch news). It's switched on by `COMING_SOON=1` on Vercel's **Production** environment; remove it and redeploy to launch. Staging leaves it unset and runs the full app; the page itself is at `/coming-soon` on both. Sign-ups are saved in the `launch_signups` table (migration `006_launch_signups.sql`); `notified_at` stays empty until the launch email is sent.
 

@@ -17,6 +17,7 @@ import { getTree, type Hung, type Tree } from '@/lib/data';
 import { BY_ID } from '@/lib/ornaments';
 import { isFollowing, rememberVisit, setFollowing } from '@/lib/friends';
 import { getMe, isMember, myNickname } from '@/lib/me';
+import { christmasLabel } from '@/lib/calendar';
 
 export default function FriendTree() {
   const { nickname } = useParams<{ nickname: string }>();
@@ -151,7 +152,7 @@ export default function FriendTree() {
         ) : (
           <>
             <Link href={`/t/${nickname}/hang`} className="btn block">Hang an ornament</Link>
-            <p className="center tiny muted mt8">You can hang one. Only {tree?.displayName ?? 'they'} can read it, on December 25.</p>
+            <p className="center tiny muted mt8">You can hang one. Only {tree?.displayName ?? 'they'} can read it, on {christmasLabel()}.</p>
           </>
         )}
         {!member && (
