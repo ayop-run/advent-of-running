@@ -162,6 +162,8 @@ p { margin: 0; }
 .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .panel-head > .num, .panel-head > .pix { white-space: nowrap; }
 .brand-mark { font-weight: 800; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--gold); margin-bottom: 2px; }
+/* "BETA": a small tag after the brand, until the app is out of testing */
+.beta { display: inline-block; margin-left: 4px; padding: 2px 5px 1px; vertical-align: 1px; clip-path: var(--px4); background: var(--frost); color: var(--night); font: 800 9px/1 var(--body); letter-spacing: .08em; text-transform: uppercase; }
 .eyebrow { font-weight: 800; font-size: 13px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
 .badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; clip-path: var(--px4); background: rgba(63,181,122,.18); color: #7fe0a6; font-weight: 800; font-size: 13px; white-space: nowrap; }
 /* ---------- ornament directory ---------- */

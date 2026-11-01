@@ -14,7 +14,7 @@ The app keeps runners, trees, hung ornaments, synced runs and earned ornaments i
 2. In the left sidebar, open **SQL Editor** and click **New query**.
 3. Paste all of `schema.sql` and click **Run**. You should see "Success. No rows returned".
 4. Open a new query, paste `seed.sql`, and click **Run**.
-5. Run each file in `migrations/` the same way, in number order (`002_strava_login.sql`, `003_activity_sync.sql`, `004_one_per_tree.sql`, `005_demo_tree_ayop.sql`, `006_launch_signups.sql`, `007_follows.sql`, `008_official_ayop.sql`, `009_ayop_empty_tree.sql`, `010_notifications.sql`, `011_hang_dates_in_app.sql`, …).
+5. Run each file in `migrations/` the same way, in number order (`002_strava_login.sql`, `003_activity_sync.sql`, `004_one_per_tree.sql`, `005_demo_tree_ayop.sql`, `006_launch_signups.sql`, `007_follows.sql`, `008_official_ayop.sql`, `009_ayop_empty_tree.sql`, `010_notifications.sql`, `011_hang_dates_in_app.sql`, `012_feedback.sql`, …).
 
 When someone adds a new migration, run just that file.
 
