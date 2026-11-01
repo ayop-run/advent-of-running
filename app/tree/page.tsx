@@ -8,6 +8,7 @@ import OrnamentSheet from '@/components/OrnamentSheet';
 import PictureSheet from '@/components/PictureSheet';
 import PixelTree, { Avatar } from '@/components/PixelTree';
 import { CameraIcon, ChevronIcon, ShareIcon } from '@/components/Icons';
+import LettersBadge from '@/components/LettersBadge';
 import PageHeader from '@/components/PageHeader';
 import TreeTitle from '@/components/TreeTitle';
 import Sk from '@/components/Skeleton';
@@ -83,6 +84,9 @@ export default function MyTree() {
         <span className="eyebrow">Messages open in</span>
         <CountdownTiles />
       </div>
+
+      {/* the count of sealed letters on your tree, same badge as on a friend's tree */}
+      {tree ? <LettersBadge count={tree.ornaments.length} empty="No letters yet. Ask a friend!" /> : <div className="center"><Sk w={64} h={36} style={{ display: 'inline-block' }} /></div>}
 
       {/* the tree stands in place, dimmed, while its ornaments load */}
       <div className="tree-stage" aria-busy={!tree}>

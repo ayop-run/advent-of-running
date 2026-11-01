@@ -17,7 +17,7 @@ const ERROR: Record<ProfileError, string> = {
 
 const browserZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-/** The runner's settings: tree name, time zone and emails. Signed out, the demo's time zone. */
+/** The runner's settings: tree name and time zone. Signed out, the demo's time zone. */
 export default function MeSettings() {
   const me = useMe();
   if (me === undefined) {
@@ -44,7 +44,6 @@ export default function MeSettings() {
 function Settings({ me }: { me: Me }) {
   const [nick, setNick] = useState(me.nickname);
   const [tz, setTz] = useState(me.timeZone);
-  const [email, setEmail] = useState(me.emailOptIn);
   const [saved, setSaved] = useState(me);
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | ProfileError>('idle');
   const zones = useMemo(() => {
@@ -57,7 +56,7 @@ function Settings({ me }: { me: Me }) {
   const format = checkNickname(nick);
   const { avail, confirm } = useAvailability(nick, renamed && format.ok);
   const check = !renamed ? null : avail ? AVAILABILITY[avail](nick) : format;
-  const dirty = renamed || tz !== saved.timeZone || email !== saved.emailOptIn;
+  const dirty = renamed || tz !== saved.timeZone;
   const blocked = renamed && (!format.ok || avail === 'taken');
 
   // "Saved" fades back once you change something again
@@ -68,9 +67,9 @@ function Settings({ me }: { me: Me }) {
   const save = async () => {
     if (renamed && (await confirm()) !== 'free') return setStatus('nickname_taken');
     setStatus('saving');
-    const res = await saveProfile({ nickname: nick, timeZone: tz, emailOptIn: email });
+    const res = await saveProfile({ nickname: nick, timeZone: tz, emailOptIn: saved.emailOptIn });
     if ('error' in res) return setStatus(res.error);
-    setSaved({ ...saved, nickname: nick, timeZone: tz, emailOptIn: email });
+    setSaved({ ...saved, nickname: nick, timeZone: tz });
     setStatus('saved');
   };
 
@@ -116,14 +115,6 @@ function Settings({ me }: { me: Me }) {
             <> <button type="button" className="ask-link" onClick={() => setTz(browserZone())}>Use {browserZone().replace(/_/g, ' ')}</button></>
           )}
         </span>
-      </label>
-
-      <label className="setting row" style={{ gap: 12, cursor: 'pointer' }}>
-        <span className="grow">
-          <span className="setting-title" style={{ display: 'block' }}>Emails</span>
-          <span className="setting-help" style={{ display: 'block' }}>Launch day and Christmas morning. No spam.</span>
-        </span>
-        <input type="checkbox" className="switch" checked={email} onChange={(e) => setEmail(e.target.checked)} />
       </label>
 
       <div className="setting">
