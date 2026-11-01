@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { adventMonth } from '@/lib/calendar';
 import { db } from '@/lib/server/db';
 import { notify } from '@/lib/server/notify';
 import { sessionRunnerId, validEditToken } from '@/lib/server/session';
@@ -16,10 +17,10 @@ async function treeOwner(nickname: string) {
   return data;
 }
 
-/** Hanging and editing close at the end of December 24 in the owner's time zone. */
+/** Editing closes at the end of the 24th of the advent month (December) in the owner's time zone. */
 function closed(timeZone: string) {
   const [, month, day] = new Intl.DateTimeFormat('en-CA', { timeZone }).format(new Date()).split('-').map(Number);
-  return month === 12 && day >= 25;
+  return month === adventMonth(month) && day >= 25;
 }
 
 /**
