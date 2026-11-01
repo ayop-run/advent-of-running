@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/server/db';
-import { adventMonth } from '@/lib/calendar';
+import { duringAdvent } from '@/lib/calendar';
 import { checkNickname } from '@/lib/nickname';
-import { localDate } from '@/lib/server/progress';
 import { currentRunner } from '@/lib/server/runner';
 import { clearedSessionCookie } from '@/lib/server/session';
 import { accessToken, deauthorize } from '@/lib/server/strava';
@@ -26,12 +25,6 @@ const validTimeZone = (tz: unknown) => {
     return false;
   }
 };
-
-/** Days 1–25 of Advent in this time zone, when doors and runs are counted by local date. */
-function duringAdvent(timeZone: string) {
-  const { month, day } = localDate(timeZone);
-  return month === adventMonth(month) && day <= 25;
-}
 
 /**
  * Sign-up and Me settings: tree name, time zone, email opt-in. The time zone is locked during

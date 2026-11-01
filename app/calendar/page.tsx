@@ -12,7 +12,7 @@ import { PoweredByStrava } from '@/components/Strava';
 import { useBump } from '@/components/useBump';
 import { getProgress } from '@/lib/data';
 import { BY_ID } from '@/lib/ornaments';
-import { DAILY_GOAL_KM, DOORS, WEEKLY, doorOrnament, monthName, type DoorState, type Progress } from '@/lib/calendar';
+import { DAILY_GOAL_KM, DOORS, WEEKLY, dayLabel, rangeLabel, doorOrnament, type DoorState, type Progress } from '@/lib/calendar';
 
 const STATE_LABEL: Record<DoorState, string> = { opened: 'Unwrapped', today: 'Today', missed: 'Missed', locked: 'Coming up' };
 
@@ -85,7 +85,9 @@ export default function Calendar() {
     );
   }
 
-  const month = monthName(p.month);
+  // "December 5" / "Dec 5" for door n, counted from the season's start date
+  const date = (n: number) => dayLabel(p.start, n, 'long');
+  const short = (n: number) => dayLabel(p.start, n);
   const doors = Array.from({ length: DOORS }, (_, i) => i + 1);
   const state = (n: number) => p.doors[n - 1];
   // unwrapped and missed doors show their ornament (missed ones faded); upcoming ones stay a surprise
@@ -100,7 +102,7 @@ export default function Calendar() {
       case 'opened':
         if (p.caughtUp[n]) {
           const by = p.caughtUp[n];
-          return `${ran}Caught up on ${month} ${by} with a ${km(by)} km day (${n} km extra on top of ${DAILY_GOAL_KM} km). ${p.given[n] ? `You gave it to ${p.given[n]}.` : 'Give it to a friend.'}`;
+          return `${ran}Caught up on ${date(by)} with a ${km(by)} km day (${n} km extra on top of ${DAILY_GOAL_KM} km). ${p.given[n] ? `You gave it to ${p.given[n]}.` : 'Give it to a friend.'}`;
         }
         return `${ran}${p.given[n] ? `You gave it to ${p.given[n]}. It hangs on their tree until Christmas.` : 'Unwrapped. Give it to a friend.'}`;
       case 'today':
@@ -108,7 +110,7 @@ export default function Calendar() {
       case 'missed':
         return `${ran}Not enough that day. To still unwrap it, run ${n} km in one go on top of a day’s ${DAILY_GOAL_KM} km.`;
       default:
-        return `Opens on ${month} ${n}.`;
+        return `Opens on ${date(n)}.`;
     }
   };
 
@@ -123,12 +125,12 @@ export default function Calendar() {
   const total = kmOver(1, DOORS);
   const daysRun = p.km.filter((k) => k > 0).length;
   const best = p.km.reduce((b, k, i) => (k > p.km[b] ? i : b), 0) + 1;
-  // the month as a whole (today and this week are in the goal cards above)
+  // the season as a whole (today and this week are in the goal cards above)
   const daysSoFar = Math.min(p.today, DOORS);
   const stats = [
     { label: 'Days run', value: `${daysRun} / ${daysSoFar}` },
     { label: 'Daily average', value: daysSoFar > 0 ? `${(total / daysSoFar).toFixed(1)} km` : '–' },
-    { label: total > 0 ? `Best · ${month.slice(0, 3)} ${best}` : 'Best day', value: total > 0 ? `${km(best).toFixed(1)} km` : '–' },
+    { label: total > 0 ? `Best · ${short(best)}` : 'Best day', value: total > 0 ? `${km(best).toFixed(1)} km` : '–' },
   ];
   // bar heights: the best day fills the chart, but never less than twice the daily goal
   const top = Math.max(DAILY_GOAL_KM * 2, ...p.km);
@@ -172,7 +174,7 @@ export default function Calendar() {
         {/* 1. today: the two goals you're running for right now, as matching cards */}
         <div className="panel-head">
           <h2 className="h2">Today</h2>
-          {running && <span className="num muted">{month.slice(0, 3)} {p.today}</span>}
+          {running && <span className="num muted">{short(p.today)}</span>}
         </div>
         {running ? (
           <div className="list mt12">
@@ -214,7 +216,7 @@ export default function Calendar() {
                     ? 'Runs together are counted soon.'
                     : week.done
                       ? 'Give it to a friend like your door ornaments.'
-                      : `Wins a rare ornament, a surprise until you do. Ends ${p.today === week.to ? 'tonight' : `${month} ${week.to}`}.`
+                      : `Wins a rare ornament, a surprise until you do. Ends ${p.today === week.to ? 'tonight' : date(week.to)}.`
                 }
               />
             )}
@@ -223,7 +225,7 @@ export default function Calendar() {
           <section className="panel gold mt12">
             <p className="eyebrow" style={{ color: 'var(--gold)' }}>{p.today === 0 ? 'Coming soon' : 'Advent is over'}</p>
             <p className="small soft mt8">
-              {p.today === 0 ? `Door 1 opens on ${month} 1.` : `You unwrapped ${p.doors.filter((s) => s === 'opened').length} of ${DOORS} doors.`}
+              {p.today === 0 ? `Door 1 opens on ${date(1)}.` : `You unwrapped ${p.doors.filter((s) => s === 'opened').length} of ${DOORS} doors.`}
             </p>
             {ready && <Link href="/gift" className="btn block mt12">Give your unwrapped ornaments</Link>}
           </section>
@@ -238,26 +240,26 @@ export default function Calendar() {
         <section className="panel quiet mt12 dist" aria-labelledby="distance">
           <div className="panel-head">
             <p id="distance" className="eyebrow">Distance</p>
-            <span className="tiny muted">{month.slice(0, 3)} 1–{DOORS}</span>
+            <span className="tiny muted">{rangeLabel(p.start, 1, DOORS)}</span>
           </div>
           <p className="mt8 dist-total">
             <b>{total.toFixed(1)}</b>
-            <span className="small soft">km in {month}</span>
+            <span className="small soft">km in Advent</span>
           </p>
           <div
             className="bars mt12"
             style={{ '--goal': `${(DAILY_GOAL_KM / top) * 100}%` } as React.CSSProperties}
             role="img"
-            aria-label={`Daily distance: ${total.toFixed(1)} km over ${daysRun} days, best ${km(best)} km on ${month} ${best}.`}
+            aria-label={`Daily distance: ${total.toFixed(1)} km over ${daysRun} days, best ${km(best)} km on ${date(best)}.`}
           >
             {doors.map((n) => (
               <i key={n} className={bar(n)} style={{ height: km(n) > 0 ? `${Math.max(8, (km(n) / top) * 100)}%` : undefined }} />
             ))}
           </div>
           <div className="bars-axis mt4" aria-hidden="true">
-            <span>{month.slice(0, 3)} 1</span>
+            <span>{short(1)}</span>
             <span className="goal-key">{DAILY_GOAL_KM} km a day</span>
-            <span>{month.slice(0, 3)} {DOORS}</span>
+            <span>{short(DOORS)}</span>
           </div>
           <div className="dist-row mt12">
             {stats.map((st) => (
@@ -279,7 +281,7 @@ export default function Calendar() {
           return (
             <section key={w.week} className="mt16" aria-label={`Week ${w.week}`}>
               <div className="week-head">
-                <span className="eyebrow">Week {w.week} <span className="week-dates">· {month.slice(0, 3)} {w.from}–{w.to}</span></span>
+                <span className="eyebrow">Week {w.week} <span className="week-dates">· {rangeLabel(p.start, w.from, w.to)}</span></span>
                 <span className="week-km">
                   {p.weeksDone.includes(w.week) && <span className="week-won">Bonus won</span>}
                   {started ? `${kmOver(w.from, w.to).toFixed(1)} km` : ''}

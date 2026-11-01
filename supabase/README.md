@@ -14,7 +14,7 @@ The app keeps runners, trees, hung ornaments, synced runs and earned ornaments i
 2. In the left sidebar, open **SQL Editor** and click **New query**.
 3. Paste all of `schema.sql` and click **Run**. You should see "Success. No rows returned".
 4. Open a new query, paste `seed.sql`, and click **Run**.
-5. Run each file in `migrations/` the same way, in number order (`002_strava_login.sql`, `003_activity_sync.sql`, `004_one_per_tree.sql`, `005_demo_tree_ayop.sql`, `006_launch_signups.sql`, `007_follows.sql`, `008_official_ayop.sql`, `009_ayop_empty_tree.sql`, `010_notifications.sql`, …).
+5. Run each file in `migrations/` the same way, in number order (`002_strava_login.sql`, `003_activity_sync.sql`, `004_one_per_tree.sql`, `005_demo_tree_ayop.sql`, `006_launch_signups.sql`, `007_follows.sql`, `008_official_ayop.sql`, `009_ayop_empty_tree.sql`, `010_notifications.sql`, `011_hang_dates_in_app.sql`, …).
 
 When someone adds a new migration, run just that file.
 
@@ -80,7 +80,7 @@ APP_URL=https://advent-of-running.vercel.app  # Local: http://localhost:3000
 
 The public values are in the dashboard under **Project Settings → API Keys** (the URL is under **Data API**). They are enough to browse trees.
 
-Leave `NEXT_PUBLIC_ADVENT_MONTH` unset on Vercel so production stays on December. Locally you can set it to `current` to run the calendar in this month.
+Leave `NEXT_PUBLIC_ADVENT_START` unset on Production so Advent starts on December 1. To test, set it to a date (`YYYY-MM-DD`) on staging or locally: door 1 is that day and letters open on day 25.
 
 `CHRISTMAS_OPEN=1` (server-only) opens every tree's messages now, to test Christmas morning locally or on staging (Vercel **Preview**). Never set it on **Production**.
 

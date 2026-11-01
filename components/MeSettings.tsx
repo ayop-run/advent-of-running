@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { adventMonth } from '@/lib/calendar';
+import { christmasLabel, duringAdvent } from '@/lib/calendar';
 import { saveProfile, useMe, type Me, type ProfileError } from '@/lib/me';
 import { checkNickname, cleanNickname } from '@/lib/nickname';
 import { AVAILABILITY, useAvailability } from '@/lib/useNickname';
@@ -16,12 +16,6 @@ const ERROR: Record<ProfileError, string> = {
 };
 
 const browserZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone;
-
-/** Days 1–25 of Advent here, when the time zone is locked (it decides which day each run counts for). */
-function duringAdvent(timeZone: string) {
-  const [, month, day] = new Intl.DateTimeFormat('en-CA', { timeZone }).format(new Date()).split('-').map(Number);
-  return month === adventMonth(month) && day <= 25;
-}
 
 /** The runner's settings: tree name, time zone and emails. Signed out, the demo's time zone. */
 export default function MeSettings() {
@@ -39,7 +33,7 @@ export default function MeSettings() {
       <div className="panel quiet flush loaded">
         <div className="setting">
           <p className="setting-title">Time zone</p>
-          <p className="setting-help">{browserZone()} · your doors close at 23:59 and your tree opens at midnight on December 25 here.</p>
+          <p className="setting-help">{browserZone()} · your doors close at 23:59 and your tree opens at midnight on {christmasLabel()} here.</p>
         </div>
       </div>
     );
@@ -117,7 +111,7 @@ function Settings({ me }: { me: Me }) {
         <span className="help">
           {locked
             ? 'Locked during Advent, so every run counts for the right day.'
-            : 'Your doors close at 23:59 and your letters open at midnight on December 25 here.'}
+            : `Your doors close at 23:59 and your letters open at midnight on ${christmasLabel()} here.`}
           {!locked && tz !== browserZone() && (
             <> <button type="button" className="ask-link" onClick={() => setTz(browserZone())}>Use {browserZone().replace(/_/g, ' ')}</button></>
           )}
