@@ -6,6 +6,7 @@
  */
 
 import type { Hung } from './data';
+import { FIRST_PHRASE, scheduleLoop } from './jingle';
 import { poseAt } from './spriteMotion';
 import { SPRITES, SPRITE_SIZE } from './sprites';
 import { BODY, FONT, SCENE_H, SCENE_W, drawAvatar, drawGrid, drawTree, miniStar, notchedRect, type CardFormat } from './treeImage';
@@ -187,16 +188,52 @@ function drawTreeCard(ctx: CanvasRenderingContext2D, o: BoothScene, x: number, y
   ctx.textBaseline = 'alphabetic';
 }
 
-/** Video formats to try, best for Instagram first. */
+/** Video formats to try, best for Instagram first; with sound, ones that carry an audio track. */
 const VIDEO_TYPES = ['video/mp4;codecs=avc1', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm'];
+const SOUND_TYPES = ['video/mp4;codecs=avc1,mp4a.40.2', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];
 
-export const videoType = () =>
-  typeof MediaRecorder === 'undefined' ? null : VIDEO_TYPES.find((t) => MediaRecorder.isTypeSupported(t)) ?? null;
+export const videoType = (sound = false) =>
+  typeof MediaRecorder === 'undefined' ? null : (sound ? SOUND_TYPES : VIDEO_TYPES).find((t) => MediaRecorder.isTypeSupported(t)) ?? null;
 
-/** Records `seconds` of the animated scene. Null where the browser can't record video. */
-export async function recordBooth(o: BoothScene, seconds = 4): Promise<Blob | null> {
-  const type = videoType();
-  if (!type) return null;
+/**
+ * The music for a video: Jingle Bells into a stream instead of the speakers, fading out at
+ * the end. Started straight from the tap (browsers only allow sound after one).
+ */
+function soundtrack(seconds: number) {
+  const AC = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+  if (!AC) return null;
+  const ctx = new AC();
+  const dest = ctx.createMediaStreamDestination();
+  const out = ctx.createGain();
+  out.connect(dest);
+  return {
+    track: dest.stream.getAudioTracks()[0],
+    start() {
+      ctx.resume().catch(() => {});
+      const at = ctx.currentTime + 0.05;
+      // louder than the music button: a phone plays a video's sound at its own volume
+      out.gain.setValueAtTime(1, at);
+      out.gain.setValueAtTime(1, at + seconds - 0.5);
+      out.gain.linearRampToValueAtTime(0, at + seconds);
+      scheduleLoop(ctx, out, at);
+    },
+    stop: () => ctx.close().catch(() => {}),
+  };
+}
+
+/** How long a video lasts: with music, one sung line ("…jingle all the way"); without, 4 s. */
+export const videoSeconds = (music: boolean) => (music ? FIRST_PHRASE + 0.3 : 4);
+
+/** Records the animated scene, with Jingle Bells if `music`. Null where the browser can't record video. */
+export async function recordBooth(o: BoothScene, music = false): Promise<Blob | null> {
+  // the music starts before anything else, while we're still inside the tap
+  const seconds = videoSeconds(music);
+  const sound = music ? soundtrack(seconds) : null;
+  const type = videoType(!!sound);
+  if (!type) {
+    sound?.stop();
+    return null;
+  }
   const { W, H } = SIZE[o.format];
   const canvas = document.createElement('canvas');
   canvas.width = W;
@@ -212,11 +249,13 @@ export async function recordBooth(o: BoothScene, seconds = 4): Promise<Blob | nu
   const track = stream.getVideoTracks()[0] as MediaStreamTrack & { requestFrame?: () => void };
   const manual = typeof track.requestFrame === 'function';
   const live = manual ? stream : canvas.captureStream(30);
-  const rec = new MediaRecorder(live, { mimeType: type, videoBitsPerSecond: 8_000_000 });
+  const media = sound ? new MediaStream([...live.getVideoTracks(), sound.track]) : live;
+  const rec = new MediaRecorder(media, { mimeType: type, videoBitsPerSecond: 8_000_000, audioBitsPerSecond: 128_000 });
   const chunks: Blob[] = [];
   rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
   const done = new Promise<void>((r) => (rec.onstop = () => r()));
   rec.start();
+  sound?.start();
   const t0 = performance.now();
   try {
     await new Promise<void>((resolve) => {
@@ -234,6 +273,8 @@ export async function recordBooth(o: BoothScene, seconds = 4): Promise<Blob | nu
   } finally {
     stream.getTracks().forEach((tr) => tr.stop());
     live.getTracks().forEach((tr) => tr.stop());
+    sound?.track.stop();
+    sound?.stop();
     canvas.remove();
   }
   return new Blob(chunks, { type: type.split(';')[0] });

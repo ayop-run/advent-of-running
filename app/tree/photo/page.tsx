@@ -30,6 +30,7 @@ export default function PhotoBooth() {
   const [stickers, setStickers] = useState<string[]>([]);
   const [choices, setChoices] = useState<string[]>([]);
   const [asVideo, setAsVideo] = useState(false);
+  const [music, setMusic] = useState(true);
   const [camera, setCamera] = useState<Camera>('starting');
   // a taken or chosen photo; while it's null the preview shows the live camera
   const [still, setStill] = useState<Backdrop | null>(null);
@@ -40,6 +41,8 @@ export default function PhotoBooth() {
   const [avatar, setAvatar] = useState<HTMLImageElement | null>(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState('');
+  // a recorded video waiting for its share tap
+  const [ready, setReady] = useState<{ blob: Blob; file: string } | null>(null);
   const [canShare, setCanShare] = useState(false);
   // known only in the browser, so the server and the first render agree
   const [canVideo, setCanVideo] = useState(false);
@@ -106,6 +109,8 @@ export default function PhotoBooth() {
     startCamera();
     return stopCamera;
   }, [startCamera]);
+
+  useEffect(() => setReady(null), [still, format, mode, stickers, asVideo, music]);
 
   const scene = useCallback(
     (backdrop: Backdrop | null): BoothScene => ({ backdrop, format, mode, stickers, stats, ornaments, ownerName: name, avatar, link }),
@@ -176,8 +181,8 @@ export default function PhotoBooth() {
     if (!still) return null;
     const base = `${name.toLowerCase().replace(/[^a-z0-9]+/g, '-') || 'my'}-advent-${mode === 'run' ? 'run' : 'tree'}-${format}`;
     if (asVideo) {
-      setBusy('Recording your video…');
-      const blob = await recordBooth(scene(still), 4);
+      setBusy(music ? 'Recording your video with Jingle Bells…' : 'Recording your video…');
+      const blob = await recordBooth(scene(still), music);
       setBusy('');
       return blob ? { blob, file: `${base}.${blob.type.includes('mp4') ? 'mp4' : 'webm'}` } : null;
     }
@@ -193,11 +198,21 @@ export default function PhotoBooth() {
     const out = await render();
     if (out) downloadBlob(out.blob, out.file);
   };
-  const share = async () => {
-    const out = await render();
+  const shareFile = async (out: { blob: Blob; file: string }) => {
     const text = mode === 'tree' ? `Hang an ornament on my tree: ${link}` : 'My Advent of Running';
     if (mode === 'tree') navigator.clipboard?.writeText(link).catch(() => {});
-    if (out && !(await shareBlob(out.blob, out.file, text))) downloadBlob(out.blob, out.file);
+    if (!(await shareBlob(out.blob, out.file, text))) downloadBlob(out.blob, out.file);
+  };
+  /**
+   * Phones only open the share sheet straight after a tap, and a video takes seconds to
+   * record: so a video is recorded first and shared with one more tap.
+   */
+  const share = async () => {
+    if (ready) return shareFile(ready);
+    const out = await render();
+    if (!out) return;
+    if (asVideo) setReady(out);
+    else shareFile(out);
   };
 
   const live = !still && camera === 'live';
@@ -238,6 +253,9 @@ export default function PhotoBooth() {
         {canVideo && (
           <button type="button" className="pill" aria-pressed={asVideo} onClick={() => setAsVideo((v) => !v)}>✨ Save as video</button>
         )}
+        {canVideo && asVideo && (
+          <button type="button" className="pill" aria-pressed={music} onClick={() => setMusic((m) => !m)}>♪ Music</button>
+        )}
       </div>
 
       {choices.length > 0 && (
@@ -261,7 +279,8 @@ export default function PhotoBooth() {
         </>
       ) : still ? (
         <>
-          {canShare && <button className="btn block mt16" disabled={!!busy} onClick={share}>{asVideo ? 'Share video' : 'Share'}</button>}
+          {ready && <p className="small center mt12" role="status" style={{ color: '#7fe0a6' }}>Your video is ready.</p>}
+          {canShare && <button className="btn block mt16" disabled={!!busy} onClick={share}>{ready ? 'Share video now' : asVideo ? 'Share video' : 'Share'}</button>}
           <button className={`btn ${canShare ? 'ghost' : ''} block mt8`} disabled={!!busy} onClick={save}>{asVideo ? 'Download video' : 'Download picture'}</button>
           <button className="btn ghost block mt8" disabled={!!busy} onClick={startCamera}>Retake</button>
           {pickPhoto(false)}
