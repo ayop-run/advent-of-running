@@ -80,6 +80,43 @@ export const ORNAMENTS: Ornament[] = [
   { id: 'golden-trophy', name: 'Golden Trophy', tier: 'rare', blurb: 'First place in the Advent of Running.' },
 ];
 
+/**
+ * Today's door, before it's unwrapped: a hint at the character hiding behind it (never its
+ * name) and a nudge to go and run. One per door ornament, so every day reads differently.
+ */
+export const DOOR_TEASERS: Record<string, string> = {
+  fox: 'Someone with a bushy orange tail is already out the door. Can you keep up?',
+  penguin: 'A little waddler is waiting for you. Slow is fine, as long as you finish.',
+  reindeer: 'Someone is training for one very long night. Join their run today!',
+  'gingerbread-runner': 'Something sweet is running away from you. Catch it!',
+  'santa-shoe': 'Something festive is laced up and ready for the Christmas 5K.',
+  'finish-medal': 'Something shiny is waiting at the finish line. Go and earn it.',
+  stopwatch: 'Something lucky is ticking. Today could be a fast day.',
+  'running-shoe': 'Something fresh and minty wants to be broken in today.',
+  'berlin-bear': 'A big furry city runner has their headband on. Your turn.',
+  'ampel-go': 'Someone small is glowing green. That means go!',
+  'ampel-stop': 'Someone is glowing red… but not yet. Rest after your run.',
+  'tempelhof-hare': 'Someone with long ears is zooming down an old runway. Race them?',
+  'wild-boar': 'Someone with tusks is crashing through the forest. Run, but don’t race them.',
+  'hooded-crow': 'A cheeky someone in a grey vest is watching you lace up.',
+  hedgehog: 'Someone small and prickly takes tiny steps and never gives up. Neither do you.',
+  dachshund: 'Short legs, long body, big plans. Someone wants a walk. Make it a run.',
+  sparrow: 'A cheeky little bird is after your pretzel crumbs. Outrun it!',
+  'night-owl': 'Someone with big round eyes loves running after dark. Headlamp on?',
+  'gps-watch': 'Something is waiting to record your run. If it isn’t on Strava…',
+  'super-shoe': 'Something bouncy is saved for race day. Pretend it’s today.',
+  'trail-shoe': 'Something grippy loves muddy paths. Go find one.',
+  'foam-roller': 'Something is waiting to make your legs feel good afterwards.',
+  'pacer-balloon': 'Something is floating ahead at a steady pace. Follow it.',
+  'race-singlet': 'Something light and fast is far too cold for December. Wear a jacket anyway.',
+  'foil-cape': 'Something shiny and warm is waiting past the finish line.',
+  'tv-tower': 'Something very tall can see your whole run from up there.',
+  'ubahn-train': 'Something yellow is racing you to the next stop. Beat it!',
+  'world-clock': 'Something keeps time for every city. Yours says it’s time to run.',
+  'wall-piece': 'A colourful piece of history is waiting along the river.',
+  'market-stall': 'Something smells of gingerbread and warm drinks. Run there and back?',
+};
+
 export const BY_ID: Record<string, Ornament> = Object.fromEntries(ORNAMENTS.map((o) => [o.id, o]));
 
 /** How each kind of ornament is earned, for the directory and the About page. */
