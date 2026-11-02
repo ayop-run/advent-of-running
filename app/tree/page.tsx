@@ -10,6 +10,7 @@ import PixelTree, { Avatar } from '@/components/PixelTree';
 import { CameraIcon, ChevronIcon, ShareIcon } from '@/components/Icons';
 import LettersBadge from '@/components/LettersBadge';
 import PageHeader from '@/components/PageHeader';
+import Tip from '@/components/Tip';
 import TreeTitle from '@/components/TreeTitle';
 import Sk from '@/components/Skeleton';
 import { useTreeScale } from '@/components/useTreeScale';
@@ -72,12 +73,16 @@ export default function MyTree() {
           )
         }
       >
-        <button type="button" className="icon-btn" onClick={() => setPicture(true)} aria-label="Picture of my tree" title="Picture of my tree" disabled={!tree}>
-          <CameraIcon />
-        </button>
-        <button type="button" className="icon-btn" onClick={share} aria-label="Share my tree" title="Share my tree">
-          <ShareIcon />
-        </button>
+        <Tip label="Save a picture">
+          <button type="button" className="icon-btn" onClick={() => setPicture(true)} aria-label="Picture of my tree" disabled={!tree}>
+            <CameraIcon />
+          </button>
+        </Tip>
+        <Tip label="Share my tree">
+          <button type="button" className="icon-btn" onClick={share} aria-label="Share my tree">
+            <ShareIcon />
+          </button>
+        </Tip>
       </PageHeader>
 
       <div className="countdown-strip">
@@ -86,7 +91,9 @@ export default function MyTree() {
       </div>
 
       {/* the count of sealed letters on your tree, same badge as on a friend's tree */}
-      {tree ? <LettersBadge count={tree.ornaments.length} empty="No letters yet. Ask a friend!" /> : <div className="center"><Sk w={64} h={36} style={{ display: 'inline-block' }} /></div>}
+      <div className="mt16">
+        {tree ? <LettersBadge count={tree.ornaments.length} empty="No letters yet. Ask a friend!" /> : <div className="center"><Sk w={64} h={36} style={{ display: 'inline-block' }} /></div>}
+      </div>
 
       {/* the tree stands in place, dimmed, while its ornaments load */}
       <div className="tree-stage" aria-busy={!tree}>
@@ -111,18 +118,18 @@ export default function MyTree() {
                     ? 'A friend hung a little wish on your tree.'
                     : `${tree.ornaments.length} friends are thinking of you.`}
               </strong>
-              <br />
-              {tree.ornaments.length === 0 ? 'Each one hides a note from a friend.' : 'Their names and notes stay wrapped.'}
-              <br />
-              Opens on Christmas morning.
+              {tree.ornaments.length === 0 && (
+                <>
+                  <br />
+                  Each one hides a note from a friend.
+                </>
+              )}
             </p>
             <p className="center mt4"><Link href="/friends" className="textlink" style={{ fontSize: 14 }}>Ask friends to hang one <ChevronIcon /></Link></p>
           </div>
         ) : (
           <div className="mt12" style={{ display: 'grid', justifyItems: 'center', gap: 8 }}>
             <Sk w={230} h={14} />
-            <Sk w={210} h={12} />
-            <Sk w={170} h={12} />
             <Sk w={150} h={14} className="mt4" />
           </div>
         )}
