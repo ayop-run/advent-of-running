@@ -54,8 +54,8 @@ export default function MyTree() {
           )
         }
       >
-        <Tip label="Run photo">
-          <Link href="/tree/photo" className="icon-btn" aria-label="Make a run photo">
+        <Tip label="Photo booth">
+          <Link href="/tree/photo" className="icon-btn" aria-label="Photo booth">
             <CameraIcon />
           </Link>
         </Tip>

@@ -117,7 +117,7 @@ export default function PictureSheet({ ornaments, ownerName, avatar, link, onClo
           </button>
         </div>
         <p className="tiny muted center mt8">For a story, add your link with Instagram&apos;s Link sticker.</p>
-        <Link href="/tree/photo" className="btn ghost block mt8">Make a run photo</Link>
+        <Link href="/tree/photo" className="btn ghost block mt8">Photo booth: add your photo</Link>
         <button className="btn ghost block mt8" onClick={onClose}>Close</button>
       </div>
     </div>

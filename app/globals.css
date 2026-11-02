@@ -732,10 +732,11 @@ a.list-row:hover { color: var(--gold); }
 .picture-frame.story { aspect-ratio: 9 / 16; max-height: 46vh; }
 .picture-frame.post { aspect-ratio: 3 / 4; max-height: 46vh; }
 .pill-note { margin-left: 4px; font-size: 12px; opacity: .65; }
-/* run photo studio: the preview canvas in its frame, and the sticker picker */
+/* photo booth: the preview canvas in its frame, and the ornament picker */
 .run-preview { display: block; width: 100%; height: 100%; object-fit: contain; }
 .sticker-picks { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
 .sticker-pick { width: 52px; height: 52px; padding: 0; display: grid; place-items: center; }
+.file-btn { position: relative; cursor: pointer; }
 .picture-frame img { display: block; width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; }
 .booth { position: relative; display: grid; place-items: center; min-height: 240px; clip-path: var(--px8); background: var(--night-deep); overflow: hidden; }
 /* the preview and the result stay on screen with the buttons below them */
