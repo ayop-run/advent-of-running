@@ -11,7 +11,7 @@ import SpriteFx from '@/components/SpriteFx';
 import { PoweredByStrava } from '@/components/Strava';
 import { useBump } from '@/components/useBump';
 import { getProgress } from '@/lib/data';
-import { BY_ID } from '@/lib/ornaments';
+import { BY_ID, DOOR_TEASERS } from '@/lib/ornaments';
 import { DAILY_GOAL_KM, DOORS, WEEKLY, dayLabel, rangeLabel, type DoorState, type Progress } from '@/lib/calendar';
 
 const STATE_LABEL: Record<DoorState, string> = { opened: 'Unwrapped', today: 'Today', missed: 'Missed', locked: 'Coming up' };
@@ -110,8 +110,11 @@ export default function Calendar() {
           return `${ran}Caught up on ${date(by)} with a ${km(by)} km day (${n} km extra on top of ${DAILY_GOAL_KM} km). ${p.given[n] ? `You gave it to ${p.given[n]}.` : 'Give it to a friend.'}`;
         }
         return `${ran}${p.given[n] ? `You gave it to ${p.given[n]}. It hangs on their tree until Christmas.` : 'Unwrapped. Give it to a friend.'}`;
-      case 'today':
-        return `${ran}Finish today’s run to unwrap it and give it to a friend.`;
+      case 'today': {
+        // a different nudge every day: a hint at whoever is hiding behind the door
+        const teaser = DOOR_TEASERS[ornament(n)] ?? 'Someone is waiting behind this door.';
+        return `${teaser} ${Math.max(0, DAILY_GOAL_KM - km(n)).toFixed(1)} km to go to unwrap it.`;
+      }
       case 'missed':
         return `${ran}Not enough that day. To still unwrap it, run ${n} km in one go on top of a day’s ${DAILY_GOAL_KM} km.`;
       default:
