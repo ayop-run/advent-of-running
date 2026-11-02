@@ -5,6 +5,7 @@
  */
 
 import { avatarColor } from './avatar';
+import { poseAt } from './spriteMotion';
 import type { Hung } from './data';
 import { BY_ID } from './ornaments';
 import { SKY_KEYS, localHour, skyVars } from './sky';
@@ -62,11 +63,21 @@ export function miniStar(ctx: CanvasRenderingContext2D, cx: number, cy: number, 
   }
 }
 
+/** The page's bulb timing: on for two thirds of 1.8 s, in three groups 0.6 s apart. */
+const bulbOn = (i: number, t: number) => ((t + (i % 3) * 0.6) % 1.8) / 1.8 < 0.67;
+/** The page's star sparkle over 2.4 s: off, a dot, the full star, a dot, off. */
+function glintAt(t: number, delay: number): 'off' | 'dot' | 'star' {
+  const p = ((((t - delay) % 2.4) + 2.4) % 2.4) / 2.4;
+  return p < 0.1 || p >= 0.6 ? 'off' : p < 0.2 || p >= 0.5 ? 'dot' : 'star';
+}
+
 /**
  * Draws the tree, its lit bulbs, the star's sparkles, the ornaments and the snow bank.
- * (x, y) is the top-left of the scene, which is SCENE_W × SCENE_H tree pixels.
+ * (x, y) is the top-left of the scene, which is SCENE_W × SCENE_H tree pixels. With `t`
+ * (seconds), it's one frame of the living tree: bulbs blink and sparkles twinkle like on the
+ * page, and the ornaments now and then play their own moves.
  */
-export function drawTree(ctx: CanvasRenderingContext2D, ornaments: Hung[], x: number, y: number, px: number) {
+export function drawTree(ctx: CanvasRenderingContext2D, ornaments: Hung[], x: number, y: number, px: number, t?: number) {
   const tx = x + ((SCENE_W - TREE_W) / 2) * px;
   // snow bank: its paths are in a 2-pixel grid (the page's viewBox starts at x=4), and it
   // reaches 16 tree pixels below the tree, like the page's
@@ -80,19 +91,39 @@ export function drawTree(ctx: CanvasRenderingContext2D, ornaments: Hung[], x: nu
   ctx.restore();
 
   drawGrid(ctx, SPRITES.tree, tx, y, px);
-  for (const [lx, ly, color] of TREE_LIGHTS) {
+  TREE_LIGHTS.forEach(([lx, ly, color], i) => {
+    if (t !== undefined && !bulbOn(i, t)) return; // unlit: the tree's own bulb shows
     ctx.fillStyle = color;
     ctx.fillRect(tx + lx * px, y + ly * px, 2 * px, 2 * px);
     ctx.fillStyle = '#fff0b8';
     ctx.fillRect(tx + lx * px, y + ly * px, px, px);
+  });
+  for (const [gx, gy, delay] of TOPPER_GLINTS) {
+    const g = t === undefined ? 'star' : glintAt(t, delay);
+    if (g === 'star') miniStar(ctx, tx + gx * px, y + gy * px, px, '#ffc94a', '#fff7ec');
+    else if (g === 'dot') {
+      ctx.fillStyle = '#fff7ec';
+      ctx.fillRect(tx + gx * px, y + gy * px, px, px);
+    }
   }
-  for (const [gx, gy] of TOPPER_GLINTS) miniStar(ctx, tx + gx * px, y + gy * px, px, '#ffc94a', '#fff7ec');
   const half = SPRITE_SIZE / 2;
   placeOrnaments(ornaments).shown.forEach((h, i) => {
     const grid = SPRITES[h.ornamentId];
     if (!grid) return;
     const [sx, sy] = TREE_SLOTS[i];
-    drawGrid(ctx, grid, tx + (sx - half) * px, y + (sy - half) * px, px);
+    // each ornament takes its turn, with a longer rest than a sticker so the tree stays calm
+    const pose = t === undefined ? null : poseAt(h.ornamentId, t, i * 0.83, 4);
+    if (!pose || (!pose.dx && !pose.dy && !pose.flip && !pose.turn && pose.alpha === 1)) {
+      drawGrid(ctx, grid, tx + (sx - half) * px, y + (sy - half) * px, px);
+      return;
+    }
+    ctx.save();
+    ctx.globalAlpha = pose.alpha;
+    ctx.translate(tx + (sx + pose.dx) * px, y + (sy + pose.dy) * px);
+    ctx.rotate((pose.turn * Math.PI) / 180);
+    if (pose.flip) ctx.scale(-1, 1);
+    drawGrid(ctx, grid, -half * px, -half * px, px);
+    ctx.restore();
   });
 }
 
