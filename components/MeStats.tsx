@@ -9,8 +9,8 @@ import { getFriends } from '@/lib/friends';
 
 const TILES = [
   { label: 'Ornaments given', href: '/me/given' },
-  { label: 'Days run' },
-  { label: 'Friends' },
+  { label: 'Days run', href: '/calendar' },
+  { label: 'Friends', href: '/friends' },
 ];
 
 /** Ornaments given, days run and friends, from your calendar (or the demo's). */

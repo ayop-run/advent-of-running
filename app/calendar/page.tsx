@@ -11,7 +11,7 @@ import SpriteFx from '@/components/SpriteFx';
 import { PoweredByStrava } from '@/components/Strava';
 import { useBump } from '@/components/useBump';
 import { getProgress } from '@/lib/data';
-import { BY_ID, DOOR_TEASERS } from '@/lib/ornaments';
+import { BY_ID, DOOR_MISSED, DOOR_TEASERS } from '@/lib/ornaments';
 import { DAILY_GOAL_KM, DOORS, WEEKLY, dayLabel, rangeLabel, type DoorState, type Progress } from '@/lib/calendar';
 
 const STATE_LABEL: Record<DoorState, string> = { opened: 'Unwrapped', today: 'Today', missed: 'Missed', locked: 'Coming up' };
@@ -115,8 +115,11 @@ export default function Calendar() {
         const teaser = DOOR_TEASERS[ornament(n)] ?? 'Someone is waiting behind this door.';
         return `${teaser} ${Math.max(0, DAILY_GOAL_KM - km(n)).toFixed(1)} km to go to unwrap it.`;
       }
-      case 'missed':
-        return `${ran}Not enough that day. To still unwrap it, run ${n} km in one go on top of a day’s ${DAILY_GOAL_KM} km.`;
+      case 'missed': {
+        // the character behind the door is still waiting, then how to catch up
+        const line = DOOR_MISSED[ornament(n)] ?? 'Not enough that day.';
+        return `${ran}${line} To still unwrap it, run ${n} km in one go on top of a day’s ${DAILY_GOAL_KM} km.`;
+      }
       default:
         return `Opens on ${date(n)}.`;
     }

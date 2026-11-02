@@ -117,6 +117,40 @@ export const DOOR_TEASERS: Record<string, string> = {
   'market-stall': 'Something smells of gingerbread and warm drinks. Run there and back?',
 };
 
+/** A missed door: the character behind it, still waiting. The catch-up rule follows it. */
+export const DOOR_MISSED: Record<string, string> = {
+  fox: 'The fox waited by the door all day. It’s still hoping you’ll come out.',
+  penguin: 'The penguin waddled out alone. It would love some company.',
+  reindeer: 'The reindeer did its training run without you, but saved you a spot.',
+  'gingerbread-runner': 'The gingerbread runner got away this time. You can still catch it.',
+  'santa-shoe': 'These festive shoes stayed laced up by the door, waiting.',
+  'finish-medal': 'This medal is still hanging at a finish line you didn’t reach.',
+  stopwatch: 'The lucky stopwatch never started. Give it a reason to tick.',
+  'running-shoe': 'The mint shoes are still not broken in.',
+  'berlin-bear': 'The Berlin bear ran its loop alone and kept your headband warm.',
+  'ampel-go': 'The light was green all day, but nobody crossed.',
+  'ampel-stop': 'That turned into a rest day. The red Ampel man approves, just this once.',
+  'tempelhof-hare': 'The hare zoomed down the runway without you.',
+  'wild-boar': 'The wild boar is still out in the Grunewald, waiting for you.',
+  'hooded-crow': 'The crow watched for you all day and is not impressed.',
+  hedgehog: 'The hedgehog never gives up on you. Don’t give up on it.',
+  dachshund: 'The dachshund waited at the door with its lead. Still waiting.',
+  sparrow: 'The sparrow ate your pretzel crumbs and left only a feather.',
+  'night-owl': 'The night owl ran under the stars alone.',
+  'gps-watch': 'The GPS watch found no run. So it didn’t happen… yet.',
+  'super-shoe': 'The super shoes are still in their box.',
+  'trail-shoe': 'The trail shoes stayed clean. Too clean.',
+  'foam-roller': 'The foam roller had nothing to roll out.',
+  'pacer-balloon': 'The pacer balloon floated past without you.',
+  'race-singlet': 'The race singlet stayed folded in the drawer.',
+  'foil-cape': 'The foil cape is still waiting past the finish line.',
+  'tv-tower': 'The TV tower looked out over the whole city and couldn’t spot you.',
+  'ubahn-train': 'The U-Bahn left without you. Another one is coming.',
+  'world-clock': 'Everyone met at the clock. Your spot was empty.',
+  'wall-piece': 'This piece of the Wall is still waiting along the river.',
+  'market-stall': 'The market hut kept a warm drink for you. It went cold.',
+};
+
 export const BY_ID: Record<string, Ornament> = Object.fromEntries(ORNAMENTS.map((o) => [o.id, o]));
 
 /** How each kind of ornament is earned, for the directory and the About page. */
