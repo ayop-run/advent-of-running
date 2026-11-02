@@ -556,6 +556,8 @@ button.orn:focus-visible > svg { outline: 4px solid var(--frost); outline-offset
 /* today: the one you're running for */
 .door.today { background: var(--night-deep); box-shadow: inset 0 0 0 4px var(--gold); }
 .door.today .n { background: var(--gold); color: #2b1d07; }
+/* today's ornament as a light silhouette: earned once today's run is done */
+.door.today .silhouette svg, .door-hint svg { filter: brightness(0) invert(1); opacity: .35; }
 .door.today[aria-pressed='true'] { box-shadow: inset 0 0 0 4px var(--gold), inset 0 0 0 8px var(--frost); }
 /* missed and upcoming: still wrapped, so the ornament stays a surprise */
 .door.missed { background: transparent; box-shadow: inset 0 0 0 2px var(--line); }

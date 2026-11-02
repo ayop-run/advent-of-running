@@ -1,4 +1,4 @@
-import { DEMO_GIVEN, doorOrnament } from '../calendar';
+import { DEMO_GIVEN, DEMO_ORNAMENTS } from '../calendar';
 import { getMe, isMember } from './me';
 import { demoName, demoNick } from './names';
 import type { Hint } from '../ornaments';
@@ -92,7 +92,7 @@ function demoGiftsTo(nick: string): Hung[] {
     .filter(([, name]) => demoNick(name) === nick)
     .map(([n]) => ({
       id: `door-${n}`,
-      ornamentId: doorOrnament(Number(n)),
+      ornamentId: DEMO_ORNAMENTS[Number(n) - 1],
       from: myName(),
       hint: 'Cheer' as Hint,
       message: `Door ${n} was for you, ${demoName(nick)}. Keep running!`,

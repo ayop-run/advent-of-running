@@ -12,7 +12,7 @@ import { PoweredByStrava } from '@/components/Strava';
 import { useBump } from '@/components/useBump';
 import { getProgress } from '@/lib/data';
 import { BY_ID } from '@/lib/ornaments';
-import { DAILY_GOAL_KM, DOORS, WEEKLY, dayLabel, rangeLabel, doorOrnament, type DoorState, type Progress } from '@/lib/calendar';
+import { DAILY_GOAL_KM, DOORS, WEEKLY, dayLabel, rangeLabel, type DoorState, type Progress } from '@/lib/calendar';
 
 const STATE_LABEL: Record<DoorState, string> = { opened: 'Unwrapped', today: 'Today', missed: 'Missed', locked: 'Coming up' };
 
@@ -90,10 +90,15 @@ export default function Calendar() {
   const short = (n: number) => dayLabel(p.start, n);
   const doors = Array.from({ length: DOORS }, (_, i) => i + 1);
   const state = (n: number) => p.doors[n - 1];
-  // unwrapped and missed doors show their ornament (missed ones faded); upcoming ones stay a surprise
+  // unwrapped and missed doors show their ornament (missed ones faded), today's shows its
+  // silhouette, and upcoming ones stay a wrapped surprise
+  const ornament = (n: number) => p.ornaments[n - 1];
   const revealed = (n: number) => state(n) === 'opened' || state(n) === 'missed';
-  const shownSprite = (n: number) => (revealed(n) ? doorOrnament(n) : 'gift-box');
-  const shownName = (n: number) => (revealed(n) ? BY_ID[doorOrnament(n)].name.replace('Advent Runner: ', '') : 'A wrapped surprise');
+  const hinted = (n: number) => state(n) === 'today';
+  const shownSprite = (n: number) => (revealed(n) || hinted(n) ? ornament(n) : 'gift-box');
+  const shownName = (n: number) => (revealed(n) ? BY_ID[ornament(n)].name.replace('Advent Runner: ', '') : hinted(n) ? 'Today’s mystery ornament' : 'A wrapped surprise');
+  /** The door's sprite, as a silhouette while it's still today's to earn. */
+  const doorSprite = (n: number, px: number) => (hinted(n) ? <span className="silhouette"><Sprite id={ornament(n)} px={px} /></span> : <Sprite id={shownSprite(n)} px={px} />);
   const km = (n: number) => p.km[n - 1];
 
   const doorStory = (n: number) => {
@@ -154,7 +159,7 @@ export default function Calendar() {
       >
         <span className="n">{n}</span>
         <span key={b.k} className="bump">
-          <span className={b.anim}><Sprite id={shownSprite(n)} px={2} /></span>
+          <span className={b.anim}>{doorSprite(n, 2)}</span>
           {b.fx && <SpriteFx anim={b.fx} px={2} />}
         </span>
         {p.caughtUp[n] ? (
@@ -180,7 +185,7 @@ export default function Calendar() {
           <div className="list mt12">
             <Goal
               tone="gold"
-              icon={<Sprite id={p.todayKm >= DAILY_GOAL_KM ? doorOrnament(p.today) : 'gift-box'} px={2} />}
+              icon={p.todayKm >= DAILY_GOAL_KM ? <Sprite id={ornament(p.today)} px={2} /> : <span className="silhouette"><Sprite id={ornament(p.today)} px={2} /></span>}
               label={`Door ${p.today}`}
               title={`Run ${DAILY_GOAL_KM.toFixed(0)} km`}
               value={`${p.todayKm.toFixed(1)} / ${DAILY_GOAL_KM.toFixed(1)} km`}
@@ -292,7 +297,11 @@ export default function Calendar() {
               </div>
               {picked !== null && picked >= w.from && picked <= w.to && (
                 <div className="panel quiet row mt8 fade-in" aria-live="polite">
-                  <Sprite id={shownSprite(picked)} px={4} style={{ flexShrink: 0, ...(state(picked) === 'missed' && { opacity: 0.5, filter: 'grayscale(1)' }) }} />
+                  {hinted(picked) ? (
+                    <span className="silhouette door-hint" style={{ flexShrink: 0 }}><Sprite id={ornament(picked)} px={4} /></span>
+                  ) : (
+                    <Sprite id={shownSprite(picked)} px={4} style={{ flexShrink: 0, ...(state(picked) === 'missed' && { opacity: 0.5, filter: 'grayscale(1)' }) }} />
+                  )}
                   <div className="grow">
                     <p className="eyebrow">Door {picked} · {p.caughtUp[picked] ? `Caught up on day ${p.caughtUp[picked]}` : STATE_LABEL[state(picked)]}</p>
                     <h2 className="h2 mt4">{shownName(picked)}</h2>
