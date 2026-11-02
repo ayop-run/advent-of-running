@@ -185,7 +185,16 @@ export default function Calendar() {
           <div className="list mt12">
             <Goal
               tone="gold"
-              icon={p.todayKm >= DAILY_GOAL_KM ? <Sprite id={ornament(p.today)} px={2} /> : <span className="silhouette"><Sprite id={ornament(p.today)} px={2} /></span>}
+              icon={
+                p.todayKm >= DAILY_GOAL_KM ? (
+                  <Sprite id={ornament(p.today)} px={2} />
+                ) : (
+                  <>
+                    <span className="silhouette"><Sprite id={ornament(p.today)} px={2} /></span>
+                    <span className="dir-q pix">?</span>
+                  </>
+                )
+              }
               label={`Door ${p.today}`}
               title={`Run ${DAILY_GOAL_KM.toFixed(0)} km`}
               value={`${p.todayKm.toFixed(1)} / ${DAILY_GOAL_KM.toFixed(1)} km`}
@@ -298,7 +307,10 @@ export default function Calendar() {
               {picked !== null && picked >= w.from && picked <= w.to && (
                 <div className="panel quiet row mt8 fade-in" aria-live="polite">
                   {hinted(picked) ? (
-                    <span className="silhouette door-hint" style={{ flexShrink: 0 }}><Sprite id={ornament(picked)} px={4} /></span>
+                    <span className="door-hint">
+                      <span className="silhouette"><Sprite id={ornament(picked)} px={4} /></span>
+                      <span className="dir-q pix">?</span>
+                    </span>
                   ) : (
                     <Sprite id={shownSprite(picked)} px={4} style={{ flexShrink: 0, ...(state(picked) === 'missed' && { opacity: 0.5, filter: 'grayscale(1)' }) }} />
                   )}
