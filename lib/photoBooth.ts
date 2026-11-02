@@ -161,14 +161,16 @@ function drawRunCard(ctx: CanvasRenderingContext2D, o: BoothScene, x: number, y:
   });
 }
 
-/** My tree: an invitation to hang an ornament, the letter count and your tree link. */
+/** My tree: an invitation to hang an ornament, your distance, the letter count and your tree link. */
 function drawTreeCard(ctx: CanvasRenderingContext2D, o: BoothScene, x: number, y: number, w: number, h: number) {
   notchedRect(ctx, x, y, w, h, 10, 'rgba(10,17,36,.82)');
   const n = o.ornaments.length;
   cardHeader(ctx, o, x + 10, y, w - 20, `${o.ownerName}'s tree`);
   ctx.fillStyle = '#c3cde6';
   ctx.font = `800 26px ${BODY}`;
-  ctx.fillText(`${n} sealed ${n === 1 ? 'letter' : 'letters'} · opens on Christmas`, x + 32, y + 152);
+  // your distance so far, when your calendar loaded, then the letters waiting on the tree
+  const km = o.stats ? `${o.stats.km.toFixed(1)} km run this Advent · ` : '';
+  ctx.fillText(`${km}${n} sealed ${n === 1 ? 'letter' : 'letters'} · opens on Christmas`, x + 32, y + 152, w - 64);
   ctx.fillStyle = '#fff7ec';
   ctx.font = `600 38px ${FONT}`;
   ctx.fillText('Hang an ornament on my tree', x + 32, y + 202, w - 64);
