@@ -57,7 +57,7 @@ export function drawBooth(ctx: CanvasRenderingContext2D, o: BoothScene, t = 0, a
   // the tree stands beside the card: small for a run, bigger when it's the star
   const px = o.mode === 'tree' ? 3 : 2;
   const treeW = SCENE_W * px;
-  drawTree(ctx, o.ornaments, W - 50 - treeW, cardY + 40 - SCENE_H * px, px);
+  drawTree(ctx, o.ornaments, W - 50 - treeW, cardY + 40 - SCENE_H * px, px, animate ? t : undefined);
 
   drawStickers(ctx, o, safe + 40, cardY - 170 - (o.mode === 'tree' ? 120 : 0), t, animate);
 
