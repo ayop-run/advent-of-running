@@ -1,4 +1,4 @@
-import { BASIC } from './ornaments';
+import { BASIC, ORNAMENTS } from './ornaments';
 
 /**
  * Advent calendar rules, shared by the server (computing a runner's progress from synced
@@ -21,9 +21,32 @@ export const DAILY_GOAL_KM = 1;
 
 export type DoorState = 'opened' | 'missed' | 'today' | 'locked';
 
-/** The special ornament behind each daily door, cycling through the Advent runners. */
-const DOOR_ORNAMENTS = ['fox', 'penguin', 'reindeer', 'gingerbread-runner', 'running-shoe', 'finish-medal', 'stopwatch', 'santa-shoe'];
-export const doorOrnament = (n: number) => DOOR_ORNAMENTS[(n + 1) % DOOR_ORNAMENTS.length];
+/** Special ornaments that can hide behind a daily door. */
+const DOOR_POOL = ORNAMENTS.filter((o) => o.tier === 'special').map((o) => o.id);
+
+/**
+ * The ornament behind each door (index 0 is door 1) for one runner and season: the special
+ * ornaments shuffled with `seed` (runner id and start date), so friends get different ones and
+ * no door repeats within a season. Always the same for the same seed, so today's door can show
+ * its ornament's silhouette before it's earned.
+ */
+export function doorOrnaments(seed: string): string[] {
+  // FNV-1a hash of the seed, then mulberry32 for the shuffle
+  let h = 2166136261;
+  for (let i = 0; i < seed.length; i++) h = Math.imul(h ^ seed.charCodeAt(i), 16777619);
+  const rand = () => {
+    h = (h + 0x6d2b79f5) | 0;
+    let t = Math.imul(h ^ (h >>> 15), 1 | h);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  const pool = [...DOOR_POOL];
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return Array.from({ length: DOORS }, (_, i) => pool[i % pool.length]);
+}
 
 export const WEEKLY = [
   { week: 1, from: 1, to: 7, title: 'Run 3 times', reward: 'snow-globe', goal: 3, unit: 'runs' },
@@ -104,6 +127,8 @@ export type Progress = {
   today: number;
   /** Index 0 is door 1. */
   doors: DoorState[];
+  /** The ornament behind each door for this runner; index 0 is door 1. */
+  ornaments: string[];
   /** Doors opened by a catch-up run: door → day of that run. */
   caughtUp: Record<number, number>;
   /** Km run on each day, index 0 is day 1. */
@@ -128,7 +153,7 @@ export function computeProgress(
   days: DayRuns[],
   today: number,
   start: string,
-): Omit<Progress, 'given' | 'unwrapped' | 'found' | 'syncedAt'> {
+): Omit<Progress, 'given' | 'unwrapped' | 'found' | 'syncedAt' | 'ornaments'> {
   const byDay = new Map(days.map((d) => [d.day, d]));
   const km = (d: number) => byDay.get(d)?.km ?? 0;
 
@@ -178,6 +203,8 @@ export function computeProgress(
  * ------------------------------------------------------------------------- */
 
 export const DEMO_TODAY = 14;
+/** The demo runner's door ornaments. */
+export const DEMO_ORNAMENTS = doorOrnaments('demo');
 export const DEMO_MISSED = [5, 9, 13];
 
 /**
@@ -201,7 +228,7 @@ export function doorState(n: number): DoorState {
  */
 export function demoFound(extra: string[] = []): Set<string> {
   const found = new Set<string>(extra);
-  for (let n = 1; n <= DOORS; n++) if (doorState(n) === 'opened') found.add(doorOrnament(n));
+  for (let n = 1; n <= DOORS; n++) if (doorState(n) === 'opened') found.add(DEMO_ORNAMENTS[n - 1]);
   found.add(WEEKLY[0].reward); // week 1 is done
   return found;
 }
@@ -213,9 +240,10 @@ export function demoProgress(): Progress {
   days.push({ day: DEMO_TODAY, km: DEMO_TODAY_KM, runs: 1, longestKm: DEMO_TODAY_KM });
   return {
     ...computeProgress(days, DEMO_TODAY, adventStart()),
+    ornaments: DEMO_ORNAMENTS,
     given: DEMO_GIVEN,
     // the demo lets you try unwrapping today's door before finishing the run
-    unwrapped: [{ ornamentId: doorOrnament(DEMO_TODAY), door: DEMO_TODAY }],
+    unwrapped: [{ ornamentId: DEMO_ORNAMENTS[DEMO_TODAY - 1], door: DEMO_TODAY }],
     found: [...demoFound(BASIC.map((o) => o.id))],
     syncedAt: null,
   };

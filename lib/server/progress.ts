@@ -1,4 +1,4 @@
-import { DOORS, WEEKLY, adventDate, adventDay, adventStart, computeProgress, doorOrnament, todayIn, type DayRuns, type Progress } from '@/lib/calendar';
+import { DOORS, WEEKLY, adventDate, adventDay, adventStart, computeProgress, doorOrnaments, todayIn, type DayRuns, type Progress } from '@/lib/calendar';
 import { BASIC } from '@/lib/ornaments';
 import { db } from './db';
 import { accessToken, fetchActivities, isCountedRun } from './strava';
@@ -73,10 +73,11 @@ export async function runnerProgress(runnerId: string, timeZone: string): Promis
     longestKm: Number(r.longest_km),
   }));
   const progress = computeProgress(days, today, start);
+  const ornaments = doorOrnaments(`${runnerId}:${start}`);
 
   // Award ornaments for opened doors and finished weeks. `source` makes this idempotent.
   const earned = [
-    ...progress.doors.flatMap((s, i) => (s === 'opened' ? [{ source: `door-${i + 1}`, ornament_id: doorOrnament(i + 1), day: i + 1 }] : [])),
+    ...progress.doors.flatMap((s, i) => (s === 'opened' ? [{ source: `door-${i + 1}`, ornament_id: ornaments[i], day: i + 1 }] : [])),
     ...WEEKLY.filter((w) => progress.weeksDone.includes(w.week)).map((w) => ({ source: `week-${w.week}`, ornament_id: w.reward, day: w.to })),
   ];
   if (earned.length) {
@@ -110,6 +111,7 @@ export async function runnerProgress(runnerId: string, timeZone: string): Promis
 
   return {
     ...progress,
+    ornaments,
     given,
     unwrapped: (pouch ?? []).filter((p) => !p.used).map((p) => ({ ornamentId: p.ornament_id, door: doorOf(p.source) })),
     found: [...new Set([...BASIC.map((o) => o.id), ...(pouch ?? []).map((p) => p.ornament_id)])],
