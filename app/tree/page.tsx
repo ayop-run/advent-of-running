@@ -23,7 +23,6 @@ export default function MyTree() {
   const scale = useTreeScale();
   const [tree, setTree] = useState<Tree | null>(null);
   const [open, setOpen] = useState<Hung | null>(null);
-  const [toast, setToast] = useState('');
   const [picture, setPicture] = useState(false);
 
   // signed out, the demo tree stands in for your own
@@ -35,24 +34,6 @@ export default function MyTree() {
     if (account === undefined) return;
     getTree(myNickname(account)).then(setTree, console.error);
   }, [account]);
-  useEffect(() => {
-    if (!toast) return;
-    const id = setTimeout(() => setToast(''), 2200);
-    return () => clearTimeout(id);
-  }, [toast]);
-
-  const share = async () => {
-    const url = `${window.location.origin}/t/${me}`;
-    try {
-      if (navigator.share) await navigator.share({ title: 'Hang an ornament on my tree', url });
-      else {
-        await navigator.clipboard.writeText(url);
-        setToast('Link copied');
-      }
-    } catch {
-      /* share sheet dismissed */
-    }
-  };
 
 
   return (
@@ -73,13 +54,13 @@ export default function MyTree() {
           )
         }
       >
-        <Tip label="Save a picture">
-          <button type="button" className="icon-btn" onClick={() => setPicture(true)} aria-label="Picture of my tree" disabled={!tree}>
+        <Tip label="Run photo">
+          <Link href="/tree/photo" className="icon-btn" aria-label="Make a run photo">
             <CameraIcon />
-          </button>
+          </Link>
         </Tip>
         <Tip label="Share my tree">
-          <button type="button" className="icon-btn" onClick={share} aria-label="Share my tree">
+          <button type="button" className="icon-btn" onClick={() => setPicture(true)} aria-label="Share my tree" disabled={!tree}>
             <ShareIcon />
           </button>
         </Tip>
@@ -148,7 +129,6 @@ export default function MyTree() {
         <PictureSheet ornaments={tree.ornaments} ownerName={displayName} avatar={avatarSrc(me, account?.avatarUrl)} link={`${window.location.origin}/t/${me}`} onClose={() => setPicture(false)} />
       )}
 
-      {toast && <div className="toast" role="status">{toast}</div>}
       <BottomNav />
     </main>
   );

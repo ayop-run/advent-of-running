@@ -212,6 +212,7 @@ export default function Calendar() {
               }
             >
               {ready && <Link href="/gift" className="btn block mt12">Unwrap your gift</Link>}
+              {p.todayKm >= DAILY_GOAL_KM && <Link href="/tree/photo" className="btn ghost block mt8">Share today&apos;s run</Link>}
             </Goal>
             {week && (
               <Goal
