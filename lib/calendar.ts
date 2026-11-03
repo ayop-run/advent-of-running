@@ -5,9 +5,8 @@ import { BASIC, ORNAMENTS } from './ornaments';
  * Strava runs) and the pages. Runs (outdoor, trail, treadmill), walks and hikes all count as
  * runs; manual entries don't.
  *
- * Rules: every door opens with 1 km run that day. A missed door N can be caught up on a later
- * day by running N km in one go on top of that day's 1 km (missed door 6 → 6 km run, 7 km that
- * day), with no limit on catch-ups. Weeks 3–4: one run
+ * Rules: a door opens only with 1 km run on its own day; a missed door stays wrapped (no
+ * catching up later). Week 1 counts days with 1 km, week 2 the week's km. Weeks 3–4: one run
  * together with a friend completes the week (two connected runners starting within ~15 min and
  * ~200 m of each other, each running at least 1 km). The ornament behind an opened door goes
  * straight to a friend's tree: run, unwrap, give.
@@ -49,7 +48,7 @@ export function doorOrnaments(seed: string): string[] {
 }
 
 export const WEEKLY = [
-  { week: 1, from: 1, to: 7, title: 'Run 3 times', reward: 'snow-globe', goal: 3, unit: 'runs' },
+  { week: 1, from: 1, to: 7, title: 'Run 1 km on 3 days', reward: 'snow-globe', goal: 3, unit: 'days' },
   { week: 2, from: 8, to: 14, title: 'Run 10 km this week', reward: 'bell-gold', goal: 10, unit: 'km' },
   { week: 3, from: 15, to: 21, title: 'Run together with a friend', reward: 'snow-globe', goal: 1, unit: 'runs together' },
   { week: 4, from: 22, to: 24, title: 'Run together with a friend', reward: 'bell-gold', goal: 1, unit: 'runs together' },
@@ -129,8 +128,6 @@ export type Progress = {
   doors: DoorState[];
   /** The ornament behind each door for this runner; index 0 is door 1. */
   ornaments: string[];
-  /** Doors opened by a catch-up run: door → day of that run. */
-  caughtUp: Record<number, number>;
   /** Km run on each day, index 0 is day 1. */
   km: number[];
   todayKm: number;
@@ -164,22 +161,10 @@ export function computeProgress(
     return n === today ? 'today' : 'missed';
   });
 
-  // Catch-ups: a day's longest run opens the highest earlier missed door it covers, as long as
-  // the day also has its own 1 km on top (missed door N needs N km more than the daily goal).
-  const caughtUp: Record<number, number> = {};
-  for (const d of [...days].sort((a, b) => a.day - b.day)) {
-    for (let n = Math.min(d.day - 1, DOORS); n >= 1; n--) {
-      if (doors[n - 1] === 'missed' && d.longestKm >= n && d.km >= n + DAILY_GOAL_KM) {
-        doors[n - 1] = 'opened';
-        caughtUp[n] = d.day;
-        break;
-      }
-    }
-  }
-
   const weekProgress = (w: Week) => {
     const inWeek = days.filter((d) => d.day >= w.from && d.day <= w.to);
-    if (w.unit === 'runs') return inWeek.reduce((s, d) => s + d.runs, 0);
+    // only days that did the daily mission count, so a short jog can't win the prize
+    if (w.unit === 'days') return inWeek.filter((d) => d.km >= DAILY_GOAL_KM).length;
     if (w.unit === 'km') return Math.round(inWeek.reduce((s, d) => s + d.km, 0) * 10) / 10;
     return 0;
   };
@@ -190,7 +175,6 @@ export function computeProgress(
     start,
     today,
     doors,
-    caughtUp,
     km: Array.from({ length: DOORS }, (_, i) => Math.round(km(i + 1) * 10) / 10),
     todayKm: Math.round(km(today) * 10) / 10,
     week: current ? { ...current, progress: weekProgress(current), done: weeksDone.includes(current.week) } : null,

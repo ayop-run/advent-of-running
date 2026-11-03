@@ -105,10 +105,6 @@ export default function Calendar() {
     const ran = km(n) > 0 ? `You ran ${km(n)} km that day. ` : '';
     switch (state(n)) {
       case 'opened':
-        if (p.caughtUp[n]) {
-          const by = p.caughtUp[n];
-          return `${ran}Caught up on ${date(by)} with a ${km(by)} km day (${n} km extra on top of ${DAILY_GOAL_KM} km). ${p.given[n] ? `You gave it to ${p.given[n]}.` : 'Give it to a friend.'}`;
-        }
         return `${ran}${p.given[n] ? `You gave it to ${p.given[n]}. It hangs on their tree until Christmas.` : 'Unwrapped. Give it to a friend.'}`;
       case 'today': {
         // a different nudge every day: a hint at whoever is hiding behind the door
@@ -116,9 +112,9 @@ export default function Calendar() {
         return `${teaser} ${Math.max(0, DAILY_GOAL_KM - km(n)).toFixed(1)} km to go to unwrap it.`;
       }
       case 'missed': {
-        // the character behind the door is still waiting, then how to catch up
+        // the character behind the door, and that a missed door stays wrapped for good
         const line = DOOR_MISSED[ornament(n)] ?? 'Not enough that day.';
-        return `${ran}${line} To still unwrap it, run ${n} km in one go on top of a day’s ${DAILY_GOAL_KM} km.`;
+        return `${ran}${line} This door stays wrapped. Don’t miss tomorrow’s!`;
       }
       default:
         return `Opens on ${date(n)}.`;
@@ -154,9 +150,9 @@ export default function Calendar() {
       <button
         key={n}
         type="button"
-        className={`door ${s}${p.caughtUp[n] ? ' caught-up' : ''}`}
+        className={`door ${s}`}
         aria-pressed={picked === n}
-        aria-label={`Door ${n}, ${STATE_LABEL[s].toLowerCase()}${p.caughtUp[n] ? `, caught up on day ${p.caughtUp[n]}` : km(n) > 0 ? `, ${km(n)} km` : ''}${revealed(n) ? `: ${shownName(n)}` : ''}`}
+        aria-label={`Door ${n}, ${STATE_LABEL[s].toLowerCase()}${km(n) > 0 ? `, ${km(n)} km` : ''}${revealed(n) ? `: ${shownName(n)}` : ''}`}
         onClick={() => {
           setPicked(n);
           // unwrapped doors play their ornament's animation; wrapped ones just jiggle
@@ -168,11 +164,7 @@ export default function Calendar() {
           <span className={b.anim}>{doorSprite(n, 2)}</span>
           {b.fx && <SpriteFx anim={b.fx} px={2} />}
         </span>
-        {p.caughtUp[n] ? (
-          <span className="km caught">↺ day {p.caughtUp[n]}</span>
-        ) : (
-          km(n) > 0 && <span className="km">{km(n).toFixed(1)} km</span>
-        )}
+        {km(n) > 0 && <span className="km">{km(n).toFixed(1)} km</span>}
       </button>
     );
   };
@@ -322,7 +314,7 @@ export default function Calendar() {
                     <Sprite id={shownSprite(picked)} px={4} style={{ flexShrink: 0, ...(state(picked) === 'missed' && { opacity: 0.5, filter: 'grayscale(1)' }) }} />
                   )}
                   <div className="grow">
-                    <p className="eyebrow">Door {picked} · {p.caughtUp[picked] ? `Caught up on day ${p.caughtUp[picked]}` : STATE_LABEL[state(picked)]}</p>
+                    <p className="eyebrow">Door {picked} · {STATE_LABEL[state(picked)]}</p>
                     <h2 className="h2 mt4">{shownName(picked)}</h2>
                     <p className="small soft mt4">{doorStory(picked)}</p>
                   </div>

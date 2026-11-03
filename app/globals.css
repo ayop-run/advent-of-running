@@ -557,8 +557,6 @@ button.orn:focus-visible > svg { outline: 4px solid var(--frost); outline-offset
   font: 800 9px var(--body); font-variant-numeric: tabular-nums; color: var(--snow); background: rgba(10,17,36,.55);
 }
 /* opened later by a long run: says which day */
-.door .km.caught { color: #2b1d07; background: var(--gold); }
-.door.opened.caught-up { box-shadow: inset 0 4px 0 var(--gold); }
 .door:hover { transform: translateY(-2px); }
 .door[aria-pressed='true'] { box-shadow: inset 0 0 0 4px var(--frost); }
 /* opened: snow on the lid, ornament in full colour */
