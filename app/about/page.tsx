@@ -15,7 +15,7 @@ const STEPS = [
   {
     sprite: 'bauble-snow',
     title: 'Friends hang ornaments',
-    text: 'Runner friends hang ornaments they earned on your tree, each with a message. Every message stays sealed.',
+    text: 'Runner friends hang ornaments on your tree, each with a message: a free starter or one they unwrapped by running. Every message stays sealed.',
   },
   {
     sprite: 'gift-box',
@@ -31,12 +31,12 @@ const STEPS = [
 
 const RULES = [
   ['What counts', 'Runs, walks and hikes synced from Strava, outdoors or on a treadmill. Manual entries don’t.'],
-  ['Daily doors', '1 km opens the day’s door. Doors close at 23:59 in your time zone.'],
-  ['Weekly challenges', 'Finish a week’s goal to win a rare ornament. What it is stays a surprise.'],
-  ['Giving', 'Everyone gets 5 free starter ornaments to give. Every other one comes from a run: unwrap it, then give it to a friend. It goes on their tree right away.'],
-  ['Group runs', 'In weeks 3 and 4, run 1 km or more with someone and record it together to win the week’s prize.'],
+  ['Daily doors', 'Run 1 km on the day to open its door, by 23:59 in your time zone. Each door hides a random ornament.'],
+  ['Weekly challenges', 'Week 1: run 1 km on 3 days. Week 2: run 10 km in the week. Weeks 3 and 4: a group run of 1 km or more, recorded together with someone. Each wins a rare ornament, a surprise until you do.'],
+  ['Free starters', 'Everyone gets 5 starter ornaments to give, no run needed.'],
+  ['Giving', 'Every other ornament comes from a run and can be given once: unwrap it, then hang it on a friend’s tree. It goes there right away.'],
   ['One per tree', 'You can hang one ornament on each friend’s tree, so spread them around.'],
-  ['Missed days', 'No run, no ornament that day. The door stays wrapped.'],
+  ['Missed days', 'No run, no ornament that day. A missed door stays wrapped, with no catching up later.'],
 ];
 
 export default function About() {

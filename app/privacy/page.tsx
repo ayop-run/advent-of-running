@@ -21,8 +21,9 @@ const SECTIONS: { title: string; body: React.ReactNode }[] = [
       <>
         When you log in with Strava, we keep your Strava athlete number, your first name, your profile
         photo link and the access tokens Strava gives this app. To open doors we read your activities
-        in Advent, including private ones, but keep only a daily total: kilometres, how many runs and
-        the longest one. Routes, maps, times, pace, heart rate and photos stay on Strava.
+        in Advent, including private ones, but keep only a daily total: kilometres, how many runs, the
+        longest one, and how many were group runs (never who you ran with). Routes, maps, times, pace,
+        heart rate and photos stay on Strava.
       </>
     ),
   },
