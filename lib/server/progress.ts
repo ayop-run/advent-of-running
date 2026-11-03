@@ -1,6 +1,6 @@
 import { DAILY_GOAL_KM, DOORS, WEEKLY, adventDate, adventDay, adventStart, computeProgress, doorOrnaments, todayIn, type DayRuns, type Progress } from '@/lib/calendar';
 import { BASIC } from '@/lib/ornaments';
-import { freeLeft } from './freeHangs';
+import { startersLeft } from './freeHangs';
 import { db } from './db';
 import { accessToken, fetchActivities, isCountedRun } from './strava';
 
@@ -119,7 +119,7 @@ export async function runnerProgress(runnerId: string, timeZone: string): Promis
     given,
     unwrapped: (pouch ?? []).filter((p) => !p.used).map((p) => ({ ornamentId: p.ornament_id, door: doorOf(p.source) })),
     found: [...new Set([...BASIC.map((o) => o.id), ...(pouch ?? []).map((p) => p.ornament_id)])],
-    freeLeft: await freeLeft(runnerId, start),
+    starters: await startersLeft(runnerId, start),
     syncedAt,
   };
 }

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { CHRISTMAS_DAY, adventDay, adventStart, todayIn } from '@/lib/calendar';
 import { db } from '@/lib/server/db';
-import { freeLeft } from '@/lib/server/freeHangs';
+import { startersLeft } from '@/lib/server/freeHangs';
 import { notify } from '@/lib/server/notify';
 import { sessionRunnerId, validEditToken } from '@/lib/server/session';
 import { BY_ID, HINTS } from '@/lib/ornaments';
@@ -26,7 +26,7 @@ function closed(timeZone: string) {
 /**
  * Hang an ornament. Only signed-in runners, and only ornaments they earned by running (an
  * unwrapped door or weekly prize, not given yet): run → unwrap → give. Every runner can also
- * give FREE_HANGS starter ornaments without running. One per tree: a runner who already hung
+ * give their FREE_HANGS random starter ornaments without running, each once. One per tree: a runner who already hung
  * one gets that one back.
  */
 export async function POST(req: Request) {
@@ -58,7 +58,7 @@ export async function POST(req: Request) {
     .limit(1)
     .maybeSingle();
   // no earned one: a starter ornament can still go out free, while the runner has some left
-  const free = !slot && ornament.tier === 'basic' && (await freeLeft(runnerId, adventStart(todayIn(owner.time_zone)))) > 0;
+  const free = !slot && (await startersLeft(runnerId, adventStart(todayIn(owner.time_zone)))).includes(ornament.id);
   if (!slot && !free) return NextResponse.json({ error: 'not_earned' }, { status: 403 });
   const pouchId = slot?.id ?? null;
 
