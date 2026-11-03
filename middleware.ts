@@ -4,7 +4,8 @@ import { NextResponse, type NextRequest } from 'next/server';
  * Before launch, production shows only the coming-soon page: set COMING_SOON=1 on Vercel's
  * Production environment. Staging (Preview) leaves it unset and runs the full app.
  */
-const OPEN = ['/coming-soon', '/api/launch', '/favicon.svg', '/privacy', '/strava/powered-by-strava.svg'];
+// the Strava webhook and the daily cleanup run before launch too: deletions can't wait
+const OPEN = ['/coming-soon', '/api/launch', '/favicon.svg', '/privacy', '/strava/powered-by-strava.svg', '/api/strava/webhook', '/api/cron/cleanup'];
 
 export function middleware(req: NextRequest) {
   if (process.env.COMING_SOON !== '1') return NextResponse.next();
