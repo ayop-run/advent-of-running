@@ -129,8 +129,10 @@ p { margin: 0; }
  *   32px section → section
  */
 .section { margin-top: 32px; }
-.section-head + * { margin-top: 12px; }
+/* 12px under every section title; `.list` resets its margin below, so it needs its own selector */
+.section-head + *, .section-head + .list { margin-top: 12px; }
 .section-head + .lead { margin-top: 4px; }
+.section-head + .lead + * { margin-top: 12px; }
 .lead + * { margin-top: 12px; }
 .list { display: flex; flex-direction: column; gap: 8px; list-style: none; padding: 0; margin: 0; }
 .brand { font-family: var(--display); font-weight: 600; font-size: var(--fs-pixel); color: var(--snow); letter-spacing: .01em; }
