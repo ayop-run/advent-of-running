@@ -60,6 +60,24 @@ export async function accessToken(runnerId: string): Promise<string | null> {
   return t.access_token;
 }
 
+/**
+ * Whether the runner's Strava access still works. Webhook calls aren't signed, so a
+ * "deauthorized" event is only trusted once Strava itself turns the runner's token down.
+ * Anything unclear (Strava down, rate limited) counts as still authorized: never delete on a guess.
+ */
+export async function stillAuthorized(runnerId: string): Promise<boolean> {
+  let token: string | null;
+  try {
+    token = await accessToken(runnerId);
+  } catch (e) {
+    // a refresh turned down with 400/401 means the access was revoked
+    return !/failed: 40[01]\b/.test(String(e));
+  }
+  if (!token) return false;
+  const res = await fetch(`${BASE}/api/v3/athlete`, { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' }).catch(() => null);
+  return res?.status !== 401;
+}
+
 /** Revokes the app's access on Strava. */
 export async function deauthorize(token: string) {
   await fetch(`${BASE}/oauth/deauthorize`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
