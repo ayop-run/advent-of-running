@@ -1,4 +1,4 @@
-import { BASIC, ORNAMENTS } from './ornaments';
+import { BASIC, FREE_HANGS, ORNAMENTS } from './ornaments';
 
 /**
  * Advent calendar rules, shared by the server (computing a runner's progress from synced
@@ -114,7 +114,8 @@ export const duringAdvent = (timeZone: string) => {
 };
 
 /** One day of synced runs. */
-export type DayRuns = { day: number; km: number; runs: number; longestKm: number };
+/** `together`: runs that day of 1 km or more that Strava grouped with someone else's. */
+export type DayRuns = { day: number; km: number; runs: number; longestKm: number; together: number };
 
 /** An earned ornament that hasn't been given yet. */
 export type Unwrapped = { ornamentId: string; door: number | null };
@@ -141,16 +142,18 @@ export type Progress = {
   unwrapped: Unwrapped[];
   /** Every ornament the runner has found: free ones plus everything earned. */
   found: string[];
+  /** Free starter ornaments still to give this season (out of FREE_HANGS). */
+  freeLeft: number;
   /** ISO time of the last Strava sync; null for demo data. */
   syncedAt: string | null;
 };
 
-/** Doors and challenges from a month of runs. Weeks 3–4 (running together) are not tracked yet. */
+/** Doors and challenges from a month of runs. Weeks 3–4 count group runs of 1 km or more. */
 export function computeProgress(
   days: DayRuns[],
   today: number,
   start: string,
-): Omit<Progress, 'given' | 'unwrapped' | 'found' | 'syncedAt' | 'ornaments'> {
+): Omit<Progress, 'given' | 'unwrapped' | 'found' | 'freeLeft' | 'syncedAt' | 'ornaments'> {
   const byDay = new Map(days.map((d) => [d.day, d]));
   const km = (d: number) => byDay.get(d)?.km ?? 0;
 
@@ -166,7 +169,7 @@ export function computeProgress(
     // only days that did the daily mission count, so a short jog can't win the prize
     if (w.unit === 'days') return inWeek.filter((d) => d.km >= DAILY_GOAL_KM).length;
     if (w.unit === 'km') return Math.round(inWeek.reduce((s, d) => s + d.km, 0) * 10) / 10;
-    return 0;
+    return inWeek.reduce((s, d) => s + d.together, 0);
   };
   const weeksDone = WEEKLY.filter((w) => w.from <= today && weekProgress(w) >= w.goal).map((w) => w.week);
   const current = WEEKLY.find((w) => today >= w.from && today <= w.to);
@@ -220,8 +223,8 @@ export function demoFound(extra: string[] = []): Set<string> {
 export function demoProgress(): Progress {
   const days: DayRuns[] = Array.from({ length: DEMO_TODAY - 1 }, (_, i) => i + 1)
     .filter((d) => !DEMO_MISSED.includes(d))
-    .map((day) => ({ day, km: day >= 8 ? 1.2 : 3, runs: 1, longestKm: day >= 8 ? 1.2 : 3 }));
-  days.push({ day: DEMO_TODAY, km: DEMO_TODAY_KM, runs: 1, longestKm: DEMO_TODAY_KM });
+    .map((day) => ({ day, km: day >= 8 ? 1.2 : 3, runs: 1, longestKm: day >= 8 ? 1.2 : 3, together: 0 }));
+  days.push({ day: DEMO_TODAY, km: DEMO_TODAY_KM, runs: 1, longestKm: DEMO_TODAY_KM, together: 0 });
   return {
     ...computeProgress(days, DEMO_TODAY, adventStart()),
     ornaments: DEMO_ORNAMENTS,
@@ -229,6 +232,7 @@ export function demoProgress(): Progress {
     // the demo lets you try unwrapping today's door before finishing the run
     unwrapped: [{ ornamentId: DEMO_ORNAMENTS[DEMO_TODAY - 1], door: DEMO_TODAY }],
     found: [...demoFound(BASIC.map((o) => o.id))],
+    freeLeft: FREE_HANGS,
     syncedAt: null,
   };
 }

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
-import { CHRISTMAS_DAY, adventDay, todayIn } from '@/lib/calendar';
+import { CHRISTMAS_DAY, adventDay, adventStart, todayIn } from '@/lib/calendar';
 import { db } from '@/lib/server/db';
+import { freeLeft } from '@/lib/server/freeHangs';
 import { notify } from '@/lib/server/notify';
 import { sessionRunnerId, validEditToken } from '@/lib/server/session';
 import { BY_ID, HINTS } from '@/lib/ornaments';
@@ -24,8 +25,9 @@ function closed(timeZone: string) {
 
 /**
  * Hang an ornament. Only signed-in runners, and only ornaments they earned by running (an
- * unwrapped door or weekly prize, not given yet): run → unwrap → give. One per tree: a runner
- * who already hung one gets that one back.
+ * unwrapped door or weekly prize, not given yet): run → unwrap → give. Every runner can also
+ * give FREE_HANGS starter ornaments without running. One per tree: a runner who already hung
+ * one gets that one back.
  */
 export async function POST(req: Request) {
   const b = await req.json().catch(() => null);
@@ -55,8 +57,10 @@ export async function POST(req: Request) {
     .order('earned_on')
     .limit(1)
     .maybeSingle();
-  if (!slot) return NextResponse.json({ error: 'not_earned' }, { status: 403 });
-  const pouchId = slot.id;
+  // no earned one: a starter ornament can still go out free, while the runner has some left
+  const free = !slot && ornament.tier === 'basic' && (await freeLeft(runnerId, adventStart(todayIn(owner.time_zone)))) > 0;
+  if (!slot && !free) return NextResponse.json({ error: 'not_earned' }, { status: 403 });
+  const pouchId = slot?.id ?? null;
 
   const { data, error } = await db().rpc('hang_ornament', {
     nick: b.nickname,
@@ -71,7 +75,7 @@ export async function POST(req: Request) {
     const known = ['tree_not_found', 'sign_in_required', 'hanging_closed'].find((k) => error.message.includes(k));
     return NextResponse.json({ error: known ?? 'unknown' }, { status: known ? 403 : 500 });
   }
-  await db().from('pouch').update({ used: true, hung_id: data }).eq('id', pouchId);
+  if (pouchId) await db().from('pouch').update({ used: true, hung_id: data }).eq('id', pouchId);
   await notify(owner.id, runnerId, 'hung', data);
   return NextResponse.json({ id: data });
 }

@@ -222,11 +222,11 @@ export default function Calendar() {
                 }
                 label={`Week ${week.week} bonus`}
                 title={week.done ? `You won the ${BY_ID[week.reward].name}!` : week.title.replace(/ this week$/, '')}
-                value={week.unit === 'runs together' ? undefined : `${week.progress} / ${week.goal} ${week.unit}`}
-                progress={week.unit === 'runs together' ? undefined : [week.progress, week.goal]}
+                value={`${week.progress} / ${week.goal} ${week.unit === 'runs together' ? 'group run' : week.unit}`}
+                progress={[week.progress, week.goal]}
                 detail={
-                  week.unit === 'runs together'
-                    ? 'Runs together are counted soon.'
+                  week.unit === 'runs together' && !week.done
+                    ? `Run 1 km or more with someone and record it together, so it shows who you ran with. Ends ${p.today === week.to ? 'tonight' : date(week.to)}.`
                     : week.done
                       ? 'Give it to a friend like your door ornaments.'
                       : `Wins a rare ornament, a surprise until you do. Ends ${p.today === week.to ? 'tonight' : date(week.to)}.`

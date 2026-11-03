@@ -155,12 +155,14 @@ export const BY_ID: Record<string, Ornament> = Object.fromEntries(ORNAMENTS.map(
 
 /** How each kind of ornament is earned, for the directory and the About page. */
 export const HOW_TO_GET: Record<Tier, string> = {
-  basic: 'Free for anyone to hang',
+  basic: 'Starter: 5 free to give',
   special: 'Behind a random Advent door',
   rare: 'Prize for a weekly challenge',
 };
 
 export const BASIC = ORNAMENTS.filter((o) => o.tier === 'basic');
+/** Starter ornaments every runner can hang without running first, one per tree as usual. */
+export const FREE_HANGS = 5;
 
 export const HINTS = ['Cheer', 'Thanks', 'Funny', 'Love'] as const;
 export type Hint = (typeof HINTS)[number];

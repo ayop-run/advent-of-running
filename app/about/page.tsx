@@ -33,7 +33,8 @@ const RULES = [
   ['What counts', 'Runs, walks and hikes synced from Strava, outdoors or on a treadmill. Manual entries don’t.'],
   ['Daily doors', '1 km opens the day’s door. Doors close at 23:59 in your time zone.'],
   ['Weekly challenges', 'Finish a week’s goal to win a rare ornament. What it is stays a surprise.'],
-  ['Giving', 'Every ornament you hang comes from a run: unwrap it, then give it to a friend. It goes on their tree right away.'],
+  ['Giving', 'Everyone gets 5 free starter ornaments to give. Every other one comes from a run: unwrap it, then give it to a friend. It goes on their tree right away.'],
+  ['Group runs', 'In weeks 3 and 4, run 1 km or more with someone and record it together to win the week’s prize.'],
   ['One per tree', 'You can hang one ornament on each friend’s tree, so spread them around.'],
   ['Missed days', 'No run, no ornament that day. The door stays wrapped.'],
 ];
