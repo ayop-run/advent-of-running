@@ -30,6 +30,17 @@ const DOOR_POOL = ORNAMENTS.filter((o) => o.tier === 'special').map((o) => o.id)
  * its ornament's silhouette before it's earned.
  */
 export function doorOrnaments(seed: string): string[] {
+  const pool = shuffled(seed, DOOR_POOL);
+  return Array.from({ length: DOORS }, (_, i) => pool[i % pool.length]);
+}
+
+/** The runner's free starter ornaments: FREE_HANGS of the starters, picked at random per runner. */
+export function freeStarters(seed: string): string[] {
+  return shuffled(`${seed}:starters`, BASIC.map((o) => o.id)).slice(0, FREE_HANGS);
+}
+
+/** The same shuffle for the same seed, every time. */
+function shuffled(seed: string, items: readonly string[]): string[] {
   // FNV-1a hash of the seed, then mulberry32 for the shuffle
   let h = 2166136261;
   for (let i = 0; i < seed.length; i++) h = Math.imul(h ^ seed.charCodeAt(i), 16777619);
@@ -39,12 +50,12 @@ export function doorOrnaments(seed: string): string[] {
     t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
-  const pool = [...DOOR_POOL];
+  const pool = [...items];
   for (let i = pool.length - 1; i > 0; i--) {
     const j = Math.floor(rand() * (i + 1));
     [pool[i], pool[j]] = [pool[j], pool[i]];
   }
-  return Array.from({ length: DOORS }, (_, i) => pool[i % pool.length]);
+  return pool;
 }
 
 export const WEEKLY = [
@@ -142,8 +153,8 @@ export type Progress = {
   unwrapped: Unwrapped[];
   /** Every ornament the runner has found: free ones plus everything earned. */
   found: string[];
-  /** Free starter ornaments still to give this season (out of FREE_HANGS). */
-  freeLeft: number;
+  /** The runner's free starter ornaments not given yet this season (FREE_HANGS at most). */
+  starters: string[];
   /** ISO time of the last Strava sync; null for demo data. */
   syncedAt: string | null;
 };
@@ -153,7 +164,7 @@ export function computeProgress(
   days: DayRuns[],
   today: number,
   start: string,
-): Omit<Progress, 'given' | 'unwrapped' | 'found' | 'freeLeft' | 'syncedAt' | 'ornaments'> {
+): Omit<Progress, 'given' | 'unwrapped' | 'found' | 'starters' | 'syncedAt' | 'ornaments'> {
   const byDay = new Map(days.map((d) => [d.day, d]));
   const km = (d: number) => byDay.get(d)?.km ?? 0;
 
@@ -232,7 +243,7 @@ export function demoProgress(): Progress {
     // the demo lets you try unwrapping today's door before finishing the run
     unwrapped: [{ ornamentId: DEMO_ORNAMENTS[DEMO_TODAY - 1], door: DEMO_TODAY }],
     found: [...demoFound(BASIC.map((o) => o.id))],
-    freeLeft: FREE_HANGS,
+    starters: freeStarters('demo'),
     syncedAt: null,
   };
 }
