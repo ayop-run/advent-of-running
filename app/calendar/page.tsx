@@ -306,6 +306,12 @@ export default function Calendar() {
               >
                 <b>{short(tip)}{tip === p.today ? ' · today' : ''}</b>
                 {tip > p.today ? 'Coming up' : km(tip) > 0 ? `${km(tip).toFixed(1)} km` : 'No run'}
+                {tip <= p.today && p.runs[tip - 1]?.title && (
+                  <span className="bar-tip-title">
+                    {p.runs[tip - 1].title}
+                    {p.runs[tip - 1].count > 1 && <span className="muted"> +{p.runs[tip - 1].count - 1} more</span>}
+                  </span>
+                )}
               </span>
             )}
           </div>
