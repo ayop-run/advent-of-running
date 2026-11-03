@@ -46,7 +46,7 @@ export default function Notifications() {
 
       {items === undefined ? (
         <ul className="list" aria-busy="true">
-          {[0, 1, 2].map((i) => <li key={i}><Sk h={66} /></li>)}
+          {[0, 1, 2].map((i) => <li key={i}><Sk h={90} /></li>)}
         </ul>
       ) : items === null ? (
         <p className="soft center mt24 loaded">Couldn&apos;t load your notifications. Please try again later.</p>

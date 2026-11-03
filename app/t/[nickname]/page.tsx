@@ -76,7 +76,7 @@ export default function FriendTree() {
               {member && tree.exists && following !== null && <FollowButton following={following} onClick={toggleFollow} />}
             </div>
           ) : (
-            <Sk w={150} h={22} />
+            <Sk w={150} h={28} />
           )
         }
       />
@@ -87,7 +87,8 @@ export default function FriendTree() {
             <Sk w={220} h={14} />
             <Sk w={260} h={14} />
           </div>
-          <div className="tree-stage tree-waiting">
+          {/* room for the owner's name tag, which arrives with the tree */}
+          <div className="tree-stage tree-waiting" style={{ paddingBottom: 39 }}>
             <PixelTree ornaments={[]} label="" decorative scale={scale} />
           </div>
         </div>
@@ -115,7 +116,13 @@ export default function FriendTree() {
         </>
       )}
       <div className={`sticky-cta mt24${member ? ' above-nav' : ''}`}>
-        {!tree?.exists ? null : mine ? (
+        {!tree ? (
+          // the button and its note, at their loaded sizes
+          <>
+            <Sk h={54} />
+            <Sk w="80%" h={32} style={{ margin: '8px auto 0' }} />
+          </>
+        ) : !tree.exists ? null : mine ? (
           <div className="panel gold row">
             <Sprite id={mine.ornamentId} px={2} style={{ flexShrink: 0 }} />
             <div className="grow">

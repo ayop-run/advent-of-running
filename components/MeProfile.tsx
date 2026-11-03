@@ -13,8 +13,8 @@ export default function MeProfile() {
       <div className="row" aria-busy="true">
         <Sk w={48} h={48} />
         <div className="grow">
-          <Sk w={140} h={20} />
-          <Sk w={180} h={14} className="mt8" />
+          <Sk w={140} h={26} />
+          <Sk w={180} h={24} className="mt4" />
         </div>
       </div>
     );

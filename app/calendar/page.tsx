@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import BottomNav from '@/components/BottomNav';
-import { Meter, TapIcon } from '@/components/Icons';
+import { ChevronIcon, Meter, TapIcon } from '@/components/Icons';
 import PageHeader from '@/components/PageHeader';
 import Sprite from '@/components/Sprite';
 import Sk from '@/components/Skeleton';
@@ -65,19 +65,20 @@ export default function Calendar() {
         ) : (
           // the calendar's shape while Strava syncs, so nothing jumps when it arrives
           <div aria-busy="true" aria-label="Syncing your runs">
-            <div className="panel-head"><Sk w={90} h={22} /><Sk w={56} h={14} /></div>
+            <div className="panel-head"><Sk w={90} h={26} /><Sk w={56} h={14} /></div>
             <Sk h={225} className="mt12" />
             <Sk h={159} className="mt8" />
-            <div className="panel-head mt32"><Sk w={150} h={22} /><Sk w={56} h={14} /></div>
-            <Sk h={236} className="mt12" />
-            <Sk h={46} className="mt16" />
-            {[1, 2].map((w) => (
-              <div key={w} className="mt16">
-                <Sk w={140} h={14} />
-                <div className="doors mt8">{Array.from({ length: 7 }, (_, i) => <Sk key={i} h="auto" />)}</div>
+            <Sk h={65} className="mt8" />
+            <div className="panel-head section"><Sk w={150} h={26} /><Sk w={120} h={14} /></div>
+            <Sk h={261} className="mt12" />
+            <Sk h={63} className="mt16" />
+            {WEEKLY.map((w) => (
+              <div key={w.week} className="mt16">
+                <Sk w={140} h={20} />
+                <div className="doors mt8">{Array.from({ length: w.to - w.from + 1 }, (_, i) => <Sk key={i} h="auto" />)}</div>
               </div>
             ))}
-            <p className="tiny muted center mt12">Syncing your runs from Strava…</p>
+            <p className="tiny muted center mt16">Syncing your runs from Strava…</p>
           </div>
         )}
         <BottomNav />
@@ -242,6 +243,20 @@ export default function Calendar() {
             </p>
             {ready && <Link href="/gift" className="btn block mt12">Give your unwrapped ornaments</Link>}
           </section>
+        )}
+
+        {/* free starters you can give without running: pick a friend, then hang one */}
+        {p.starters.length > 0 && (
+          <Link href="/friends" className="panel quiet row link-row mt8">
+            <span className="row" style={{ gap: 2, flexShrink: 0 }}>
+              {p.starters.slice(0, 3).map((id) => <Sprite key={id} id={id} px={2} />)}
+            </span>
+            <span className="grow small" style={{ fontWeight: 700 }}>
+              {p.starters.length} free {p.starters.length === 1 ? 'starter' : 'starters'} to give
+              <span className="tiny muted" style={{ display: 'block', fontWeight: 400 }}>No run needed</span>
+            </span>
+            <ChevronIcon />
+          </Link>
         )}
 
         {/* 2. the Advent doors, one row per bonus week */}

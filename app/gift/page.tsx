@@ -48,14 +48,16 @@ export default function GiftOpened() {
   if (!p) {
     return (
       <main className="screen no-nav" aria-busy="true">
-        <div className="topbar"><Sk w={96} h={26} /><Sk w={44} h={18} /></div>
+        <div className="topbar"><Sk w={120} h={28} /><Sk w={44} h={44} /></div>
         <div className="showcase mt8 tree-waiting"><Sprite id="gift-box" px={4} /></div>
-        <div className="mt16" style={{ display: 'grid', justifyItems: 'center', gap: 10 }}>
-          <Sk w={200} h={24} />
-          <Sk w={260} h={14} />
-          <Sk w={220} h={14} />
+        {/* eyebrow, title and two lines of text, then the button, at their loaded sizes */}
+        <div style={{ display: 'grid', justifyItems: 'center' }}>
+          <Sk w={200} h={20} className="mt16" />
+          <Sk w={220} h={27} className="mt8" />
+          <Sk w={280} h={20} className="mt8" />
+          <Sk w={220} h={20} className="mt8" />
         </div>
-        <Sk h={56} className="mt24" />
+        <Sk h={54} className="mt24" />
       </main>
     );
   }
@@ -70,6 +72,11 @@ export default function GiftOpened() {
         <h1 className="h1 center mt16">Nothing to unwrap yet</h1>
         <p className="center soft mt8">Run 1 km to open today&apos;s door. The ornament inside is yours to give to a friend.</p>
         <Link href="/calendar" className="btn block mt24">Open the calendar</Link>
+        {p.starters.length > 0 && (
+          <Link href="/friends" className="btn ghost block mt8">
+            Give a free starter ({p.starters.length} left)
+          </Link>
+        )}
       </main>
     );
   }
@@ -92,7 +99,13 @@ export default function GiftOpened() {
             <i className="glint" style={{ bottom: 30, left: 26, animationDelay: '-1.2s' }} />
           </>
         ) : (
-          <Sprite id="gift-box" px={4} label="Wrapped gift" className="box" />
+          // the ornament's shadow with a question mark, like today's door on the calendar
+          <span className="box" role="img" aria-label="Mystery ornament">
+            <span className="door-hint">
+              <span className="silhouette"><Sprite id={o.id} px={4} /></span>
+              <span className="dir-q pix" aria-hidden="true">?</span>
+            </span>
+          </span>
         )}
       </div>
 
