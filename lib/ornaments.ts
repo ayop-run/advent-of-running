@@ -117,12 +117,12 @@ export const DOOR_TEASERS: Record<string, string> = {
   'market-stall': 'Something smells of gingerbread and warm drinks. Run there and back?',
 };
 
-/** A missed door: the character behind it, still waiting. The catch-up rule follows it. */
+/** A missed door: the character behind it, who waited in vain. The door then stays wrapped. */
 export const DOOR_MISSED: Record<string, string> = {
-  fox: 'The fox waited by the door all day. It’s still hoping you’ll come out.',
+  fox: 'The fox waited by the door all day, but you didn’t come out.',
   penguin: 'The penguin waddled out alone. It would love some company.',
   reindeer: 'The reindeer did its training run without you, but saved you a spot.',
-  'gingerbread-runner': 'The gingerbread runner got away this time. You can still catch it.',
+  'gingerbread-runner': 'The gingerbread runner got away this time.',
   'santa-shoe': 'These festive shoes stayed laced up by the door, waiting.',
   'finish-medal': 'This medal is still hanging at a finish line you didn’t reach.',
   stopwatch: 'The lucky stopwatch never started. Give it a reason to tick.',
