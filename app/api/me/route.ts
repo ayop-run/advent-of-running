@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/server/db';
+import { forgetRunner } from '@/lib/server/forget';
 import { duringAdvent } from '@/lib/calendar';
 import { checkNickname } from '@/lib/nickname';
 import { currentRunner } from '@/lib/server/runner';
@@ -64,7 +65,7 @@ export async function DELETE() {
   } catch {
     /* access already revoked on Strava: delete anyway */
   }
-  const { error } = await db().from('runners').delete().eq('id', me.id);
+  const { error } = await forgetRunner(me.id);
   if (error) return NextResponse.json({ error: 'unknown' }, { status: 500 });
   const res = NextResponse.json({ ok: true });
   res.cookies.set(...clearedSessionCookie());
