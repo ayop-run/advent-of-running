@@ -542,6 +542,7 @@ button.orn:focus-visible > svg { outline: 4px solid var(--frost); outline-offset
   animation: fade .15s ease-out both;
 }
 .bar-tip b { color: var(--gold); font-size: 11px; }
+.bar-tip-title { max-width: 180px; overflow: hidden; text-overflow: ellipsis; color: var(--soft); font-weight: 600; }
 .bar-tip.start { transform: translateX(-12px); align-items: flex-start; }
 .bar-tip.end { transform: translateX(calc(-100% + 12px)); align-items: flex-end; }
 .bars i.met { background: var(--frost); box-shadow: inset 0 2px 0 rgba(255,255,255,.45); }

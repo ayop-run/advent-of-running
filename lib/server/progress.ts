@@ -37,9 +37,17 @@ export async function runnerProgress(runnerId: string, timeZone: string): Promis
         if (date < first || date > last) continue;
         const day = adventDay(date, start);
         const km = a.distance / 1000;
-        const d = days.get(day) ?? { day, km: 0, runs: 0, longestKm: 0, together: 0 };
+        const d = days.get(day) ?? { day, km: 0, runs: 0, longestKm: 0, together: 0, title: null };
         const together = (a.athlete_count ?? 1) >= 2 && km >= DAILY_GOAL_KM ? 1 : 0;
-        days.set(day, { day, km: d.km + km, runs: d.runs + 1, longestKm: Math.max(d.longestKm, km), together: d.together + together });
+        const longest = km > d.longestKm;
+        days.set(day, {
+          day,
+          km: d.km + km,
+          runs: d.runs + 1,
+          longestKm: Math.max(d.longestKm, km),
+          together: d.together + together,
+          title: longest ? (a.name?.trim().slice(0, 100) || null) : d.title,
+        });
       }
 
       // Replace the season's rows, so deleted or edited runs drop out too.
@@ -55,6 +63,7 @@ export async function runnerProgress(runnerId: string, timeZone: string): Promis
               runs: d.runs,
               longest_km: d.longestKm.toFixed(2),
               together: d.together,
+              title: d.title ?? null,
             })),
           );
       }
@@ -65,7 +74,7 @@ export async function runnerProgress(runnerId: string, timeZone: string): Promis
 
   const { data: rows } = await db()
     .from('daily_progress')
-    .select('day, km, runs, longest_km, together')
+    .select('day, km, runs, longest_km, together, title')
     .eq('runner_id', runnerId)
     .gte('day', first)
     .lte('day', last);
@@ -75,6 +84,7 @@ export async function runnerProgress(runnerId: string, timeZone: string): Promis
     runs: r.runs,
     longestKm: Number(r.longest_km),
     together: r.together ?? 0,
+    title: r.title ?? null,
   }));
   const progress = computeProgress(days, today, start);
   const ornaments = doorOrnaments(`${runnerId}:${start}`);
