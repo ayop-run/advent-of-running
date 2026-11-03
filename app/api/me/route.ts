@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/server/db';
 import { forgetRunner } from '@/lib/server/forget';
 import { duringAdvent } from '@/lib/calendar';
+import { DATA_NOTICE, validDisplayName } from '@/lib/dataNotice';
 import { checkNickname } from '@/lib/nickname';
 import { currentRunner } from '@/lib/server/runner';
 import { clearedSessionCookie } from '@/lib/server/session';
@@ -28,7 +29,8 @@ const validTimeZone = (tz: unknown) => {
 };
 
 /**
- * Sign-up and Me settings: tree name, time zone, email opt-in. The time zone is locked during
+ * Sign-up and Me settings: tree name, the name on the tree, time zone, email opt-in, and
+ * accepting the data notice. The time zone is locked during
  * Advent, since moving it would shift which day each run counts for.
  */
 export async function PATCH(req: Request) {
@@ -39,7 +41,8 @@ export async function PATCH(req: Request) {
   if (
     !checkNickname(nickname).ok ||
     !validTimeZone(body.timeZone) ||
-    typeof body.emailOptIn !== 'boolean'
+    typeof body.emailOptIn !== 'boolean' ||
+    (body.displayName !== undefined && !validDisplayName(body.displayName))
   ) {
     return NextResponse.json({ error: 'invalid' }, { status: 400 });
   }
@@ -48,7 +51,15 @@ export async function PATCH(req: Request) {
   }
   const { error } = await db()
     .from('runners')
-    .update({ nickname, time_zone: body.timeZone, email_opt_in: body.emailOptIn, onboarded: true })
+    .update({
+      nickname,
+      time_zone: body.timeZone,
+      email_opt_in: body.emailOptIn,
+      onboarded: true,
+      // the name on the tree is the runner's own, never copied from Strava without them
+      ...(body.displayName !== undefined && { display_name: body.displayName.trim() }),
+      ...(body.acceptNotice === true && { data_notice: DATA_NOTICE }),
+    })
     .eq('id', me.id);
   if (error?.code === '23505') return NextResponse.json({ error: 'nickname_taken' }, { status: 409 });
   if (error) return NextResponse.json({ error: 'unknown' }, { status: 500 });

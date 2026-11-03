@@ -60,5 +60,6 @@ export async function runnerByNickname(nickname: string): Promise<string | null>
 }
 
 function toFriend(r: Row, c: { following: boolean; hung: number; given: boolean }): Friend {
-  return { nickname: r.nickname, name: r.display_name, avatarUrl: r.avatar_url, hung: c.hung, given: c.given ? 1 : 0, visited: false, following: c.following, official: r.official };
+  // others' Strava photos are never shown (Strava API Policy 2.3); official logos are
+  return { nickname: r.nickname, name: r.display_name, avatarUrl: r.strava_athlete_id > 0 ? null : r.avatar_url, hung: c.hung, given: c.given ? 1 : 0, visited: false, following: c.following, official: r.official };
 }

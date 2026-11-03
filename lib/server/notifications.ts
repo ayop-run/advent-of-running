@@ -2,7 +2,7 @@ import type { Notification } from '@/lib/notifications';
 import { db } from './db';
 import { notify } from './notify';
 
-type Who = { id: string; nickname: string; display_name: string; avatar_url: string | null; official: boolean };
+type Who = { id: string; nickname: string; display_name: string; avatar_url: string | null; strava_athlete_id: number; official: boolean };
 
 /**
  * Your latest notifications, newest first. A hung ornament shows only the sender's initial and
@@ -21,7 +21,7 @@ export async function listNotifications(me: string): Promise<{ items: Notificati
   const actors = [...new Set(rows.map((r) => r.actor as string))];
   const hungIds = rows.map((r) => r.hung_id).filter(Boolean) as string[];
   const [{ data: who }, { data: hung }, { data: follows }, { data: gave }] = await Promise.all([
-    db().from('runners').select('id, nickname, display_name, avatar_url, official').in('id', actors),
+    db().from('runners').select('id, nickname, display_name, avatar_url, strava_athlete_id, official').in('id', actors),
     hungIds.length ? db().from('ornaments_hung').select('id, from_name, ornament_id').in('id', hungIds) : Promise.resolve({ data: [] }),
     db().from('follows').select('followee').eq('follower', me).in('followee', actors),
     db().from('ornaments_hung').select('tree_owner').eq('from_runner', me).in('tree_owner', actors),
@@ -42,7 +42,8 @@ export async function listNotifications(me: string): Promise<{ items: Notificati
     }
     const w = byId.get(r.actor as string);
     if (!w) continue;
-    const person = { nickname: w.nickname, name: w.display_name, avatarUrl: w.avatar_url, official: w.official };
+    // others' Strava photos are never shown (Strava API Policy 2.3); official logos are
+    const person = { nickname: w.nickname, name: w.display_name, avatarUrl: w.strava_athlete_id > 0 ? null : w.avatar_url, official: w.official };
     if (r.kind === 'followed') items.push({ ...base, kind: 'followed', who: person, following: following.has(w.id) });
     else items.push({ ...base, kind: 'asked', who: person, given: given.has(w.id) });
   }
