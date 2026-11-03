@@ -125,8 +125,11 @@ export const duringAdvent = (timeZone: string) => {
 };
 
 /** One day of synced runs. */
-/** `together`: runs that day of 1 km or more that Strava grouped with someone else's. */
-export type DayRuns = { day: number; km: number; runs: number; longestKm: number; together: number };
+/**
+ * `together`: runs that day of 1 km or more that Strava grouped with someone else's.
+ * `title`: the longest run's title, for the distance chart.
+ */
+export type DayRuns = { day: number; km: number; runs: number; longestKm: number; together: number; title?: string | null };
 
 /** An earned ornament that hasn't been given yet. */
 export type Unwrapped = { ornamentId: string; door: number | null };
@@ -142,6 +145,8 @@ export type Progress = {
   ornaments: string[];
   /** Km run on each day, index 0 is day 1. */
   km: number[];
+  /** Each day's longest run title and how many runs there were; index 0 is day 1. */
+  runs: { title: string | null; count: number }[];
   todayKm: number;
   /** The current week's challenge, or null outside days 1–24. */
   week: (Week & { progress: number; done: boolean }) | null;
@@ -190,6 +195,7 @@ export function computeProgress(
     today,
     doors,
     km: Array.from({ length: DOORS }, (_, i) => Math.round(km(i + 1) * 10) / 10),
+    runs: Array.from({ length: DOORS }, (_, i) => ({ title: byDay.get(i + 1)?.title ?? null, count: byDay.get(i + 1)?.runs ?? 0 })),
     todayKm: Math.round(km(today) * 10) / 10,
     week: current ? { ...current, progress: weekProgress(current), done: weeksDone.includes(current.week) } : null,
     weeksDone,
@@ -234,8 +240,8 @@ export function demoFound(extra: string[] = []): Set<string> {
 export function demoProgress(): Progress {
   const days: DayRuns[] = Array.from({ length: DEMO_TODAY - 1 }, (_, i) => i + 1)
     .filter((d) => !DEMO_MISSED.includes(d))
-    .map((day) => ({ day, km: day >= 8 ? 1.2 : 3, runs: 1, longestKm: day >= 8 ? 1.2 : 3, together: 0 }));
-  days.push({ day: DEMO_TODAY, km: DEMO_TODAY_KM, runs: 1, longestKm: DEMO_TODAY_KM, together: 0 });
+    .map((day) => ({ day, km: day >= 8 ? 1.2 : 3, runs: 1, longestKm: day >= 8 ? 1.2 : 3, together: 0, title: day % 7 === 1 ? 'Own Pace Monday' : 'Morning run' }));
+  days.push({ day: DEMO_TODAY, km: DEMO_TODAY_KM, runs: 1, longestKm: DEMO_TODAY_KM, together: 0, title: 'Lunch jog' });
   return {
     ...computeProgress(days, DEMO_TODAY, adventStart()),
     ornaments: DEMO_ORNAMENTS,

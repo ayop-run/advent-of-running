@@ -72,6 +72,8 @@ export type StravaActivity = {
   manual: boolean;
   /** Meters. */
   distance: number;
+  /** The title the runner gave it, e.g. "Own Pace Monday". */
+  name?: string;
   /** People in the run: 2 or more when Strava grouped it with someone else's ("ran with"). */
   athlete_count?: number;
   /** Local time of the activity, e.g. "2026-12-14T07:30:00Z" (the Z is meaningless here). */

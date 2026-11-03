@@ -48,6 +48,8 @@ export default function Calendar() {
   const [p, setP] = useState<Progress | null>(null);
   const [failed, setFailed] = useState(false);
   const [picked, setPicked] = useState<number | null>(null);
+  // the day whose bar shows its tooltip on the distance chart
+  const [tip, setTip] = useState<number | null>(null);
   const { bump, of } = useBump();
   useEffect(() => {
     getProgress().then((res) => {
@@ -277,12 +279,41 @@ export default function Calendar() {
           <div
             className="bars mt12"
             style={{ '--goal': `${(DAILY_GOAL_KM / top) * 100}%` } as React.CSSProperties}
-            role="img"
+            role="group"
             aria-label={`Daily distance: ${total.toFixed(1)} km over ${daysRun} days, best ${km(best)} km on ${date(best)}.`}
+            onMouseLeave={() => setTip(null)}
           >
+            {/* each day is a full-height column, so the thin bars are easy to hover or tap */}
             {doors.map((n) => (
-              <i key={n} className={bar(n)} style={{ height: km(n) > 0 ? `${Math.max(8, (km(n) / top) * 100)}%` : undefined }} />
+              <button
+                key={n}
+                type="button"
+                className={`bar-col${tip === n ? ' on' : ''}`}
+                aria-label={`${date(n)}: ${n > p.today ? 'coming up' : km(n) > 0 ? `${km(n).toFixed(1)} km` : 'no run'}`}
+                onPointerEnter={(e) => e.pointerType === 'mouse' && setTip(n)}
+                onFocus={() => setTip(n)}
+                onBlur={() => setTip((t) => (t === n ? null : t))}
+                onClick={() => setTip((t) => (t === n ? null : n))}
+              >
+                <i className={bar(n)} style={{ height: km(n) > 0 ? `${Math.max(8, (km(n) / top) * 100)}%` : undefined }} />
+              </button>
             ))}
+            {tip !== null && (
+              <span
+                className={`bar-tip${tip <= 3 ? ' start' : tip >= DOORS - 2 ? ' end' : ''}`}
+                style={{ left: `${((tip - 0.5) / DOORS) * 100}%` }}
+                aria-hidden="true"
+              >
+                <b>{short(tip)}{tip === p.today ? ' · today' : ''}</b>
+                {tip > p.today ? 'Coming up' : km(tip) > 0 ? `${km(tip).toFixed(1)} km` : 'No run'}
+                {tip <= p.today && p.runs[tip - 1]?.title && (
+                  <span className="bar-tip-title">
+                    {p.runs[tip - 1].title}
+                    {p.runs[tip - 1].count > 1 && <span className="muted"> +{p.runs[tip - 1].count - 1} more</span>}
+                  </span>
+                )}
+              </span>
+            )}
           </div>
           <div className="bars-axis mt4" aria-hidden="true">
             <span>{short(1)}</span>
