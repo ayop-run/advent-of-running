@@ -9,7 +9,7 @@ import { HOW_TO_GET, ORNAMENTS, type Ornament, type Tier } from '@/lib/ornaments
 
 const SECTIONS: { tier: Tier; title: string; note: string }[] = [
   { tier: 'basic', title: 'Starter ornaments', note: 'In everyone’s collection from day one. The ones you hang come from your runs.' },
-  { tier: 'special', title: 'Daily doors', note: 'Run on a day of Advent to unwrap one.' },
+  { tier: 'special', title: 'Daily doors', note: 'Run 1 km on a day of Advent to unwrap one. Which one hides behind each door is random, so every runner’s calendar is different.' },
   { tier: 'rare', title: 'Weekly prizes', note: 'Finish a weekly challenge to win one.' },
 ];
 
@@ -37,7 +37,7 @@ export default function OrnamentDirectory() {
           <span className="pix" style={{ color: 'var(--gold)' }}>{ORNAMENTS.length}</span>
         </div>
         <p className="small soft mt8">
-          {count('basic')} starter ornaments, {count('special')} behind the daily doors and{' '}
+          {count('basic')} starter ornaments, {count('special')} behind the daily doors (in a random order for each runner) and{' '}
           {count('rare')} rare prizes. Tap any of them to see it move.
         </p>
       </section>
