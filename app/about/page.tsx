@@ -20,7 +20,7 @@ const STEPS = [
   {
     sprite: 'gift-box',
     title: 'Run to unwrap',
-    text: 'Each day of Advent has a door. Run that day to unwrap a special ornament, then hang it on a friend’s tree.',
+    text: 'Each day of Advent has a door. Run 1 km that day to unwrap a mystery ornament, then hang it on a friend’s tree. Every runner gets them in a different, random order.',
   },
   {
     sprite: 'lock',

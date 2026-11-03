@@ -156,7 +156,7 @@ export const BY_ID: Record<string, Ornament> = Object.fromEntries(ORNAMENTS.map(
 /** How each kind of ornament is earned, for the directory and the About page. */
 export const HOW_TO_GET: Record<Tier, string> = {
   basic: 'Free for anyone to hang',
-  special: 'Behind a daily Advent door',
+  special: 'Behind a random Advent door',
   rare: 'Prize for a weekly challenge',
 };
 
