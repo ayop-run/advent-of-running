@@ -1,5 +1,6 @@
-import { DOORS, WEEKLY, adventDate, adventDay, adventStart, computeProgress, doorOrnaments, todayIn, type DayRuns, type Progress } from '@/lib/calendar';
+import { DAILY_GOAL_KM, DOORS, WEEKLY, adventDate, adventDay, adventStart, computeProgress, doorOrnaments, todayIn, type DayRuns, type Progress } from '@/lib/calendar';
 import { BASIC } from '@/lib/ornaments';
+import { freeLeft } from './freeHangs';
 import { db } from './db';
 import { accessToken, fetchActivities, isCountedRun } from './strava';
 
@@ -36,8 +37,9 @@ export async function runnerProgress(runnerId: string, timeZone: string): Promis
         if (date < first || date > last) continue;
         const day = adventDay(date, start);
         const km = a.distance / 1000;
-        const d = days.get(day) ?? { day, km: 0, runs: 0, longestKm: 0 };
-        days.set(day, { day, km: d.km + km, runs: d.runs + 1, longestKm: Math.max(d.longestKm, km) });
+        const d = days.get(day) ?? { day, km: 0, runs: 0, longestKm: 0, together: 0 };
+        const together = (a.athlete_count ?? 1) >= 2 && km >= DAILY_GOAL_KM ? 1 : 0;
+        days.set(day, { day, km: d.km + km, runs: d.runs + 1, longestKm: Math.max(d.longestKm, km), together: d.together + together });
       }
 
       // Replace the season's rows, so deleted or edited runs drop out too.
@@ -52,6 +54,7 @@ export async function runnerProgress(runnerId: string, timeZone: string): Promis
               km: d.km.toFixed(2),
               runs: d.runs,
               longest_km: d.longestKm.toFixed(2),
+              together: d.together,
             })),
           );
       }
@@ -62,7 +65,7 @@ export async function runnerProgress(runnerId: string, timeZone: string): Promis
 
   const { data: rows } = await db()
     .from('daily_progress')
-    .select('day, km, runs, longest_km')
+    .select('day, km, runs, longest_km, together')
     .eq('runner_id', runnerId)
     .gte('day', first)
     .lte('day', last);
@@ -71,6 +74,7 @@ export async function runnerProgress(runnerId: string, timeZone: string): Promis
     km: Number(r.km),
     runs: r.runs,
     longestKm: Number(r.longest_km),
+    together: r.together ?? 0,
   }));
   const progress = computeProgress(days, today, start);
   const ornaments = doorOrnaments(`${runnerId}:${start}`);
@@ -115,6 +119,7 @@ export async function runnerProgress(runnerId: string, timeZone: string): Promis
     given,
     unwrapped: (pouch ?? []).filter((p) => !p.used).map((p) => ({ ornamentId: p.ornament_id, door: doorOf(p.source) })),
     found: [...new Set([...BASIC.map((o) => o.id), ...(pouch ?? []).map((p) => p.ornament_id)])],
+    freeLeft: await freeLeft(runnerId, start),
     syncedAt,
   };
 }

@@ -11,7 +11,7 @@ import Link from 'next/link';
 import { editMyOrnament, getProgress, getTree, hangOrnament, type HangError, type Hung } from '@/lib/data';
 import { getMe } from '@/lib/me';
 import { demoName } from '@/lib/demo/names';
-import { BY_ID, HINTS, type Hint } from '@/lib/ornaments';
+import { BASIC, BY_ID, FREE_HANGS, HINTS, type Hint } from '@/lib/ornaments';
 import { christmasLabel, lastDayLabel } from '@/lib/calendar';
 
 const MAX = 200;
@@ -29,7 +29,7 @@ const HANG_ERROR: Record<HangError, string> = {
   tree_not_found: 'This tree doesn’t exist.',
   sign_in_required: 'Sign up or log in to hang an ornament.',
   hanging_closed: `Hanging closed on ${lastDayLabel()}.`,
-  not_earned: 'You haven’t unwrapped this ornament yet. Run to earn one first.',
+  not_earned: 'You can’t give this ornament: unwrap it by running, or pick a free starter if you have some left.',
   not_yours: 'You can only edit the ornament you hung.',
   invalid: 'Please check your message and name.',
   unknown: 'That didn’t work. Please try again.',
@@ -52,6 +52,11 @@ export default function HangForm() {
   const [from, setFrom] = useState('');
   const [tried, setTried] = useState(false);
   const [already, setAlready] = useState<Hung | null>(null);
+  // for the empty state: how many you've given so far, and whether today's door is still to run
+  const [givenCount, setGivenCount] = useState(0);
+  // starter ornaments you can still give without running
+  const [free, setFree] = useState(0);
+  const [todayOpen, setTodayOpen] = useState(false);
   const [ready, setReady] = useState(false);
   const [sending, setSending] = useState(false);
   const [failed, setFailed] = useState<HangError | null>(null);
@@ -69,7 +74,14 @@ export default function HangForm() {
       // the one you just unwrapped comes first
       if (preset && ids.includes(preset)) ids.sort((a, b) => Number(b === preset) - Number(a === preset));
       setEarnedIds(ids);
-      if (!(mine && wantsEdit)) setPick(ids[0] ?? '');
+      const freeLeft = 'progress' in res ? res.progress.freeLeft : 0;
+      setFree(freeLeft);
+      if ('progress' in res) {
+        const p = res.progress;
+        setGivenCount(Object.keys(p.given).length);
+        setTodayOpen(p.today >= 1 && p.today <= p.doors.length && p.doors[p.today - 1] === 'opened');
+      }
+      if (!(mine && wantsEdit)) setPick(ids[0] ?? (freeLeft > 0 ? (preset && BASIC.some((o) => o.id === preset) ? preset : BASIC[0].id) : ''));
       if (mine && wantsEdit) {
         // editing: start from what's already hanging
         setPick(mine.ornamentId);
@@ -90,6 +102,7 @@ export default function HangForm() {
   const editing = Boolean(already && wantsEdit);
   // the ornament on the tree stays when editing; otherwise pick from what you earned
   const options = editing && already ? [already.ornamentId] : earnedIds;
+  const freeOptions = editing || free === 0 ? [] : BASIC.map((o) => o.id).filter((id) => !earnedIds.includes(id));
 
   const name = demoName(nickname.toLowerCase());
   const chosen = BY_ID[pick] as (typeof BY_ID)[string] | undefined;
@@ -149,8 +162,8 @@ export default function HangForm() {
         <PageHeader back={`/t/${nickname}`} title="Hang an ornament" />
         <div className="center mt16">
           <div className="showcase"><Sprite id="gift-box" px={4} label="Wrapped gift" /></div>
-          <h2 className="h2 mt16">Run to give {name} an ornament</h2>
-          <p className="soft mt8">Every ornament comes from a run. Join Advent of Running, run 1 km to unwrap your first one, then hang it here with a sealed message.</p>
+          <h2 className="h2 mt16">Give {name} an ornament</h2>
+          <p className="soft mt8">Join Advent of Running to hang one here with a sealed message. Everyone gets {FREE_HANGS} starter ornaments to give, and every 1 km run unwraps a special one.</p>
         </div>
         <Link href="/signup" className="btn block mt32">Get a tree of your own</Link>
         <Link href={`/t/${nickname}`} className="btn ghost block mt8">See the tree</Link>
@@ -165,8 +178,22 @@ export default function HangForm() {
         <PageHeader back={`/t/${nickname}`} title="Hang an ornament" />
         <div className="center mt16">
           <div className="showcase"><Sprite id="gift-box" px={4} label="Wrapped gift" /></div>
-          <h2 className="h2 mt16">Run to unwrap an ornament first</h2>
-          <p className="soft mt8">Every ornament comes from a run. Run 1 km to open today&apos;s door, then hang what&apos;s inside on {name}&apos;s tree.</p>
+          {givenCount > 0 || free < FREE_HANGS ? (
+            <>
+              <h2 className="h2 mt16">You’ve given all your ornaments</h2>
+              <p className="soft mt8">
+                Your free starters and every ornament you unwrapped are already on friends’ trees.{' '}
+                {todayOpen
+                  ? `Run 1 km tomorrow to unwrap a new one for ${name}.`
+                  : `Run 1 km today to unwrap a new one for ${name}.`}
+              </p>
+            </>
+          ) : (
+            <>
+              <h2 className="h2 mt16">Run to unwrap an ornament first</h2>
+              <p className="soft mt8">Every ornament comes from a run. Run 1 km to open today&apos;s door, then hang what&apos;s inside on {name}&apos;s tree.</p>
+            </>
+          )}
         </div>
         <Link href="/calendar" className="btn block mt32">Open the calendar</Link>
         <Link href={`/t/${nickname}`} className="btn ghost block mt8">See the tree</Link>
@@ -220,18 +247,38 @@ export default function HangForm() {
       >
         <fieldset className="field" style={{ border: 0, padding: 0, margin: 0 }}>
           <legend className="step-label"><b>1</b> Pick an ornament</legend>
-          <div className="picker">
-            {options.map((id) => (
-              <button key={id} type="button" className="pick" aria-pressed={pick === id} onClick={() => choose(id)}>
-                {id === preset && !editing && <span className="pick-tag">New</span>}
-                {art(id)}
-                <span>{short(BY_ID[id].name)}</span>
-              </button>
-            ))}
-          </div>
-          <span className="help">
-            {editing ? 'This ornament stays on the tree. You can still change the message.' : 'Ornaments you unwrapped by running and haven’t given yet.'}
-          </span>
+          {options.length > 0 && (
+            <>
+              <div className="picker">
+                {options.map((id) => (
+                  <button key={id} type="button" className="pick" aria-pressed={pick === id} onClick={() => choose(id)}>
+                    {id === preset && !editing && <span className="pick-tag">New</span>}
+                    {art(id)}
+                    <span>{short(BY_ID[id].name)}</span>
+                  </button>
+                ))}
+              </div>
+              <span className="help">
+                {editing ? 'This ornament stays on the tree. You can still change the message.' : 'Ornaments you unwrapped by running and haven’t given yet.'}
+              </span>
+            </>
+          )}
+          {freeOptions.length > 0 && (
+            <>
+              <p className={`small${options.length ? ' mt16' : ''}`} style={{ fontWeight: 700 }}>
+                Free starters <span className="muted">· {free} of {FREE_HANGS} left</span>
+              </p>
+              <div className="picker mt8">
+                {freeOptions.map((id) => (
+                  <button key={id} type="button" className="pick" aria-pressed={pick === id} onClick={() => choose(id)}>
+                    {art(id)}
+                    <span>{short(BY_ID[id].name)}</span>
+                  </button>
+                ))}
+              </div>
+              <span className="help">Everyone can give {FREE_HANGS} starter ornaments without running. Run 1 km to unwrap special ones.</span>
+            </>
+          )}
         </fieldset>
 
         <div className="stack" style={{ gap: 8 }}>
