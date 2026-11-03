@@ -42,7 +42,7 @@ export default function MyTree() {
         title={
           // until we know who you are, a placeholder: never a flash of someone else's name
           account === undefined ? (
-            <div className="row" style={{ gap: 6, height: 28 }} aria-busy="true">
+            <div className="row" style={{ gap: 6, height: 24 }} aria-busy="true">
               <Sk w={24} h={24} />
               <Sk w={150} h={20} />
             </div>
@@ -73,7 +73,7 @@ export default function MyTree() {
 
       {/* the count of sealed letters on your tree, same badge as on a friend's tree */}
       <div className="mt16">
-        {tree ? <LettersBadge count={tree.ornaments.length} empty="No letters yet. Ask a friend!" /> : <div className="center"><Sk w={64} h={36} style={{ display: 'inline-block' }} /></div>}
+        {tree ? <LettersBadge count={tree.ornaments.length} empty="No letters yet. Ask a friend!" /> : <Sk w={64} h={36} style={{ margin: '0 auto' }} />}
       </div>
 
       {/* the tree stands in place, dimmed, while its ornaments load */}
@@ -109,9 +109,10 @@ export default function MyTree() {
             <p className="center mt4"><Link href="/friends" className="textlink" style={{ fontSize: 14 }}>Ask friends to hang one <ChevronIcon /></Link></p>
           </div>
         ) : (
-          <div className="mt12" style={{ display: 'grid', justifyItems: 'center', gap: 8 }}>
-            <Sk w={230} h={14} />
-            <Sk w={150} h={14} className="mt4" />
+          // the same height as the two lines below the tree (the link is a 44px tap target)
+          <div style={{ display: 'grid', justifyItems: 'center' }}>
+            <Sk w={230} h={21} className="mt12" />
+            <Sk w={150} h={20} style={{ margin: '16px 0 12px' }} />
           </div>
         )}
       </div>

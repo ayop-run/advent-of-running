@@ -32,9 +32,9 @@ export default function OrnamentsGiven() {
       <PageHeader back="/me" title="Ornaments given" />
       {loading ? (
         <div aria-busy="true">
-          <Sk h={14} />
-          <Sk w="70%" h={14} className="mt8" />
-          <div className="dir-grid mt16">{[0, 1, 2, 3, 4, 5].map((i) => <Sk key={i} h={132} />)}</div>
+          <Sk h={17} />
+          <Sk w="70%" h={17} className="mt8" />
+          <div className="dir-grid mt16">{[0, 1, 2, 3, 4, 5].map((i) => <Sk key={i} h={171} />)}</div>
         </div>
       ) : (
         <div className="loaded">

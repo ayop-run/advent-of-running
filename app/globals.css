@@ -594,7 +594,9 @@ a.list-row:hover { color: var(--gold); }
 /* ---------- landing: how it works ---------- */
 .steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .step { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 14px 6px 12px; clip-path: var(--px4); background: rgba(26,42,79,.6); text-align: center; font-size: 13px; font-weight: 700; line-height: 1.3; color: var(--soft); }
-.step b { font: 600 var(--fs-pixel)/1 var(--display); color: var(--gold); }
+.step b { display: block; height: 1em; font: 600 var(--fs-pixel)/1 var(--display); color: var(--gold); }
+/* labels keep room for two lines, so every tile has the same height, loading or not */
+.step > span { min-height: 2.6em; }
 .step.link { color: var(--snow); text-decoration: none; box-shadow: inset 0 0 0 2px var(--gold); transition: transform .12s ease; }
 .step.link:hover { transform: translateY(-2px); }
 
