@@ -23,7 +23,8 @@ const SECTIONS: { title: string; body: React.ReactNode }[] = [
         photo link and the access tokens Strava gives this app. To open doors we read your activities
         in Advent, including private ones, but keep only a daily summary: kilometres, how many runs, the
         longest one and its title, and how many were group runs (never who you ran with). Only you see
-        it. Routes, maps, times, pace, heart rate and photos stay on Strava.
+        it, and we delete it 7 days after your last sync (your next visit syncs it again). Routes,
+        maps, times, pace, heart rate and photos stay on Strava.
       </>
     ),
   },
@@ -31,7 +32,7 @@ const SECTIONS: { title: string; body: React.ReactNode }[] = [
     title: 'What you add',
     body: (
       <>
-        Your tree name and your time zone. When you hang an ornament on a
+        Your tree name, the name shown on your tree and your time zone. When you hang an ornament on a
         friend&apos;s tree, we store the ornament, the name you sign with, a hint and your message. Who
         you follow is stored too.
       </>
@@ -41,8 +42,9 @@ const SECTIONS: { title: string; body: React.ReactNode }[] = [
     title: 'What others see',
     body: (
       <>
-        Your tree is public: anyone with the link sees your name, photo and the ornaments on it, with
-        each sender shown only as an initial. Runners can find you by name in search. Messages stay
+        Your tree is public: anyone with the link sees the name you chose, your initial and the
+        ornaments on it, with each sender shown only as an initial. Your Strava name and photo are
+        never shown to anyone but you. Runners can find you by name in search. Messages stay
         sealed: only the tree&apos;s owner can read them, from midnight on December 25. Your runs,
         distances and calendar are only ever shown to you.
       </>
@@ -81,7 +83,8 @@ const SECTIONS: { title: string; body: React.ReactNode }[] = [
     body: (
       <>
         &ldquo;Delete my tree&rdquo; on Me disconnects Strava and immediately deletes your tree, the
-        ornaments and letters on it, your calendar and your synced runs. Ornaments you hung on
+        ornaments and letters on it, your calendar and your synced runs. Disconnecting the app in
+        your Strava settings does the same, automatically. Ornaments you hung on
         friends&apos; trees stay there as gifts, signed with the name you chose. To have one of those
         removed too, send a message on Instagram.
       </>

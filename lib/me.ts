@@ -18,6 +18,8 @@ export type Me = {
   emailOptIn: boolean;
   /** False until the runner finished sign-up (confirmed tree name and time zone). */
   onboarded: boolean;
+  /** The last data notice the runner accepted (lib/dataNotice). */
+  dataNotice: number;
 };
 
 export const DEMO_NICKNAME = demo.DEMO_NICKNAME;
@@ -71,7 +73,7 @@ export async function logOut() {
 export type ProfileError = 'nickname_taken' | 'invalid' | 'timezone_locked' | 'signed_out' | 'unknown';
 
 export async function saveProfile(
-  profile: Pick<Me, 'nickname' | 'timeZone' | 'emailOptIn'>,
+  profile: Pick<Me, 'nickname' | 'timeZone' | 'emailOptIn'> & { displayName?: string; acceptNotice?: boolean },
 ): Promise<{ ok: true } | { error: ProfileError }> {
   try {
     const res = await fetch('/api/me', {

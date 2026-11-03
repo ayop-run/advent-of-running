@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { christmasLabel, duringAdvent } from '@/lib/calendar';
+import { validDisplayName } from '@/lib/dataNotice';
 import { saveProfile, useMe, type Me, type ProfileError } from '@/lib/me';
 import { checkNickname, cleanNickname } from '@/lib/nickname';
 import { AVAILABILITY, useAvailability } from '@/lib/useNickname';
@@ -17,12 +18,13 @@ const ERROR: Record<ProfileError, string> = {
 
 const browserZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-/** The runner's settings: tree name and time zone. Signed out, the demo's time zone. */
+/** The runner's settings: tree name, the name on the tree and time zone. Signed out, the demo's time zone. */
 export default function MeSettings() {
   const me = useMe();
   if (me === undefined) {
     return (
       <div className="panel quiet flush" aria-busy="true">
+        <div className="setting"><Sk w={90} h={15} /><Sk h={44} className="mt8" /></div>
         <div className="setting"><Sk w={90} h={15} /><Sk h={44} className="mt8" /></div>
         <div className="setting"><Sk w={90} h={15} /><Sk h={44} className="mt8" /></div>
       </div>
@@ -44,6 +46,7 @@ export default function MeSettings() {
 function Settings({ me }: { me: Me }) {
   const [nick, setNick] = useState(me.nickname);
   const [tz, setTz] = useState(me.timeZone);
+  const [name, setName] = useState(me.displayName);
   const [saved, setSaved] = useState(me);
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | ProfileError>('idle');
   const zones = useMemo(() => {
@@ -56,8 +59,8 @@ function Settings({ me }: { me: Me }) {
   const format = checkNickname(nick);
   const { avail, confirm } = useAvailability(nick, renamed && format.ok);
   const check = !renamed ? null : avail ? AVAILABILITY[avail](nick) : format;
-  const dirty = renamed || tz !== saved.timeZone;
-  const blocked = renamed && (!format.ok || avail === 'taken');
+  const dirty = renamed || tz !== saved.timeZone || name.trim() !== saved.displayName;
+  const blocked = (renamed && (!format.ok || avail === 'taken')) || !validDisplayName(name);
 
   // "Saved" fades back once you change something again
   useEffect(() => {
@@ -67,9 +70,9 @@ function Settings({ me }: { me: Me }) {
   const save = async () => {
     if (renamed && (await confirm()) !== 'free') return setStatus('nickname_taken');
     setStatus('saving');
-    const res = await saveProfile({ nickname: nick, timeZone: tz, emailOptIn: saved.emailOptIn });
+    const res = await saveProfile({ nickname: nick, timeZone: tz, emailOptIn: saved.emailOptIn, displayName: name.trim() });
     if ('error' in res) return setStatus(res.error);
-    setSaved({ ...saved, nickname: nick, timeZone: tz });
+    setSaved({ ...saved, nickname: nick, timeZone: tz, displayName: name.trim() });
     setStatus('saved');
   };
 
@@ -99,6 +102,14 @@ function Settings({ me }: { me: Me }) {
         </div>
         <span id="nick-help" className={`help${check && avail !== 'checking' ? (check.ok ? ' ok' : ' bad') : ''}`} aria-live="polite">
           {check ? (check.ok ? `${check.message}. Your old link /t/${saved.nickname} will stop working.` : check.message) : 'Friends use it to find your tree.'}
+        </span>
+      </label>
+
+      <label className="setting field">
+        <span className="setting-title">Your name</span>
+        <input className="input" value={name} maxLength={30} autoComplete="nickname" aria-invalid={!validDisplayName(name)} onChange={(e) => setName(e.target.value)} />
+        <span className={`help${validDisplayName(name) ? '' : ' bad'}`}>
+          {validDisplayName(name) ? 'Shown on your tree and to friends.' : 'Add the name friends know you by.'}
         </span>
       </label>
 
