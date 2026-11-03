@@ -24,9 +24,10 @@ export default function MeProfile() {
       <Avatar owner={{ name, avatarUrl: me?.avatarUrl ?? undefined }} size={48} />
       <div className="grow">
         <p className="h2">{name}</p>
-        <p className="mt4">
+        {/* the badge is taller than the link, so line them up on their centers */}
+        <p className="mt4 row" style={{ gap: 8 }}>
           {me ? <span className="badge">Strava connected</span> : <span className="tiny muted">Demo account</span>}
-          {me && <span className="tiny muted" style={{ marginLeft: 8 }}>/t/{me.nickname}</span>}
+          {me && <span className="tiny muted">/t/{me.nickname}</span>}
         </p>
       </div>
     </div>
