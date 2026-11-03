@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import PageHeader from '@/components/PageHeader';
 import { PoweredByStrava } from '@/components/Strava';
 
@@ -10,7 +11,9 @@ const SECTIONS: { title: string; body: React.ReactNode }[] = [
     title: 'Who is behind this',
     body: (
       <>
-        Advent of Running is made by Sujin. Questions about your data? Send a message on Instagram:{' '}
+        Advent of Running is made by Sujin, who decides how your data is used here (the &ldquo;controller&rdquo;).
+        Questions about your data, or a request to see, correct or delete it? Email{' '}
+        <a href="mailto:hello@ayop.run" style={{ fontWeight: 800 }}>hello@ayop.run</a> or send a message on Instagram:{' '}
         <a href="https://www.instagram.com/sujinleeme/" target="_blank" rel="noopener noreferrer" style={{ fontWeight: 800 }}>@sujinleeme</a>.
       </>
     ),
@@ -25,6 +28,16 @@ const SECTIONS: { title: string; body: React.ReactNode }[] = [
         longest one and its title, and how many were group runs (never who you ran with). Only you see
         it, and we delete it 7 days after your last sync (your next visit syncs it again). Routes,
         maps, times, pace, heart rate and photos stay on Strava.
+      </>
+    ),
+  },
+  {
+    title: 'Why we may use it',
+    body: (
+      <>
+        Your consent, which you give when you connect Strava. You can take it back at any time by
+        deleting your tree on Me or disconnecting the app in your Strava settings. We use your data
+        only to run Advent of Running: open your doors, show your tree and deliver your letters.
       </>
     ),
   },
@@ -51,6 +64,27 @@ const SECTIONS: { title: string; body: React.ReactNode }[] = [
     ),
   },
   {
+    title: 'How long we keep it',
+    body: (
+      <>
+        Your synced runs: 7 days after your last sync. Your tree, ornaments and letters: until you
+        delete your tree, and at the latest until the end of January after the season. If the app
+        stops using Strava, we delete everything that came from Strava.
+      </>
+    ),
+  },
+  {
+    title: 'Your rights',
+    body: (
+      <>
+        You can see your data (your calendar shows what we keep, and we send a copy on request),
+        have it corrected or deleted, take back your consent, and object to how we use it. Email{' '}
+        <a href="mailto:hello@ayop.run" style={{ fontWeight: 800 }}>hello@ayop.run</a>; we answer within 30
+        days and confirm every deletion. You can also complain to your data protection authority.
+      </>
+    ),
+  },
+  {
     title: 'Emails',
     body: (
       <>
@@ -73,8 +107,11 @@ const SECTIONS: { title: string; body: React.ReactNode }[] = [
     title: 'Where it lives',
     body: (
       <>
-        In a Supabase database. The app is hosted on Vercel. Your data is never sold or passed on to
-        anyone. Strava may collect data about how this app uses the Strava API.
+        In a Supabase database in Frankfurt, Germany (EU). The app is hosted on Vercel, which may
+        handle requests outside the EU, including the US, under the EU&apos;s standard contractual
+        clauses. Supabase and Vercel are the only services that process your data for us. Your data is
+        never sold or passed on to anyone else, and never used to train AI. Strava may monitor and
+        collect data about how this app uses the Strava API.
       </>
     ),
   },
@@ -86,7 +123,8 @@ const SECTIONS: { title: string; body: React.ReactNode }[] = [
         ornaments and letters on it, your calendar and your synced runs. Disconnecting the app in
         your Strava settings does the same, automatically. Ornaments you hung on
         friends&apos; trees stay there as gifts, signed with the name you chose. To have one of those
-        removed too, send a message on Instagram.
+        removed too, email <a href="mailto:hello@ayop.run" style={{ fontWeight: 800 }}>hello@ayop.run</a>.
+        You see a confirmation once everything is deleted.
       </>
     ),
   },
@@ -110,7 +148,9 @@ export default function Privacy() {
         This app uses the Strava API but is not developed, endorsed or certified by Strava.
       </p>
       <p className="center mt12"><PoweredByStrava /></p>
-      <p className="center tiny muted mt12">Last updated October 30, 2026</p>
+      <p className="center tiny muted mt12">
+        Last updated November 3, 2026 · <Link href="/terms" className="textlink">Terms</Link>
+      </p>
     </main>
   );
 }
