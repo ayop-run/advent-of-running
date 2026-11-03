@@ -20,6 +20,8 @@ export async function GET(req: Request) {
   return NextResponse.json({ 'hub.challenge': q.get('hub.challenge') });
 }
 
+const FORWARDED = 'x-advent-forwarded';
+
 type Event = {
   object_type: 'activity' | 'athlete';
   aspect_type: 'create' | 'update' | 'delete';
@@ -36,8 +38,15 @@ type Event = {
 export async function POST(req: Request) {
   const e = (await req.json().catch(() => null)) as Event | null;
   const forward = process.env.STRAVA_WEBHOOK_FORWARD;
-  if (e && forward) {
-    await fetch(forward, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(e), signal: AbortSignal.timeout(800) }).catch(() => null);
+  // an event production already passed on is never passed on again, so a forward URL set by
+  // mistake on staging (or pointing at itself) can't start a loop
+  if (e && forward && !req.headers.get(FORWARDED)) {
+    await fetch(forward, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', [FORWARDED]: '1' },
+      body: JSON.stringify(e),
+      signal: AbortSignal.timeout(800),
+    }).catch(() => null);
   }
   const sub = process.env.STRAVA_WEBHOOK_SUBSCRIPTION_ID;
   if (!e || typeof e.owner_id !== 'number' || (sub && String(e.subscription_id) !== sub)) {
