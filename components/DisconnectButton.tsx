@@ -23,7 +23,7 @@ export default function DisconnectButton() {
   return (
     <>
       <button type="button" className="danger-link mt16" onClick={() => setAsking(true)}>Delete my tree</button>
-      {asking && <DeleteSheet nickname={me.nickname} onClose={() => setAsking(false)} onDeleted={() => router.push('/')} />}
+      {asking && <DeleteSheet nickname={me.nickname} onClose={() => setAsking(false)} onDeleted={() => router.push('/deleted')} />}
     </>
   );
 }
