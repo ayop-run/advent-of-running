@@ -28,6 +28,11 @@ export default function MeProfile() {
         <p className="mt4 row" style={{ gap: 8 }}>
           {me ? <span className="badge">Strava connected</span> : <span className="tiny muted">Demo account</span>}
           {me && <span className="tiny muted">/t/{me.nickname}</span>}
+          {me && (
+            <a href="https://www.strava.com/dashboard" target="_blank" rel="noopener noreferrer" className="tiny textlink" style={{ marginLeft: 'auto' }}>
+              Open Strava
+            </a>
+          )}
         </p>
       </div>
     </div>

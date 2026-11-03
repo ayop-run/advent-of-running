@@ -5,7 +5,7 @@ import { NextResponse, type NextRequest } from 'next/server';
  * Production environment. Staging (Preview) leaves it unset and runs the full app.
  */
 // the Strava webhook and the daily cleanup run before launch too: deletions can't wait
-const OPEN = ['/coming-soon', '/api/launch', '/favicon.svg', '/privacy', '/strava/powered-by-strava.svg', '/api/strava/webhook', '/api/cron/cleanup'];
+const OPEN = ['/coming-soon', '/api/launch', '/favicon.svg', '/privacy', '/strava/powered-by-strava.svg', '/api/strava/webhook', '/api/cron/cleanup', '/terms', '/deleted'];
 
 export function middleware(req: NextRequest) {
   if (process.env.COMING_SOON !== '1') return NextResponse.next();

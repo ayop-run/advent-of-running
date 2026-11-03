@@ -51,7 +51,7 @@ export default async function Landing({ searchParams }: { searchParams: Promise<
       </div>
       {error && <p className="center small mt8" role="alert">{LOGIN_ERROR[error] ?? LOGIN_ERROR.strava}</p>}
       <p className="center tiny muted mt12">
-        <Link href="/t/ayop" style={{ fontWeight: 800 }}>Visit AYOP&apos;s tree</Link> · <Link href="/about" style={{ fontWeight: 800 }}>How it works</Link> · <Link href="/ornaments" style={{ fontWeight: 800 }}>Ornaments</Link> · <Link href="/privacy" style={{ fontWeight: 800 }}>Privacy</Link>
+        <Link href="/t/ayop" style={{ fontWeight: 800 }}>Visit AYOP&apos;s tree</Link> · <Link href="/about" style={{ fontWeight: 800 }}>How it works</Link> · <Link href="/ornaments" style={{ fontWeight: 800 }}>Ornaments</Link> · <Link href="/privacy" style={{ fontWeight: 800 }}>Privacy</Link> · <Link href="/terms" style={{ fontWeight: 800 }}>Terms</Link>
       </p>
       <p className="center mt16"><PoweredByStrava /></p>
     </main>

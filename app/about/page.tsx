@@ -97,7 +97,8 @@ export default function About() {
           Friends from AYOP (At Your Own Pace) tested it along the way and added many of its ideas.
         </p>
         <p>
-          Most of it was built with Claude Code, Anthropic&apos;s AI coding tool. Questions or ideas? Say hi on Instagram:{' '}
+          Most of it was built with Claude Code, Anthropic&apos;s AI coding tool. Questions, ideas or help? Email{' '}
+          <a href="mailto:hello@ayop.run" style={{ fontWeight: 800 }}>hello@ayop.run</a> or say hi on Instagram:{' '}
           <a href="https://www.instagram.com/sujinleeme/" target="_blank" rel="noopener noreferrer" style={{ fontWeight: 800 }}>@sujinleeme</a>.
         </p>
       </div>
@@ -112,6 +113,9 @@ export default function About() {
 
       <p className="center tiny muted mt24">
         Pixel art drawn in code · “Jingle Bells” (J. L. Pierpont, 1857, public domain) played as chiptune
+      </p>
+      <p className="center tiny muted mt8">
+        <Link href="/privacy" className="textlink">Privacy</Link> · <Link href="/terms" className="textlink">Terms</Link>
       </p>
     </main>
   );
