@@ -1,15 +1,15 @@
-import { BASIC, FREE_HANGS } from '@/lib/ornaments';
+import { freeStarters } from '@/lib/calendar';
 import { db } from './db';
 
-const BASIC_IDS = BASIC.map((o) => o.id);
-
-/** Free starter ornaments the runner can still hang this season (since `start`, YYYY-MM-DD). */
-export async function freeLeft(runnerId: string, start: string): Promise<number> {
-  const { count } = await db()
+/** The runner's free starters they haven't hung yet this season (since `start`, YYYY-MM-DD). */
+export async function startersLeft(runnerId: string, start: string): Promise<string[]> {
+  const all = freeStarters(`${runnerId}:${start}`);
+  const { data } = await db()
     .from('ornaments_hung')
-    .select('id', { count: 'exact', head: true })
+    .select('ornament_id')
     .eq('from_runner', runnerId)
-    .in('ornament_id', BASIC_IDS)
+    .in('ornament_id', all)
     .gte('created_at', start);
-  return Math.max(0, FREE_HANGS - (count ?? 0));
+  const hung = new Set((data ?? []).map((r) => r.ornament_id));
+  return all.filter((id) => !hung.has(id));
 }

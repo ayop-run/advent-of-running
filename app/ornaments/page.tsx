@@ -8,7 +8,7 @@ import { animFor, animName, useBump } from '@/components/useBump';
 import { HOW_TO_GET, ORNAMENTS, type Ornament, type Tier } from '@/lib/ornaments';
 
 const SECTIONS: { tier: Tier; title: string; note: string }[] = [
-  { tier: 'basic', title: 'Starter ornaments', note: 'In everyone’s collection from day one. Every runner can give 5 of them for free, no run needed.' },
+  { tier: 'basic', title: 'Starter ornaments', note: 'In everyone’s collection from day one. Every runner gets 5 of them at random to give for free, no run needed.' },
   { tier: 'special', title: 'Daily doors', note: 'Run 1 km on a day of Advent to unwrap one. Which one hides behind each door is random, so every runner’s calendar is different.' },
   { tier: 'rare', title: 'Weekly prizes', note: 'Finish a weekly challenge to win one.' },
 ];
