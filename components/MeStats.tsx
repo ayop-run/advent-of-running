@@ -8,7 +8,7 @@ import { getProgress } from '@/lib/data';
 import { getFriends } from '@/lib/friends';
 
 const TILES = [
-  { label: 'Ornaments given', href: '/me/given' },
+  { label: 'Gifts given', href: '/me/given' },
   { label: 'Days run', href: '/calendar' },
   { label: 'Friends', href: '/friends' },
 ];
