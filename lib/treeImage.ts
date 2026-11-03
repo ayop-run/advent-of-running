@@ -5,6 +5,7 @@
  */
 
 import { avatarColor } from './avatar';
+import { poseAt } from './spriteMotion';
 import type { Hung } from './data';
 import { BY_ID } from './ornaments';
 import { SKY_KEYS, localHour, skyVars } from './sky';
@@ -39,7 +40,7 @@ const GROUND = [
 export const SCENE_W = 164;
 export const SCENE_H = TREE_H + 16;
 
-function drawGrid(ctx: CanvasRenderingContext2D, grid: (string | null)[][], x0: number, y0: number, px: number) {
+export function drawGrid(ctx: CanvasRenderingContext2D, grid: (string | null)[][], x0: number, y0: number, px: number) {
   grid.forEach((row, y) => {
     let x = 0;
     while (x < row.length) {
@@ -55,18 +56,28 @@ function drawGrid(ctx: CanvasRenderingContext2D, grid: (string | null)[][], x0: 
   });
 }
 
-function miniStar(ctx: CanvasRenderingContext2D, cx: number, cy: number, u: number, body: string, centre: string) {
+export function miniStar(ctx: CanvasRenderingContext2D, cx: number, cy: number, u: number, body: string, centre: string) {
   for (const [dx, dy] of MINI_STAR) {
     ctx.fillStyle = dx === 0 && dy === 0 ? centre : body;
     ctx.fillRect(cx + dx * u, cy + dy * u, u, u);
   }
 }
 
+/** The page's bulb timing: on for two thirds of 1.8 s, in three groups 0.6 s apart. */
+const bulbOn = (i: number, t: number) => ((t + (i % 3) * 0.6) % 1.8) / 1.8 < 0.67;
+/** The page's star sparkle over 2.4 s: off, a dot, the full star, a dot, off. */
+function glintAt(t: number, delay: number): 'off' | 'dot' | 'star' {
+  const p = ((((t - delay) % 2.4) + 2.4) % 2.4) / 2.4;
+  return p < 0.1 || p >= 0.6 ? 'off' : p < 0.2 || p >= 0.5 ? 'dot' : 'star';
+}
+
 /**
  * Draws the tree, its lit bulbs, the star's sparkles, the ornaments and the snow bank.
- * (x, y) is the top-left of the scene, which is SCENE_W × SCENE_H tree pixels.
+ * (x, y) is the top-left of the scene, which is SCENE_W × SCENE_H tree pixels. With `t`
+ * (seconds), it's one frame of the living tree: bulbs blink and sparkles twinkle like on the
+ * page, and the ornaments now and then play their own moves.
  */
-export function drawTree(ctx: CanvasRenderingContext2D, ornaments: Hung[], x: number, y: number, px: number) {
+export function drawTree(ctx: CanvasRenderingContext2D, ornaments: Hung[], x: number, y: number, px: number, t?: number) {
   const tx = x + ((SCENE_W - TREE_W) / 2) * px;
   // snow bank: its paths are in a 2-pixel grid (the page's viewBox starts at x=4), and it
   // reaches 16 tree pixels below the tree, like the page's
@@ -80,24 +91,44 @@ export function drawTree(ctx: CanvasRenderingContext2D, ornaments: Hung[], x: nu
   ctx.restore();
 
   drawGrid(ctx, SPRITES.tree, tx, y, px);
-  for (const [lx, ly, color] of TREE_LIGHTS) {
+  TREE_LIGHTS.forEach(([lx, ly, color], i) => {
+    if (t !== undefined && !bulbOn(i, t)) return; // unlit: the tree's own bulb shows
     ctx.fillStyle = color;
     ctx.fillRect(tx + lx * px, y + ly * px, 2 * px, 2 * px);
     ctx.fillStyle = '#fff0b8';
     ctx.fillRect(tx + lx * px, y + ly * px, px, px);
+  });
+  for (const [gx, gy, delay] of TOPPER_GLINTS) {
+    const g = t === undefined ? 'star' : glintAt(t, delay);
+    if (g === 'star') miniStar(ctx, tx + gx * px, y + gy * px, px, '#ffc94a', '#fff7ec');
+    else if (g === 'dot') {
+      ctx.fillStyle = '#fff7ec';
+      ctx.fillRect(tx + gx * px, y + gy * px, px, px);
+    }
   }
-  for (const [gx, gy] of TOPPER_GLINTS) miniStar(ctx, tx + gx * px, y + gy * px, px, '#ffc94a', '#fff7ec');
   const half = SPRITE_SIZE / 2;
   placeOrnaments(ornaments).shown.forEach((h, i) => {
     const grid = SPRITES[h.ornamentId];
     if (!grid) return;
     const [sx, sy] = TREE_SLOTS[i];
-    drawGrid(ctx, grid, tx + (sx - half) * px, y + (sy - half) * px, px);
+    // each ornament takes its turn, with a longer rest than a sticker so the tree stays calm
+    const pose = t === undefined ? null : poseAt(h.ornamentId, t, i * 0.83, 4);
+    if (!pose || (!pose.dx && !pose.dy && !pose.flip && !pose.turn && pose.alpha === 1)) {
+      drawGrid(ctx, grid, tx + (sx - half) * px, y + (sy - half) * px, px);
+      return;
+    }
+    ctx.save();
+    ctx.globalAlpha = pose.alpha;
+    ctx.translate(tx + (sx + pose.dx) * px, y + (sy + pose.dy) * px);
+    ctx.rotate((pose.turn * Math.PI) / 180);
+    if (pose.flip) ctx.scale(-1, 1);
+    drawGrid(ctx, grid, -half * px, -half * px, px);
+    ctx.restore();
   });
 }
 
-const FONT = '"Pixelify Sans", system-ui, sans-serif';
-const BODY = '"M PLUS Rounded 1c", system-ui, sans-serif';
+export const FONT = '"Pixelify Sans", system-ui, sans-serif';
+export const BODY = '"M PLUS Rounded 1c", system-ui, sans-serif';
 
 /** Waits for the pixel font so text on the canvas doesn't fall back to a system font. */
 export async function loadFonts() {
@@ -109,7 +140,7 @@ export async function loadFonts() {
 }
 
 /** Loads an image for the canvas, or null if there is none or it fails. */
-function loadImage(src: string | null | undefined): Promise<HTMLImageElement | null> {
+export function loadImage(src: string | null | undefined): Promise<HTMLImageElement | null> {
   if (!src) return Promise.resolve(null);
   return new Promise((resolve) => {
     const img = new Image();
@@ -137,8 +168,29 @@ function notchedSquare(ctx: CanvasRenderingContext2D, x: number, y: number, s: n
   ctx.closePath();
 }
 
+/** A rectangle with notched pixel corners (n wide), filled with `fill`. */
+export function notchedRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, n: number, fill: string) {
+  // one path, so a see-through fill never doubles up where the parts would overlap
+  ctx.beginPath();
+  ctx.moveTo(x + n, y);
+  ctx.lineTo(x + w - n, y);
+  ctx.lineTo(x + w - n, y + n);
+  ctx.lineTo(x + w, y + n);
+  ctx.lineTo(x + w, y + h - n);
+  ctx.lineTo(x + w - n, y + h - n);
+  ctx.lineTo(x + w - n, y + h);
+  ctx.lineTo(x + n, y + h);
+  ctx.lineTo(x + n, y + h - n);
+  ctx.lineTo(x, y + h - n);
+  ctx.lineTo(x, y + n);
+  ctx.lineTo(x + n, y + n);
+  ctx.closePath();
+  ctx.fillStyle = fill;
+  ctx.fill();
+}
+
 /** The runner's avatar as on the page: their photo, or their initial on a colour, in a snow frame. */
-function drawAvatar(ctx: CanvasRenderingContext2D, photo: HTMLImageElement | null, name: string, x: number, y: number, size: number) {
+export function drawAvatar(ctx: CanvasRenderingContext2D, photo: HTMLImageElement | null, name: string, x: number, y: number, size: number) {
   const frame = Math.max(2, Math.round(size / 20));
   const inner = size - 2 * frame;
   const notch = Math.max(2, Math.round(size / 16));
@@ -185,13 +237,32 @@ function currentSky() {
   };
 }
 
-/** A 1080×1350 card (4:5, fits a phone screen and an Instagram post): sky, tree, name, count. */
 type Owner = { ornaments: Hung[]; ownerName: string; /** same-origin photo URL, from `avatarSrc` */ avatar?: string | null };
 
-export async function renderTreeCard({ ornaments, ownerName, avatar, link }: Owner & { link: string }) {
+/** Picture sizes for sharing: an Instagram story (9:16) and a feed post (3:4). */
+export type CardFormat = 'story' | 'post';
+/**
+ * Each format's height and layout, in px from `top`. Stories keep everything between
+ * Instagram's top bar (~250 px) and reply bar (~250 px), and leave snow free under the link
+ * chip for a real link sticker.
+ */
+const CARD = {
+  story: { H: 1920, top: 255, face: 96, title: 105, panel: [180, 310], tree: 345, invite: 75, chip: 145 },
+  post: { H: 1440, top: 48, face: 80, title: 88, panel: [148, 262], tree: 292, invite: 62, chip: 124 },
+} as const;
+
+/** The runner's Advent so far, shown like an activity's stats. Left out if it couldn't load. */
+export type CardStats = { doors: number; km: number };
+
+/**
+ * A 1080-wide picture to share: the sky as it is right now, your name, your Advent stats
+ * (doors unwrapped, km, sealed letters), the tree, and the link for friends to hang one.
+ */
+export async function renderTreeCard({ ornaments, ownerName, avatar, link, format, stats }: Owner & { link: string; format: CardFormat; stats?: CardStats | null }) {
   const [photo] = await Promise.all([loadImage(avatar), loadFonts()]);
   const W = 1080;
-  const H = 1350;
+  const L = CARD[format];
+  const { H, top } = L;
   const canvas = document.createElement('canvas');
   canvas.width = W;
   canvas.height = H;
@@ -216,10 +287,10 @@ export async function renderTreeCard({ ornaments, ownerName, avatar, link }: Own
   ctx.fillRect(-W, -H, 2 * W, H);
   ctx.restore();
   // a scattering of mini stars, the same shape as every other sparkle; they fade out by day
-  const stars = [[90, 120], [980, 90], [180, 330], [930, 300], [60, 620], [1010, 560], [140, 900], [960, 860], [320, 70], [880, 214]];
-  stars.forEach(([sx, sy], i) => {
+  const stars = [[90, 0.08], [980, 0.06], [180, 0.23], [930, 0.21], [60, 0.43], [1010, 0.39], [140, 0.62], [960, 0.6], [320, 0.05], [880, 0.15], [40, 0.3], [1040, 0.5], [230, 0.71], [850, 0.68]];
+  stars.forEach(([sx, f], i) => {
     ctx.globalAlpha = (i % 2 ? 0.45 : 0.8) * now.stars;
-    miniStar(ctx, sx, sy, 4, '#fff7ec', '#fff7ec');
+    miniStar(ctx, sx, Math.round(f * H), 4, '#fff7ec', '#fff7ec');
   });
   ctx.globalAlpha = 1;
 
@@ -228,11 +299,12 @@ export async function renderTreeCard({ ornaments, ownerName, avatar, link }: Own
   ctx.textBaseline = 'alphabetic';
   ctx.fillStyle = '#ffc94a';
   ctx.font = `800 28px ${BODY}`;
-  ctx.fillText('ADVENT OF RUNNING', W / 2, 96);
+  ctx.fillText('ADVENT OF RUNNING', W / 2, top + 30);
   // the avatar and "Name's tree", centred together; long names get a smaller font
   const title = `${ownerName}'s tree`;
-  const face = 88;
+  const face = L.face;
   const gap = 24;
+  const titleY = top + L.title;
   let fontSize = 72;
   ctx.font = `600 ${fontSize}px ${FONT}`;
   while (fontSize > 40 && face + gap + ctx.measureText(title).width > W - 120) {
@@ -240,87 +312,66 @@ export async function renderTreeCard({ ornaments, ownerName, avatar, link }: Own
     ctx.font = `600 ${fontSize}px ${FONT}`;
   }
   const left = (W - (face + gap + ctx.measureText(title).width)) / 2;
-  drawAvatar(ctx, photo, ownerName, left, 150 - face / 2, face);
+  drawAvatar(ctx, photo, ownerName, left, titleY - face / 2, face);
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
   ctx.fillStyle = '#fff7ec';
   ctx.font = `600 ${fontSize}px ${FONT}`;
-  ctx.fillText(title, left + face + gap, 150);
+  ctx.fillText(title, left + face + gap, titleY);
+
+  // stats, like an activity: a dark pixel panel, value over label in columns with thin dividers
+  const n = ornaments.length;
+  const cols = [
+    ...(stats ? [[`${stats.doors}/24`, 'DOORS'], [`${stats.km.toFixed(1)}`, 'KM']] : []),
+    [`${n}`, n === 1 ? 'LETTER' : 'LETTERS'],
+  ];
+  const [p0, p1] = L.panel;
+  const panelX = 90;
+  const panelW = W - 2 * panelX;
+  notchedRect(ctx, panelX, top + p0, panelW, p1 - p0, 8, 'rgba(10,17,36,.5)');
+  const colW = panelW / cols.length;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
+  cols.forEach(([value, label], i) => {
+    const cx = panelX + colW * i + colW / 2;
+    ctx.fillStyle = '#ffc94a';
+    ctx.font = `800 22px ${BODY}`;
+    ctx.fillText(label, cx, top + p0 + 42);
+    ctx.fillStyle = '#fff7ec';
+    ctx.font = `600 ${format === 'story' ? 64 : 56}px ${FONT}`;
+    ctx.fillText(value, cx, top + p1 - 28);
+    if (i > 0) {
+      ctx.fillStyle = 'rgba(255,247,236,.2)';
+      ctx.fillRect(panelX + colW * i - 1, top + p0 + 24, 2, p1 - p0 - 48);
+    }
+  });
 
   // the tree, 4 screen pixels per art pixel
   const px = 4;
-  drawTree(ctx, ornaments, (W - SCENE_W * px) / 2, 236, px);
+  const treeTop = top + L.tree;
+  drawTree(ctx, ornaments, (W - SCENE_W * px) / 2, treeTop, px);
 
-  // snow at the bottom, with the details on it
-  const groundTop = 236 + SCENE_H * px - 8;
+  // snow down to the bottom, with the invitation and the link on it
+  const groundTop = treeTop + SCENE_H * px - 8;
   ctx.fillStyle = '#e9eefb';
   ctx.fillRect(0, groundTop, W, H - groundTop);
   ctx.fillStyle = '#c7d3f0';
   ctx.fillRect(0, H - 24, W, 24);
   ctx.fillStyle = '#101a33';
   ctx.font = `600 44px ${FONT}`;
-  const n = ornaments.length;
-  ctx.fillText(`${n} sealed ornament${n === 1 ? '' : 's'}`, W / 2, groundTop + 64);
-  ctx.font = `800 28px ${BODY}`;
-  ctx.fillStyle = '#3c4a70';
-  ctx.fillText('Opens on Christmas morning. Hang one on my tree:', W / 2, groundTop + 112);
-  ctx.fillStyle = '#b8384f';
-  ctx.fillText(link.replace(/^https?:\/\//, ''), W / 2, groundTop + 152);
-  return canvas;
-}
-
-/**
- * A photo booth picture: the camera frame (mirrored, like a mirror) with the tree standing
- * in the bottom-right corner and a small name plate.
- */
-export async function renderPhoto({ video, ornaments, ownerName, avatar }: Owner & { video: HTMLVideoElement }) {
-  const [photo] = await Promise.all([loadImage(avatar), loadFonts()]);
-  const { W, H, px, margin } = photoLayout(video.videoWidth, video.videoHeight);
-  const canvas = document.createElement('canvas');
-  canvas.width = W;
-  canvas.height = H;
-  const ctx = canvas.getContext('2d')!;
-  ctx.save();
-  ctx.translate(W, 0);
-  ctx.scale(-1, 1);
-  ctx.drawImage(video, 0, 0, W, H);
-  ctx.restore();
-
-  drawTree(ctx, ornaments, W - SCENE_W * px - margin, H - SCENE_H * px - margin, px);
-
-  // name plate with the avatar, top-left
-  const size = Math.round(W * 0.032);
-  const plate = Math.round(size * 2.2);
-  const pad = Math.round(size * 0.3);
-  const face = plate - 2 * pad;
-  ctx.font = `600 ${size}px ${FONT}`;
-  const text = `${ownerName}'s tree · Advent of Running`;
-  const w = pad + face + size * 0.5 + ctx.measureText(text).width + size * 0.7;
-  ctx.fillStyle = 'rgba(10,17,36,.78)';
-  ctx.fillRect(margin, margin, w, plate);
-  drawAvatar(ctx, photo, ownerName, margin + pad, margin + pad, face);
+  ctx.fillText('Hang an ornament on my tree', W / 2, groundTop + L.invite);
+  // the link as a sticker: a cranberry chip with a snow-white address
+  const address = link.replace(/^https?:\/\//, '');
+  ctx.font = `800 30px ${BODY}`;
+  const chipW = ctx.measureText(address).width + 72;
+  const chipH = 64;
+  const chipY = groundTop + L.chip - chipH / 2;
+  notchedRect(ctx, (W - chipW) / 2, chipY + 6, chipW, chipH, 8, '#8f2a3d');
+  notchedRect(ctx, (W - chipW) / 2, chipY, chipW, chipH, 8, '#b8384f');
   ctx.fillStyle = '#fff7ec';
-  ctx.font = `600 ${size}px ${FONT}`;
-  ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
-  ctx.fillText(text, margin + pad + face + size * 0.5, margin + plate / 2);
+  ctx.fillText(address, W / 2, chipY + chipH / 2 + 1);
   return canvas;
-}
-
-/**
- * Size of a photo and of the tree in it. Small camera frames are scaled up first, so the
- * tree can be drawn at a whole number of pixels per art pixel and still fill about 40% of
- * the width (never more than 55%, or taller than 70% of the frame).
- */
-export function photoLayout(videoW: number, videoH: number) {
-  const k = Math.max(1, Math.ceil(1000 / videoW));
-  const W = videoW * k;
-  const H = videoH * k;
-  let px = Math.max(1, Math.round((W * 0.42) / SCENE_W));
-  while (px > 1 && (SCENE_W * px > W * 0.55 || SCENE_H * px > H * 0.7)) px--;
-  return { W, H, px, margin: Math.round(W * 0.03) };
 }
 
 /** Saves a canvas as a PNG file. */

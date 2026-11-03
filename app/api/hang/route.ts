@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { CHRISTMAS_DAY, adventDay, todayIn } from '@/lib/calendar';
 import { db } from '@/lib/server/db';
 import { notify } from '@/lib/server/notify';
 import { sessionRunnerId, validEditToken } from '@/lib/server/session';
@@ -16,10 +17,9 @@ async function treeOwner(nickname: string) {
   return data;
 }
 
-/** Hanging and editing close at the end of December 24 in the owner's time zone. */
+/** Hanging and editing close at the end of door 24's day (December 24) in the owner's time zone. */
 function closed(timeZone: string) {
-  const [, month, day] = new Intl.DateTimeFormat('en-CA', { timeZone }).format(new Date()).split('-').map(Number);
-  return month === 12 && day >= 25;
+  return adventDay(todayIn(timeZone)) >= CHRISTMAS_DAY;
 }
 
 /**
@@ -35,6 +35,7 @@ export async function POST(req: Request) {
   if (!runnerId) return NextResponse.json({ error: 'sign_in_required' }, { status: 401 });
   const owner = await treeOwner(b.nickname);
   if (!owner) return NextResponse.json({ error: 'tree_not_found' }, { status: 404 });
+  if (closed(owner.time_zone)) return NextResponse.json({ error: 'hanging_closed' }, { status: 403 });
 
   const { data: existing } = await db()
     .from('ornaments_hung')

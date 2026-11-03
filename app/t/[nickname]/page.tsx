@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import BottomNav from '@/components/BottomNav';
 import OrnamentSheet from '@/components/OrnamentSheet';
 import FollowButton from '@/components/FollowButton';
-import { LetterIcon } from '@/components/Icons';
+import LettersBadge from '@/components/LettersBadge';
 import PageHeader from '@/components/PageHeader';
 import TreeTitle from '@/components/TreeTitle';
 import PixelTree from '@/components/PixelTree';
@@ -17,6 +17,7 @@ import { getTree, type Hung, type Tree } from '@/lib/data';
 import { BY_ID } from '@/lib/ornaments';
 import { isFollowing, rememberVisit, setFollowing } from '@/lib/friends';
 import { getMe, isMember, myNickname } from '@/lib/me';
+import { christmasLabel } from '@/lib/calendar';
 
 export default function FriendTree() {
   const { nickname } = useParams<{ nickname: string }>();
@@ -28,12 +29,6 @@ export default function FriendTree() {
   const [open, setOpen] = useState<Hung | null>(null);
   // null until we know; never shown on your own tree or to guests
   const [following, setFollowingState] = useState<boolean | null>(null);
-  const [letterTip, setLetterTip] = useState(false);
-  useEffect(() => {
-    if (!letterTip) return;
-    const id = setTimeout(() => setLetterTip(false), 3200);
-    return () => clearTimeout(id);
-  }, [letterTip]);
   const saved = useSearchParams().get('saved') === '1';
   const [toast, setToast] = useState('');
   useEffect(() => {
@@ -107,26 +102,7 @@ export default function FriendTree() {
 
       {tree?.exists && (
         <>
-          {/* how many sealed letters hang here; tap for a little bubble saying when they open */}
-          <div className="center loaded">
-            <div className="letters-wrap">
-              <button
-                type="button"
-                className="letters"
-                aria-expanded={letterTip}
-                aria-label={`${tree.ornaments.length} sealed ${tree.ornaments.length === 1 ? 'letter' : 'letters'}`}
-                onClick={() => setLetterTip((v) => !v)}
-              >
-                <LetterIcon />
-                <b>{tree.ornaments.length}</b>
-              </button>
-              {letterTip && (
-                <p className="bubble" role="status">
-                  {tree.ornaments.length === 0 ? 'No letters yet. Be the first!' : 'Sealed until Christmas'}
-                </p>
-              )}
-            </div>
-          </div>
+          <LettersBadge count={tree.ornaments.length} empty="No letters yet. Be the first!" />
           <div className="tree-stage">
             <PixelTree
               ornaments={tree.ornaments}
@@ -151,7 +127,7 @@ export default function FriendTree() {
         ) : (
           <>
             <Link href={`/t/${nickname}/hang`} className="btn block">Hang an ornament</Link>
-            <p className="center tiny muted mt8">You can hang one. Only {tree?.displayName ?? 'they'} can read it, on December 25.</p>
+            <p className="center tiny muted mt8">You can hang one. Only {tree?.displayName ?? 'they'} can read it, on {christmasLabel()}.</p>
           </>
         )}
         {!member && (

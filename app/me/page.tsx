@@ -27,6 +27,7 @@ export default function Me() {
           { href: '/ornaments', sprite: 'snow-globe', label: 'All ornaments' },
           { href: '/about', sprite: 'star-gold', label: 'How it works' },
           { href: '/privacy', sprite: 'lock', label: 'Privacy' },
+          { href: '/feedback', sprite: 'bauble-cranberry', label: 'Send feedback' },
         ].map((l) => (
           <Link key={l.href} href={l.href} className="panel quiet row link-row">
             <Sprite id={l.sprite} px={2} />

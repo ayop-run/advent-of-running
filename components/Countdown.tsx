@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { untilChristmas } from '@/lib/calendar';
 
-/** Big pixel countdown to Dec 25, 00:00 in the viewer's time zone. */
+/** Big pixel countdown to day 25 (Christmas), 00:00 in the viewer's time zone. */
 export function CountdownTiles() {
   const [t, setT] = useState<ReturnType<typeof untilChristmas> | null>(null);
   useEffect(() => {

@@ -12,6 +12,7 @@ import { editMyOrnament, getProgress, getTree, hangOrnament, type HangError, typ
 import { getMe } from '@/lib/me';
 import { demoName } from '@/lib/demo/names';
 import { BY_ID, HINTS, type Hint } from '@/lib/ornaments';
+import { christmasLabel, lastDayLabel } from '@/lib/calendar';
 
 const MAX = 200;
 const IDEAS = ['See you at the Sunday long run!', 'So proud of every mile you ran.', 'Thanks for all the runs together.'];
@@ -27,7 +28,7 @@ const short = (name: string) => name.replace('Advent Runner: ', '');
 const HANG_ERROR: Record<HangError, string> = {
   tree_not_found: 'This tree doesn’t exist.',
   sign_in_required: 'Sign up or log in to hang an ornament.',
-  hanging_closed: 'Hanging closed on December 24.',
+  hanging_closed: `Hanging closed on ${lastDayLabel()}.`,
   not_earned: 'You haven’t unwrapped this ornament yet. Run to earn one first.',
   not_yours: 'You can only edit the ornament you hung.',
   invalid: 'Please check your message and name.',
@@ -177,7 +178,7 @@ export default function HangForm() {
     <main className="screen no-nav">
       {/* the gift tag below says who it's for, so the title stays short even for long names */}
       <PageHeader back={`/t/${nickname}`} title={editing ? 'Edit your ornament' : 'Hang an ornament'} />
-      {editing && <p className="small soft">You can change it until December 24 at 23:59.</p>}
+      {editing && <p className="small soft">You can change it until {lastDayLabel()} at 23:59.</p>}
 
       {/* live preview: the ornament and its gift tag, as it will hang */}
       <section className={`hang-preview${editing ? ' mt12' : ''}`} aria-label="Preview">
@@ -191,7 +192,7 @@ export default function HangForm() {
           <p><span className="k">To</span> {name}</p>
           <p><span className="k">From</span> {from.trim() || 'you'}</p>
           <p className="mt4"><span className="tag-chip">Hint: {hint}</span></p>
-          <p className="sealed"><Sprite id="lock" px={1} /> Sealed until Dec 25</p>
+          <p className="sealed"><Sprite id="lock" px={1} /> Sealed until {christmasLabel('short')}</p>
         </div>
       </section>
 
@@ -247,7 +248,7 @@ export default function HangForm() {
             />
             <span className="help" style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
               <span className={tried && !message.trim() ? 'bad' : undefined}>
-                {tried && !message.trim() ? 'Write a message to hang your ornament.' : `Only ${name} can read it, on December 25.`}
+                {tried && !message.trim() ? 'Write a message to hang your ornament.' : `Only ${name} can read it, on ${christmasLabel()}.`}
               </span>
               <span className="num">{message.length}/{MAX}</span>
             </span>
@@ -293,7 +294,7 @@ export default function HangForm() {
           <button className="btn block" type="submit" aria-busy={sending} disabled={sending}>
             {sending ? 'Hanging…' : editing ? 'Save changes' : 'Hang my ornament'}
           </button>
-          <p className="center tiny muted mt8">Hanging closes December 24 at 23:59.</p>
+          <p className="center tiny muted mt8">Hanging closes {lastDayLabel()} at 23:59.</p>
         </div>
       </form>
     </main>

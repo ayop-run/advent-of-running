@@ -30,7 +30,7 @@ const SECTIONS: { title: string; body: React.ReactNode }[] = [
     title: 'What you add',
     body: (
       <>
-        Your tree name, your time zone and whether you want emails. When you hang an ornament on a
+        Your tree name and your time zone. When you hang an ornament on a
         friend&apos;s tree, we store the ornament, the name you sign with, a hint and your message. Who
         you follow is stored too.
       </>
@@ -52,8 +52,7 @@ const SECTIONS: { title: string; body: React.ReactNode }[] = [
     body: (
       <>
         If you leave your email on the launch page, we use it once to tell you Advent of Running is
-        open. If you switch on emails in Settings, we only write about launch day and Christmas
-        morning. No newsletters, no spam.
+        open. That&apos;s it: no newsletters, no spam.
       </>
     ),
   },

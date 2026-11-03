@@ -9,6 +9,7 @@ import { animFor, animName } from '@/components/useBump';
 import type { Hung } from '@/lib/data';
 import { maskName } from '@/components/PixelTree';
 import { BY_ID } from '@/lib/ornaments';
+import { christmasLabel } from '@/lib/calendar';
 
 type Props = {
   hung: Hung;
@@ -52,7 +53,7 @@ export default function OrnamentSheet({ hung, ownerName, isOwner, onClose }: Pro
             <p style={{ fontSize: 18, lineHeight: 1.45, fontWeight: 700 }}>&ldquo;{hung.message}&rdquo;</p>
             <div className="tiny muted mt8 row" style={{ gap: 8, alignItems: 'center' }}>
               <LockIcon />
-              <span>Only {ownerName} can read this, on December 25.</span>
+              <span>Only {ownerName} can read this, on {christmasLabel()}.</span>
             </div>
           </div>
         ) : (
@@ -61,7 +62,7 @@ export default function OrnamentSheet({ hung, ownerName, isOwner, onClose }: Pro
             <div>
               <strong>The message is locked</strong>
               <div className="tiny soft">
-                {isOwner ? <><Countdown prefix="It opens in" />, along with who sent it.</> : `Only ${ownerName} can read it, on December 25.`}
+                {isOwner ? <><Countdown prefix="It opens in" />, along with who sent it.</> : `Only ${ownerName} can read it, on ${christmasLabel()}.`}
               </div>
             </div>
           </div>

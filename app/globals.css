@@ -94,6 +94,17 @@ p { margin: 0; }
 .music:focus-visible, .icon-btn:focus-visible { outline: none; box-shadow: inset 0 0 0 4px var(--frost); }
 .icon-btn:hover { color: var(--snow); }
 .icon-btn:active { transform: translateY(2px); }
+/* header button labels (Tip): under the button, right-aligned so they never leave the screen */
+.tip { position: relative; display: inline-flex; }
+.tip::after {
+  content: attr(data-tip); position: absolute; top: calc(100% + 8px); right: 0; z-index: 30;
+  width: max-content; padding: 5px 9px; pointer-events: none;
+  background: var(--snow); color: var(--night); clip-path: var(--px4); box-shadow: inset 0 -3px 0 #c7d3f0;
+  font: 700 13px/1.2 var(--body); opacity: 0; transform: translateY(-2px); transition: opacity .12s ease, transform .12s ease;
+}
+@media (hover: hover) { .tip:hover::after { opacity: 1; transform: none; transition-delay: .25s; } }
+.tip:has(:focus-visible)::after { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) { .tip::after { transition: none; } }
 
 /* ---------- layout ---------- */
 .screen {
@@ -162,6 +173,8 @@ p { margin: 0; }
 .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .panel-head > .num, .panel-head > .pix { white-space: nowrap; }
 .brand-mark { font-weight: 800; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--gold); margin-bottom: 2px; }
+/* "BETA": a small tag after the brand, until the app is out of testing */
+.beta { display: inline-block; margin-left: 4px; padding: 2px 5px 1px; vertical-align: 1px; clip-path: var(--px4); background: var(--frost); color: var(--night); font: 800 9px/1 var(--body); letter-spacing: .08em; text-transform: uppercase; }
 .eyebrow { font-weight: 800; font-size: 13px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
 .badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; clip-path: var(--px4); background: rgba(63,181,122,.18); color: #7fe0a6; font-weight: 800; font-size: 13px; white-space: nowrap; }
 /* ---------- ornament directory ---------- */
@@ -200,10 +213,21 @@ p { margin: 0; }
 .stepper .done span { color: var(--soft); }
 .input-prefix { display: flex; align-items: stretch; }
 /* search field: a magnifier in front of the input, like the tree-link prefix */
-.search { display: flex; align-items: stretch; }
-.search > span { display: grid; place-items: center; padding: 0 2px 0 12px; clip-path: var(--px4); background: var(--night-deep); color: var(--muted); box-shadow: inset 0 0 0 2px var(--line); margin-right: -2px; }
-.search .input { flex: 1; min-width: 0; padding-left: 8px; }
-.search .input::-webkit-search-cancel-button { filter: invert(.7); }
+.search {
+  display: flex; align-items: center; gap: 10px; height: 52px; padding: 0 8px 0 14px; cursor: text;
+  clip-path: var(--px4); background: var(--night-deep); color: var(--muted); box-shadow: inset 0 0 0 2px var(--line);
+  transition: box-shadow .15s ease, color .15s ease;
+}
+.search svg { flex-shrink: 0; }
+.search:focus-within { color: var(--snow); box-shadow: inset 0 0 0 2px var(--frost); }
+.search-input { flex: 1; min-width: 0; height: 100%; padding: 0; border: 0; outline: none; background: transparent; color: var(--snow); font: 500 16px var(--body); }
+.search-input:focus-visible { outline: none; } /* the whole field lights up instead */
+.search-input::placeholder { color: var(--muted); }
+.search-input::-webkit-search-cancel-button { appearance: none; display: none; }
+.search-clear { flex-shrink: 0; width: 32px; height: 32px; display: grid; place-items: center; padding: 0; border: 0; cursor: pointer; clip-path: var(--px4); background: var(--panel-2); color: var(--soft); font: 800 20px/1 var(--body); }
+.search-clear:hover { color: var(--snow); }
+.search-clear:focus-visible { outline: none; box-shadow: inset 0 0 0 3px var(--frost); }
+@media (prefers-reduced-motion: reduce) { .search { transition: none; } }
 /* a friend's avatar and name open their tree */
 .friend-link { display: block; flex-shrink: 0; line-height: 0; }
 .friend-name { color: var(--snow); font-weight: 800; }
@@ -231,12 +255,6 @@ p { margin: 0; }
 .setting.field { display: flex; }
 select.input { appearance: none; cursor: pointer; padding-right: 40px; background: var(--night-deep) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' shape-rendering='crispEdges'%3E%3Cpath d='M0 0h4v2h4V0h4v4h-2v2H8v2H4V6H2V4H0z' fill='%238fa3cf'/%3E%3C/svg%3E") no-repeat right 16px center; }
 select.input:disabled { cursor: not-allowed; opacity: .6; }
-/* on/off switch, pixel style */
-.switch { appearance: none; flex-shrink: 0; width: 52px; height: 28px; margin: 0; cursor: pointer; clip-path: var(--px4); background: var(--night-deep); box-shadow: inset 0 0 0 2px var(--line); position: relative; }
-.switch::after { content: ''; position: absolute; top: 6px; left: 6px; width: 16px; height: 16px; background: var(--muted); transition: transform .15s; }
-.switch:checked { background: #2f8f5f; box-shadow: none; }
-.switch:checked::after { transform: translateX(24px); background: #fff; }
-.switch:focus-visible { outline: 3px solid var(--frost); outline-offset: 2px; }
 
 /* ---------- hang form ---------- */
 .hang-preview { display: flex; align-items: center; gap: 14px; padding: 14px; clip-path: var(--px8); background: rgba(26,42,79,.6); }
@@ -255,9 +273,10 @@ select.input:disabled { cursor: not-allowed; opacity: .6; }
 .idea:hover { background: rgba(143,211,255,.22); color: var(--snow); }
 .field .help .bad, .field .help.bad { color: #ff9aa8; }
 
-.ask-link { display: inline-flex; align-items: center; min-height: 28px; margin-top: 2px; padding: 0; border: 0; background: none; color: var(--gold); font-weight: 800; font-size: 13px; }
+/* the ask line sits where a friend's note would, same height; the button keeps a bigger tap area */
+.ask-link { display: flex; width: fit-content; align-items: center; margin: -6px 0; padding: 6px 0; border: 0; background: none; color: var(--gold); font-weight: 800; font-size: 13px; line-height: 1.5; }
 .ask-link:hover { color: #ffe08f; }
-.ask-done { display: inline-flex; align-items: center; min-height: 28px; margin-top: 2px; color: #7fe0a6; font-weight: 800; font-size: 13px; }
+.ask-done { display: flex; width: fit-content; align-items: center; color: #7fe0a6; font-weight: 800; font-size: 13px; line-height: 1.5; }
 
 /* ---------- christmas carousel ---------- */
 .carousel {
@@ -538,8 +557,6 @@ button.orn:focus-visible > svg { outline: 4px solid var(--frost); outline-offset
   font: 800 9px var(--body); font-variant-numeric: tabular-nums; color: var(--snow); background: rgba(10,17,36,.55);
 }
 /* opened later by a long run: says which day */
-.door .km.caught { color: #2b1d07; background: var(--gold); }
-.door.opened.caught-up { box-shadow: inset 0 4px 0 var(--gold); }
 .door:hover { transform: translateY(-2px); }
 .door[aria-pressed='true'] { box-shadow: inset 0 0 0 4px var(--frost); }
 /* opened: snow on the lid, ornament in full colour */
@@ -547,8 +564,13 @@ button.orn:focus-visible > svg { outline: 4px solid var(--frost); outline-offset
 .door.opened .n { top: 4px; background: var(--cranberry); color: var(--snow); }
 .door.opened[aria-pressed='true'] { box-shadow: inset 0 4px 0 var(--snow), inset 0 0 0 4px var(--frost); }
 /* today: the one you're running for */
-.door.today { background: var(--night-deep); box-shadow: inset 0 0 0 4px var(--gold); }
+.door.today { background: var(--panel-2); box-shadow: inset 0 0 0 4px var(--gold); }
 .door.today .n { background: var(--gold); color: #2b1d07; }
+/* today's ornament as a light silhouette: earned once today's run is done */
+.door.today .silhouette svg, .door-hint svg { filter: brightness(0) invert(1); opacity: .45; }
+/* the tapped door's sheet: today's silhouette with a gold "?" on top, like the weekly prize */
+.door-hint { position: relative; flex-shrink: 0; display: grid; place-items: center; }
+.door-hint .dir-q { color: var(--gold); font-size: 32px; }
 .door.today[aria-pressed='true'] { box-shadow: inset 0 0 0 4px var(--gold), inset 0 0 0 8px var(--frost); }
 /* missed and upcoming: still wrapped, so the ornament stays a surprise */
 .door.missed { background: transparent; box-shadow: inset 0 0 0 2px var(--line); }
@@ -704,14 +726,21 @@ a.list-row:hover { color: var(--gold); }
 
 /* ---------- pictures: tree card preview and photo booth ---------- */
 .picture-frame { display: grid; place-items: center; aspect-ratio: 4 / 5; max-height: 52vh; margin: 12px auto 0; clip-path: var(--px8); background: var(--night-deep); }
+/* the share sheet's preview, in the picture's own shape */
+.picture-frame.story { aspect-ratio: 9 / 16; max-height: 46vh; }
+.picture-frame.post { aspect-ratio: 3 / 4; max-height: 46vh; }
+.pill-note { margin-left: 4px; font-size: 12px; opacity: .65; }
+/* photo booth: the preview canvas in its frame, and the ornament picker */
+.run-preview { display: block; width: 100%; height: 100%; object-fit: contain; }
+.sticker-picks { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.sticker-pick { width: 52px; height: 52px; padding: 0; display: grid; place-items: center; }
+.file-btn { position: relative; cursor: pointer; }
 .picture-frame img { display: block; width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; }
 .booth { position: relative; display: grid; place-items: center; min-height: 240px; clip-path: var(--px8); background: var(--night-deep); overflow: hidden; }
 /* the preview and the result stay on screen with the buttons below them */
-.booth-view { position: relative; line-height: 0; }
 .booth video, .booth img { display: block; max-width: 100%; max-height: 62vh; width: auto; height: auto; }
 /* mirrored like a mirror; the saved photo is mirrored the same way */
 .booth video { transform: scaleX(-1); }
-.booth .booth-tree { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; image-rendering: pixelated; }
 .booth > p { padding: 24px; }
 .booth [hidden] { display: none; }
 

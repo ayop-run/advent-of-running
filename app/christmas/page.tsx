@@ -9,7 +9,7 @@ import Sk from '@/components/Skeleton';
 import Sprite from '@/components/Sprite';
 import SpriteFx from '@/components/SpriteFx';
 import { animFor, animName } from '@/components/useBump';
-import { adventMonth, monthName } from '@/lib/calendar';
+import { christmasLabel } from '@/lib/calendar';
 import { getChristmas, type Christmas } from '@/lib/data';
 import { BY_ID } from '@/lib/ornaments';
 
@@ -24,7 +24,7 @@ export default function ChristmasUnlock() {
   }, []);
   useEffect(load, [load]);
   const list = data?.kind === 'preview' || data?.kind === 'open' ? data.ornaments : [];
-  const day = `${monthName(adventMonth(new Date().getMonth() + 1))} 25`;
+  const day = christmasLabel();
 
   /** Scroll the carousel to message n (swiping and the buttons share one scroll position). */
   const go = useCallback(

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { adventMonth } from '@/lib/calendar';
+import { christmasLabel, duringAdvent } from '@/lib/calendar';
 import { saveProfile, useMe, type Me, type ProfileError } from '@/lib/me';
 import { checkNickname, cleanNickname } from '@/lib/nickname';
 import { AVAILABILITY, useAvailability } from '@/lib/useNickname';
@@ -17,13 +17,7 @@ const ERROR: Record<ProfileError, string> = {
 
 const browserZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-/** Days 1–25 of Advent here, when the time zone is locked (it decides which day each run counts for). */
-function duringAdvent(timeZone: string) {
-  const [, month, day] = new Intl.DateTimeFormat('en-CA', { timeZone }).format(new Date()).split('-').map(Number);
-  return month === adventMonth(month) && day <= 25;
-}
-
-/** The runner's settings: tree name, time zone and emails. Signed out, the demo's time zone. */
+/** The runner's settings: tree name and time zone. Signed out, the demo's time zone. */
 export default function MeSettings() {
   const me = useMe();
   if (me === undefined) {
@@ -39,7 +33,7 @@ export default function MeSettings() {
       <div className="panel quiet flush loaded">
         <div className="setting">
           <p className="setting-title">Time zone</p>
-          <p className="setting-help">{browserZone()} · your doors close at 23:59 and your tree opens at midnight on December 25 here.</p>
+          <p className="setting-help">{browserZone()} · your doors close at 23:59 and your tree opens at midnight on {christmasLabel()} here.</p>
         </div>
       </div>
     );
@@ -50,7 +44,6 @@ export default function MeSettings() {
 function Settings({ me }: { me: Me }) {
   const [nick, setNick] = useState(me.nickname);
   const [tz, setTz] = useState(me.timeZone);
-  const [email, setEmail] = useState(me.emailOptIn);
   const [saved, setSaved] = useState(me);
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | ProfileError>('idle');
   const zones = useMemo(() => {
@@ -63,7 +56,7 @@ function Settings({ me }: { me: Me }) {
   const format = checkNickname(nick);
   const { avail, confirm } = useAvailability(nick, renamed && format.ok);
   const check = !renamed ? null : avail ? AVAILABILITY[avail](nick) : format;
-  const dirty = renamed || tz !== saved.timeZone || email !== saved.emailOptIn;
+  const dirty = renamed || tz !== saved.timeZone;
   const blocked = renamed && (!format.ok || avail === 'taken');
 
   // "Saved" fades back once you change something again
@@ -74,9 +67,9 @@ function Settings({ me }: { me: Me }) {
   const save = async () => {
     if (renamed && (await confirm()) !== 'free') return setStatus('nickname_taken');
     setStatus('saving');
-    const res = await saveProfile({ nickname: nick, timeZone: tz, emailOptIn: email });
+    const res = await saveProfile({ nickname: nick, timeZone: tz, emailOptIn: saved.emailOptIn });
     if ('error' in res) return setStatus(res.error);
-    setSaved({ ...saved, nickname: nick, timeZone: tz, emailOptIn: email });
+    setSaved({ ...saved, nickname: nick, timeZone: tz });
     setStatus('saved');
   };
 
@@ -117,19 +110,11 @@ function Settings({ me }: { me: Me }) {
         <span className="help">
           {locked
             ? 'Locked during Advent, so every run counts for the right day.'
-            : 'Your doors close at 23:59 and your letters open at midnight on December 25 here.'}
+            : `Your doors close at 23:59 and your letters open at midnight on ${christmasLabel()} here.`}
           {!locked && tz !== browserZone() && (
             <> <button type="button" className="ask-link" onClick={() => setTz(browserZone())}>Use {browserZone().replace(/_/g, ' ')}</button></>
           )}
         </span>
-      </label>
-
-      <label className="setting row" style={{ gap: 12, cursor: 'pointer' }}>
-        <span className="grow">
-          <span className="setting-title" style={{ display: 'block' }}>Emails</span>
-          <span className="setting-help" style={{ display: 'block' }}>Launch day and Christmas morning. No spam.</span>
-        </span>
-        <input type="checkbox" className="switch" checked={email} onChange={(e) => setEmail(e.target.checked)} />
       </label>
 
       <div className="setting">

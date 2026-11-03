@@ -7,7 +7,6 @@ import Sprite from '@/components/Sprite';
 import Sk from '@/components/Skeleton';
 import SpriteFx from '@/components/SpriteFx';
 import { useBump } from '@/components/useBump';
-import { doorOrnament } from '@/lib/calendar';
 import { getProgress } from '@/lib/data';
 import { BY_ID } from '@/lib/ornaments';
 
@@ -23,7 +22,7 @@ export default function OrnamentsGiven() {
     getProgress().then((res) => {
       setLoading(false);
       if (!('progress' in res)) return;
-      setGiven(Object.entries(res.progress.given).map(([n, to]) => ({ door: Number(n), to, o: BY_ID[doorOrnament(Number(n))] })));
+      setGiven(Object.entries(res.progress.given).map(([n, to]) => ({ door: Number(n), to, o: BY_ID[res.progress.ornaments[Number(n) - 1]] })));
     });
   }, []);
   const friends = new Set(GIVEN.map((g) => g.to)).size;

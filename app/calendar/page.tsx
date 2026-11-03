@@ -11,8 +11,8 @@ import SpriteFx from '@/components/SpriteFx';
 import { PoweredByStrava } from '@/components/Strava';
 import { useBump } from '@/components/useBump';
 import { getProgress } from '@/lib/data';
-import { BY_ID } from '@/lib/ornaments';
-import { DAILY_GOAL_KM, DOORS, WEEKLY, doorOrnament, monthName, type DoorState, type Progress } from '@/lib/calendar';
+import { BY_ID, DOOR_MISSED, DOOR_TEASERS } from '@/lib/ornaments';
+import { DAILY_GOAL_KM, DOORS, WEEKLY, dayLabel, rangeLabel, type DoorState, type Progress } from '@/lib/calendar';
 
 const STATE_LABEL: Record<DoorState, string> = { opened: 'Unwrapped', today: 'Today', missed: 'Missed', locked: 'Coming up' };
 
@@ -85,30 +85,39 @@ export default function Calendar() {
     );
   }
 
-  const month = monthName(p.month);
+  // "December 5" / "Dec 5" for door n, counted from the season's start date
+  const date = (n: number) => dayLabel(p.start, n, 'long');
+  const short = (n: number) => dayLabel(p.start, n);
   const doors = Array.from({ length: DOORS }, (_, i) => i + 1);
   const state = (n: number) => p.doors[n - 1];
-  // unwrapped and missed doors show their ornament (missed ones faded); upcoming ones stay a surprise
+  // unwrapped and missed doors show their ornament (missed ones faded), today's shows its
+  // silhouette, and upcoming ones stay a wrapped surprise
+  const ornament = (n: number) => p.ornaments[n - 1];
   const revealed = (n: number) => state(n) === 'opened' || state(n) === 'missed';
-  const shownSprite = (n: number) => (revealed(n) ? doorOrnament(n) : 'gift-box');
-  const shownName = (n: number) => (revealed(n) ? BY_ID[doorOrnament(n)].name.replace('Advent Runner: ', '') : 'A wrapped surprise');
+  const hinted = (n: number) => state(n) === 'today';
+  const shownSprite = (n: number) => (revealed(n) || hinted(n) ? ornament(n) : 'gift-box');
+  const shownName = (n: number) => (revealed(n) ? BY_ID[ornament(n)].name.replace('Advent Runner: ', '') : hinted(n) ? 'Today’s mystery ornament' : 'A wrapped surprise');
+  /** The door's sprite, as a silhouette while it's still today's to earn. */
+  const doorSprite = (n: number, px: number) => (hinted(n) ? <span className="silhouette"><Sprite id={ornament(n)} px={px} /></span> : <Sprite id={shownSprite(n)} px={px} />);
   const km = (n: number) => p.km[n - 1];
 
   const doorStory = (n: number) => {
     const ran = km(n) > 0 ? `You ran ${km(n)} km that day. ` : '';
     switch (state(n)) {
       case 'opened':
-        if (p.caughtUp[n]) {
-          const by = p.caughtUp[n];
-          return `${ran}Caught up on ${month} ${by} with a ${km(by)} km day (${n} km extra on top of ${DAILY_GOAL_KM} km). ${p.given[n] ? `You gave it to ${p.given[n]}.` : 'Give it to a friend.'}`;
-        }
         return `${ran}${p.given[n] ? `You gave it to ${p.given[n]}. It hangs on their tree until Christmas.` : 'Unwrapped. Give it to a friend.'}`;
-      case 'today':
-        return `${ran}Finish today’s run to unwrap it and give it to a friend.`;
-      case 'missed':
-        return `${ran}Not enough that day. To still unwrap it, run ${n} km in one go on top of a day’s ${DAILY_GOAL_KM} km.`;
+      case 'today': {
+        // a different nudge every day: a hint at whoever is hiding behind the door
+        const teaser = DOOR_TEASERS[ornament(n)] ?? 'Someone is waiting behind this door.';
+        return `${teaser} ${Math.max(0, DAILY_GOAL_KM - km(n)).toFixed(1)} km to go to unwrap it.`;
+      }
+      case 'missed': {
+        // the character behind the door, and that a missed door stays wrapped for good
+        const line = DOOR_MISSED[ornament(n)] ?? 'Not enough that day.';
+        return `${ran}${line} This door stays wrapped. Don’t miss tomorrow’s!`;
+      }
       default:
-        return `Opens on ${month} ${n}.`;
+        return `Opens on ${date(n)}.`;
     }
   };
 
@@ -123,12 +132,12 @@ export default function Calendar() {
   const total = kmOver(1, DOORS);
   const daysRun = p.km.filter((k) => k > 0).length;
   const best = p.km.reduce((b, k, i) => (k > p.km[b] ? i : b), 0) + 1;
-  // the month as a whole (today and this week are in the goal cards above)
+  // the season as a whole (today and this week are in the goal cards above)
   const daysSoFar = Math.min(p.today, DOORS);
   const stats = [
     { label: 'Days run', value: `${daysRun} / ${daysSoFar}` },
     { label: 'Daily average', value: daysSoFar > 0 ? `${(total / daysSoFar).toFixed(1)} km` : '–' },
-    { label: total > 0 ? `Best · ${month.slice(0, 3)} ${best}` : 'Best day', value: total > 0 ? `${km(best).toFixed(1)} km` : '–' },
+    { label: total > 0 ? `Best · ${short(best)}` : 'Best day', value: total > 0 ? `${km(best).toFixed(1)} km` : '–' },
   ];
   // bar heights: the best day fills the chart, but never less than twice the daily goal
   const top = Math.max(DAILY_GOAL_KM * 2, ...p.km);
@@ -141,9 +150,9 @@ export default function Calendar() {
       <button
         key={n}
         type="button"
-        className={`door ${s}${p.caughtUp[n] ? ' caught-up' : ''}`}
+        className={`door ${s}`}
         aria-pressed={picked === n}
-        aria-label={`Door ${n}, ${STATE_LABEL[s].toLowerCase()}${p.caughtUp[n] ? `, caught up on day ${p.caughtUp[n]}` : km(n) > 0 ? `, ${km(n)} km` : ''}${revealed(n) ? `: ${shownName(n)}` : ''}`}
+        aria-label={`Door ${n}, ${STATE_LABEL[s].toLowerCase()}${km(n) > 0 ? `, ${km(n)} km` : ''}${revealed(n) ? `: ${shownName(n)}` : ''}`}
         onClick={() => {
           setPicked(n);
           // unwrapped doors play their ornament's animation; wrapped ones just jiggle
@@ -152,14 +161,10 @@ export default function Calendar() {
       >
         <span className="n">{n}</span>
         <span key={b.k} className="bump">
-          <span className={b.anim}><Sprite id={shownSprite(n)} px={2} /></span>
+          <span className={b.anim}>{doorSprite(n, 2)}</span>
           {b.fx && <SpriteFx anim={b.fx} px={2} />}
         </span>
-        {p.caughtUp[n] ? (
-          <span className="km caught">↺ day {p.caughtUp[n]}</span>
-        ) : (
-          km(n) > 0 && <span className="km">{km(n).toFixed(1)} km</span>
-        )}
+        {km(n) > 0 && <span className="km">{km(n).toFixed(1)} km</span>}
       </button>
     );
   };
@@ -172,13 +177,22 @@ export default function Calendar() {
         {/* 1. today: the two goals you're running for right now, as matching cards */}
         <div className="panel-head">
           <h2 className="h2">Today</h2>
-          {running && <span className="num muted">{month.slice(0, 3)} {p.today}</span>}
+          {running && <span className="num muted">{short(p.today)}</span>}
         </div>
         {running ? (
           <div className="list mt12">
             <Goal
               tone="gold"
-              icon={<Sprite id={p.todayKm >= DAILY_GOAL_KM ? doorOrnament(p.today) : 'gift-box'} px={2} />}
+              icon={
+                p.todayKm >= DAILY_GOAL_KM ? (
+                  <Sprite id={ornament(p.today)} px={2} />
+                ) : (
+                  <>
+                    <span className="silhouette"><Sprite id={ornament(p.today)} px={2} /></span>
+                    <span className="dir-q pix">?</span>
+                  </>
+                )
+              }
               label={`Door ${p.today}`}
               title={`Run ${DAILY_GOAL_KM.toFixed(0)} km`}
               value={`${p.todayKm.toFixed(1)} / ${DAILY_GOAL_KM.toFixed(1)} km`}
@@ -190,6 +204,7 @@ export default function Calendar() {
               }
             >
               {ready && <Link href="/gift" className="btn block mt12">Unwrap your gift</Link>}
+              {p.todayKm >= DAILY_GOAL_KM && <Link href="/tree/photo" className="btn ghost block mt8">Share today&apos;s run</Link>}
             </Goal>
             {week && (
               <Goal
@@ -214,7 +229,7 @@ export default function Calendar() {
                     ? 'Runs together are counted soon.'
                     : week.done
                       ? 'Give it to a friend like your door ornaments.'
-                      : `Wins a rare ornament, a surprise until you do. Ends ${p.today === week.to ? 'tonight' : `${month} ${week.to}`}.`
+                      : `Wins a rare ornament, a surprise until you do. Ends ${p.today === week.to ? 'tonight' : date(week.to)}.`
                 }
               />
             )}
@@ -223,7 +238,7 @@ export default function Calendar() {
           <section className="panel gold mt12">
             <p className="eyebrow" style={{ color: 'var(--gold)' }}>{p.today === 0 ? 'Coming soon' : 'Advent is over'}</p>
             <p className="small soft mt8">
-              {p.today === 0 ? `Door 1 opens on ${month} 1.` : `You unwrapped ${p.doors.filter((s) => s === 'opened').length} of ${DOORS} doors.`}
+              {p.today === 0 ? `Door 1 opens on ${date(1)}.` : `You unwrapped ${p.doors.filter((s) => s === 'opened').length} of ${DOORS} doors.`}
             </p>
             {ready && <Link href="/gift" className="btn block mt12">Give your unwrapped ornaments</Link>}
           </section>
@@ -238,26 +253,26 @@ export default function Calendar() {
         <section className="panel quiet mt12 dist" aria-labelledby="distance">
           <div className="panel-head">
             <p id="distance" className="eyebrow">Distance</p>
-            <span className="tiny muted">{month.slice(0, 3)} 1–{DOORS}</span>
+            <span className="tiny muted">{rangeLabel(p.start, 1, DOORS)}</span>
           </div>
           <p className="mt8 dist-total">
             <b>{total.toFixed(1)}</b>
-            <span className="small soft">km in {month}</span>
+            <span className="small soft">km in Advent</span>
           </p>
           <div
             className="bars mt12"
             style={{ '--goal': `${(DAILY_GOAL_KM / top) * 100}%` } as React.CSSProperties}
             role="img"
-            aria-label={`Daily distance: ${total.toFixed(1)} km over ${daysRun} days, best ${km(best)} km on ${month} ${best}.`}
+            aria-label={`Daily distance: ${total.toFixed(1)} km over ${daysRun} days, best ${km(best)} km on ${date(best)}.`}
           >
             {doors.map((n) => (
               <i key={n} className={bar(n)} style={{ height: km(n) > 0 ? `${Math.max(8, (km(n) / top) * 100)}%` : undefined }} />
             ))}
           </div>
           <div className="bars-axis mt4" aria-hidden="true">
-            <span>{month.slice(0, 3)} 1</span>
+            <span>{short(1)}</span>
             <span className="goal-key">{DAILY_GOAL_KM} km a day</span>
-            <span>{month.slice(0, 3)} {DOORS}</span>
+            <span>{short(DOORS)}</span>
           </div>
           <div className="dist-row mt12">
             {stats.map((st) => (
@@ -279,7 +294,7 @@ export default function Calendar() {
           return (
             <section key={w.week} className="mt16" aria-label={`Week ${w.week}`}>
               <div className="week-head">
-                <span className="eyebrow">Week {w.week} <span className="week-dates">· {month.slice(0, 3)} {w.from}–{w.to}</span></span>
+                <span className="eyebrow">Week {w.week} <span className="week-dates">· {rangeLabel(p.start, w.from, w.to)}</span></span>
                 <span className="week-km">
                   {p.weeksDone.includes(w.week) && <span className="week-won">Bonus won</span>}
                   {started ? `${kmOver(w.from, w.to).toFixed(1)} km` : ''}
@@ -290,9 +305,16 @@ export default function Calendar() {
               </div>
               {picked !== null && picked >= w.from && picked <= w.to && (
                 <div className="panel quiet row mt8 fade-in" aria-live="polite">
-                  <Sprite id={shownSprite(picked)} px={4} style={{ flexShrink: 0, ...(state(picked) === 'missed' && { opacity: 0.5, filter: 'grayscale(1)' }) }} />
+                  {hinted(picked) ? (
+                    <span className="door-hint">
+                      <span className="silhouette"><Sprite id={ornament(picked)} px={4} /></span>
+                      <span className="dir-q pix">?</span>
+                    </span>
+                  ) : (
+                    <Sprite id={shownSprite(picked)} px={4} style={{ flexShrink: 0, ...(state(picked) === 'missed' && { opacity: 0.5, filter: 'grayscale(1)' }) }} />
+                  )}
                   <div className="grow">
-                    <p className="eyebrow">Door {picked} · {p.caughtUp[picked] ? `Caught up on day ${p.caughtUp[picked]}` : STATE_LABEL[state(picked)]}</p>
+                    <p className="eyebrow">Door {picked} · {STATE_LABEL[state(picked)]}</p>
                     <h2 className="h2 mt4">{shownName(picked)}</h2>
                     <p className="small soft mt4">{doorStory(picked)}</p>
                   </div>

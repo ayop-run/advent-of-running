@@ -132,18 +132,27 @@ function FriendsInner() {
         <p className="small soft">Follow your running friends&apos; trees, and hang an ornament on each.</p>
       )}
 
-      <div className="search mt12" role="search">
-        <span aria-hidden="true"><SearchIcon /></span>
-        <input
-          className="input"
-          type="search"
-          inputMode="search"
-          autoComplete="off"
-          placeholder="Search by name or tree name"
-          aria-label="Search runners"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
+      {/* one field: icon, input and a clear button; finds runners by name or tree name */}
+      <div role="search" className="mt12">
+        <label className="search">
+          <SearchIcon />
+          <input
+            className="search-input"
+            type="search"
+            inputMode="search"
+            autoComplete="off"
+            enterKeyHint="search"
+            placeholder="Find a friend by name"
+            aria-label="Search runners by name or tree name"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+          {query && (
+            <button type="button" className="search-clear" aria-label="Clear search" onClick={() => setQuery('')}>
+              ×
+            </button>
+          )}
+        </label>
       </div>
 
       {searching ? (
@@ -245,7 +254,7 @@ function FriendRow({ f, giving, canGive, asked, onAsk, onFollow }: {
           <Link href={`/t/${f.nickname}`} className="friend-name">{f.name}</Link>
           {f.official && <span className="badge official">Official</span>}
         </div>
-        <div className="tiny muted">{note || `/t/${f.nickname}`}</div>
+        {note && <div className="tiny muted">{note}</div>}
         {!giving && onAsk && f.following && f.hung === 0 && (asked ? (
           <span className="ask-done">Asked ✓</span>
         ) : (

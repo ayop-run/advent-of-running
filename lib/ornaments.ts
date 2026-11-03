@@ -80,12 +80,83 @@ export const ORNAMENTS: Ornament[] = [
   { id: 'golden-trophy', name: 'Golden Trophy', tier: 'rare', blurb: 'First place in the Advent of Running.' },
 ];
 
+/**
+ * Today's door, before it's unwrapped: a hint at the character hiding behind it (never its
+ * name) and a nudge to go and run. One per door ornament, so every day reads differently.
+ */
+export const DOOR_TEASERS: Record<string, string> = {
+  fox: 'Someone with a bushy orange tail is already out the door. Can you keep up?',
+  penguin: 'A little waddler is waiting for you. Slow is fine, as long as you finish.',
+  reindeer: 'Someone is training for one very long night. Join their run today!',
+  'gingerbread-runner': 'Something sweet is running away from you. Catch it!',
+  'santa-shoe': 'Something festive is laced up and ready for the Christmas 5K.',
+  'finish-medal': 'Something shiny is waiting at the finish line. Go and earn it.',
+  stopwatch: 'Something lucky is ticking. Today could be a fast day.',
+  'running-shoe': 'Something fresh and minty wants to be broken in today.',
+  'berlin-bear': 'A big furry city runner has their headband on. Your turn.',
+  'ampel-go': 'Someone small is glowing green. That means go!',
+  'ampel-stop': 'Someone is glowing red… but not yet. Rest after your run.',
+  'tempelhof-hare': 'Someone with long ears is zooming down an old runway. Race them?',
+  'wild-boar': 'Someone with tusks is crashing through the forest. Run, but don’t race them.',
+  'hooded-crow': 'A cheeky someone in a grey vest is watching you lace up.',
+  hedgehog: 'Someone small and prickly takes tiny steps and never gives up. Neither do you.',
+  dachshund: 'Short legs, long body, big plans. Someone wants a walk. Make it a run.',
+  sparrow: 'A cheeky little bird is after your pretzel crumbs. Outrun it!',
+  'night-owl': 'Someone with big round eyes loves running after dark. Headlamp on?',
+  'gps-watch': 'Something is waiting to record your run. If it isn’t on Strava…',
+  'super-shoe': 'Something bouncy is saved for race day. Pretend it’s today.',
+  'trail-shoe': 'Something grippy loves muddy paths. Go find one.',
+  'foam-roller': 'Something is waiting to make your legs feel good afterwards.',
+  'pacer-balloon': 'Something is floating ahead at a steady pace. Follow it.',
+  'race-singlet': 'Something light and fast is far too cold for December. Wear a jacket anyway.',
+  'foil-cape': 'Something shiny and warm is waiting past the finish line.',
+  'tv-tower': 'Something very tall can see your whole run from up there.',
+  'ubahn-train': 'Something yellow is racing you to the next stop. Beat it!',
+  'world-clock': 'Something keeps time for every city. Yours says it’s time to run.',
+  'wall-piece': 'A colourful piece of history is waiting along the river.',
+  'market-stall': 'Something smells of gingerbread and warm drinks. Run there and back?',
+};
+
+/** A missed door: the character behind it, who waited in vain. The door then stays wrapped. */
+export const DOOR_MISSED: Record<string, string> = {
+  fox: 'The fox waited by the door all day, but you didn’t come out.',
+  penguin: 'The penguin waddled out alone. It would love some company.',
+  reindeer: 'The reindeer did its training run without you, but saved you a spot.',
+  'gingerbread-runner': 'The gingerbread runner got away this time.',
+  'santa-shoe': 'These festive shoes stayed laced up by the door, waiting.',
+  'finish-medal': 'This medal is still hanging at a finish line you didn’t reach.',
+  stopwatch: 'The lucky stopwatch never started. Give it a reason to tick.',
+  'running-shoe': 'The mint shoes are still not broken in.',
+  'berlin-bear': 'The Berlin bear ran its loop alone and kept your headband warm.',
+  'ampel-go': 'The light was green all day, but nobody crossed.',
+  'ampel-stop': 'That turned into a rest day. The red Ampel man approves, just this once.',
+  'tempelhof-hare': 'The hare zoomed down the runway without you.',
+  'wild-boar': 'The wild boar is still out in the Grunewald, waiting for you.',
+  'hooded-crow': 'The crow watched for you all day and is not impressed.',
+  hedgehog: 'The hedgehog never gives up on you. Don’t give up on it.',
+  dachshund: 'The dachshund waited at the door with its lead. Still waiting.',
+  sparrow: 'The sparrow ate your pretzel crumbs and left only a feather.',
+  'night-owl': 'The night owl ran under the stars alone.',
+  'gps-watch': 'The GPS watch found no run. So it didn’t happen… yet.',
+  'super-shoe': 'The super shoes are still in their box.',
+  'trail-shoe': 'The trail shoes stayed clean. Too clean.',
+  'foam-roller': 'The foam roller had nothing to roll out.',
+  'pacer-balloon': 'The pacer balloon floated past without you.',
+  'race-singlet': 'The race singlet stayed folded in the drawer.',
+  'foil-cape': 'The foil cape is still waiting past the finish line.',
+  'tv-tower': 'The TV tower looked out over the whole city and couldn’t spot you.',
+  'ubahn-train': 'The U-Bahn left without you. Another one is coming.',
+  'world-clock': 'Everyone met at the clock. Your spot was empty.',
+  'wall-piece': 'This piece of the Wall is still waiting along the river.',
+  'market-stall': 'The market hut kept a warm drink for you. It went cold.',
+};
+
 export const BY_ID: Record<string, Ornament> = Object.fromEntries(ORNAMENTS.map((o) => [o.id, o]));
 
 /** How each kind of ornament is earned, for the directory and the About page. */
 export const HOW_TO_GET: Record<Tier, string> = {
   basic: 'Free for anyone to hang',
-  special: 'Behind a daily Advent door',
+  special: 'Behind a random Advent door',
   rare: 'Prize for a weekly challenge',
 };
 

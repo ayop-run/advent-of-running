@@ -8,7 +8,9 @@ import OrnamentSheet from '@/components/OrnamentSheet';
 import PictureSheet from '@/components/PictureSheet';
 import PixelTree, { Avatar } from '@/components/PixelTree';
 import { CameraIcon, ChevronIcon, ShareIcon } from '@/components/Icons';
+import LettersBadge from '@/components/LettersBadge';
 import PageHeader from '@/components/PageHeader';
+import Tip from '@/components/Tip';
 import TreeTitle from '@/components/TreeTitle';
 import Sk from '@/components/Skeleton';
 import { useTreeScale } from '@/components/useTreeScale';
@@ -21,7 +23,6 @@ export default function MyTree() {
   const scale = useTreeScale();
   const [tree, setTree] = useState<Tree | null>(null);
   const [open, setOpen] = useState<Hung | null>(null);
-  const [toast, setToast] = useState('');
   const [picture, setPicture] = useState(false);
 
   // signed out, the demo tree stands in for your own
@@ -33,24 +34,6 @@ export default function MyTree() {
     if (account === undefined) return;
     getTree(myNickname(account)).then(setTree, console.error);
   }, [account]);
-  useEffect(() => {
-    if (!toast) return;
-    const id = setTimeout(() => setToast(''), 2200);
-    return () => clearTimeout(id);
-  }, [toast]);
-
-  const share = async () => {
-    const url = `${window.location.origin}/t/${me}`;
-    try {
-      if (navigator.share) await navigator.share({ title: 'Hang an ornament on my tree', url });
-      else {
-        await navigator.clipboard.writeText(url);
-        setToast('Link copied');
-      }
-    } catch {
-      /* share sheet dismissed */
-    }
-  };
 
 
   return (
@@ -71,17 +54,26 @@ export default function MyTree() {
           )
         }
       >
-        <button type="button" className="icon-btn" onClick={() => setPicture(true)} aria-label="Picture of my tree" title="Picture of my tree" disabled={!tree}>
-          <CameraIcon />
-        </button>
-        <button type="button" className="icon-btn" onClick={share} aria-label="Share my tree" title="Share my tree">
-          <ShareIcon />
-        </button>
+        <Tip label="Photo booth">
+          <Link href="/tree/photo" className="icon-btn" aria-label="Photo booth">
+            <CameraIcon />
+          </Link>
+        </Tip>
+        <Tip label="Share my tree">
+          <button type="button" className="icon-btn" onClick={() => setPicture(true)} aria-label="Share my tree" disabled={!tree}>
+            <ShareIcon />
+          </button>
+        </Tip>
       </PageHeader>
 
       <div className="countdown-strip">
         <span className="eyebrow">Messages open in</span>
         <CountdownTiles />
+      </div>
+
+      {/* the count of sealed letters on your tree, same badge as on a friend's tree */}
+      <div className="mt16">
+        {tree ? <LettersBadge count={tree.ornaments.length} empty="No letters yet. Ask a friend!" /> : <div className="center"><Sk w={64} h={36} style={{ display: 'inline-block' }} /></div>}
       </div>
 
       {/* the tree stands in place, dimmed, while its ornaments load */}
@@ -107,18 +99,18 @@ export default function MyTree() {
                     ? 'A friend hung a little wish on your tree.'
                     : `${tree.ornaments.length} friends are thinking of you.`}
               </strong>
-              <br />
-              {tree.ornaments.length === 0 ? 'Each one hides a note from a friend.' : 'Their names and notes stay wrapped.'}
-              <br />
-              Opens on Christmas morning.
+              {tree.ornaments.length === 0 && (
+                <>
+                  <br />
+                  Each one hides a note from a friend.
+                </>
+              )}
             </p>
             <p className="center mt4"><Link href="/friends" className="textlink" style={{ fontSize: 14 }}>Ask friends to hang one <ChevronIcon /></Link></p>
           </div>
         ) : (
           <div className="mt12" style={{ display: 'grid', justifyItems: 'center', gap: 8 }}>
             <Sk w={230} h={14} />
-            <Sk w={210} h={12} />
-            <Sk w={170} h={12} />
             <Sk w={150} h={14} className="mt4" />
           </div>
         )}
@@ -137,7 +129,6 @@ export default function MyTree() {
         <PictureSheet ornaments={tree.ornaments} ownerName={displayName} avatar={avatarSrc(me, account?.avatarUrl)} link={`${window.location.origin}/t/${me}`} onClose={() => setPicture(false)} />
       )}
 
-      {toast && <div className="toast" role="status">{toast}</div>}
       <BottomNav />
     </main>
   );

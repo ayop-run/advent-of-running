@@ -13,7 +13,7 @@ export default function PageHeader({ title, back, start, children }: { title: Re
       <div className="topbar-title">
         {start ?? (back && <BackLink fallback={back} />)}
         <div className="topbar-heading">
-          <p className="brand-mark">Advent of Running</p>
+          <p className="brand-mark">Advent of Running <span className="beta">Beta</span></p>
           {typeof title === 'string' ? <h1 className="title">{title}</h1> : title}
         </div>
       </div>
