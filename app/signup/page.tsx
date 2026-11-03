@@ -7,6 +7,7 @@ import { ChevronIcon } from '@/components/Icons';
 import PageHeader from '@/components/PageHeader';
 import { StravaLogin } from '@/components/Strava';
 import Sprite from '@/components/Sprite';
+import { validDisplayName } from '@/lib/dataNotice';
 import { getMe, saveProfile, stravaLoginUrl, type Me, type ProfileError } from '@/lib/me';
 import { checkNickname, cleanNickname } from '@/lib/nickname';
 import { AVAILABILITY, useAvailability } from '@/lib/useNickname';
@@ -42,6 +43,8 @@ function SignUpInner() {
   const [failed, setFailed] = useState<ProfileError | null>(null);
   const [me, setMe] = useState<Me | null>(null);
   const [tz, setTz] = useState('');
+  // the name friends see on the tree; suggested from Strava, but the runner's to choose
+  const [name, setName] = useState('');
   const nameInput = useRef<HTMLInputElement>(null);
 
   const [host, setHost] = useState('advent.ayop.run');
@@ -57,6 +60,7 @@ function SignUpInner() {
       setMe(runner);
       // the name picked in step 1, or a free one based on the Strava name if it was taken
       setNick(runner.nickname);
+      setName(runner.displayName);
     });
   }, [finishing, router]);
 
@@ -168,9 +172,9 @@ function SignUpInner() {
 
           <ul className="panel quiet flush" style={{ listStyle: 'none', margin: 0 }}>
             {[
-              ['We read', `Your runs from ${dayLabel(adventStart(), 1, 'long')} to ${lastDayLabel()}: distance and date.`],
-              ['Friends see', 'Only the ornaments on your tree. Never your runs.'],
-              ['You can leave', 'Delete your tree any time from Me. It removes everything.'],
+              ['We read', `Your runs from ${dayLabel(adventStart(), 1, 'long')} to ${lastDayLabel()}, private ones too. We keep only a daily summary: distance, number of runs, the longest run’s title and how many were group runs.`],
+              ['Friends see', 'Your tree, the ornaments on it and the name you choose. Never your runs or your Strava photo.'],
+              ['You can leave', 'Delete your tree in Me, or disconnect the app in your Strava settings. We delete everything and confirm it.'],
             ].map(([k, v]) => (
               <li key={k} className="list-row small" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 2, padding: '12px 0' }}>
                 <span style={{ fontWeight: 800 }}>{k}</span>
@@ -199,7 +203,8 @@ function SignUpInner() {
               setSaving(false);
               return;
             }
-            const res = await saveProfile({ nickname: nick, timeZone: tz || me.timeZone, emailOptIn: me.emailOptIn });
+            if (!validDisplayName(name)) return setFailed('invalid');
+            const res = await saveProfile({ nickname: nick, timeZone: tz || me.timeZone, emailOptIn: me.emailOptIn, displayName: name.trim(), acceptNotice: true });
             if ('error' in res) {
               setFailed(res.error);
               setSaving(false);
@@ -235,6 +240,14 @@ function SignUpInner() {
             </div>
             <span className={`help${checking ? '' : check.ok ? ' ok' : ' bad'}`} aria-live="polite">
               {check.ok ? 'Free. Friends use it to find your tree.' : check.message}
+            </span>
+          </label>
+
+          <label className="field">
+            Your name
+            <input className="input" value={name} maxLength={30} autoComplete="nickname" onChange={(e) => { setName(e.target.value); setFailed(null); }} />
+            <span className={`help${name.trim() ? '' : ' bad'}`}>
+              {name.trim() ? 'Shown on your tree and to friends. Your Strava photo isn’t: friends see your initial.' : 'Add the name friends know you by.'}
             </span>
           </label>
 

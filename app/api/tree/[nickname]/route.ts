@@ -32,7 +32,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ nicknam
     tree: {
       nickname: owner.nickname,
       displayName: owner.display_name,
-      avatarUrl: owner.avatar_url,
+      // a Strava profile photo is shown only to its runner (Strava API Policy 2.3); everyone
+      // else sees the initial. Official accounts without Strava keep their logo.
+      avatarUrl: me === owner.id || owner.strava_athlete_id <= 0 ? owner.avatar_url : null,
       ornaments: (rows ?? []).map((r) => {
         const mine = !!me && r.from_runner === me;
         return {

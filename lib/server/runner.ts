@@ -9,7 +9,7 @@ export async function currentRunner(): Promise<(Me & { id: string }) | null> {
   if (!id) return null;
   const { data } = await db()
     .from('runners')
-    .select('id, nickname, display_name, avatar_url, time_zone, email_opt_in, onboarded')
+    .select('id, nickname, display_name, avatar_url, time_zone, email_opt_in, onboarded, data_notice')
     .eq('id', id)
     .maybeSingle();
   if (!data) return null;
@@ -21,6 +21,7 @@ export async function currentRunner(): Promise<(Me & { id: string }) | null> {
     timeZone: data.time_zone,
     emailOptIn: data.email_opt_in,
     onboarded: data.onboarded,
+    dataNotice: data.data_notice ?? 0,
   };
 }
 
