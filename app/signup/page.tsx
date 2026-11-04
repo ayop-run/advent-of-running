@@ -165,7 +165,7 @@ function SignUpInner() {
           <div className="row">
             <Sprite id="running-shoe" px={4} style={{ flexShrink: 0 }} />
             <div>
-              <h2 className="h2">Connect Strava</h2>
+              <h2 className="h2">Connect your runs</h2>
               <p className="small soft mt4">Your runs open the Advent doors, so we need to see them.</p>
             </div>
           </div>
