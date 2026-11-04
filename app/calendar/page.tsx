@@ -107,8 +107,11 @@ export default function Calendar() {
   const doorStory = (n: number) => {
     const ran = km(n) > 0 ? `You ran ${km(n)} km that day. ` : '';
     switch (state(n)) {
-      case 'opened':
-        return `${ran}${p.given[n] ? `You gave it to ${p.given[n]}. It hangs on their tree until Christmas.` : 'Unwrapped. Give it to a friend.'}`;
+      case 'opened': {
+        // the ornament's own line, as in the directory, then where it went
+        const blurb = BY_ID[ornament(n)]?.blurb ?? '';
+        return `${blurb} ${p.given[n] ? `Now on ${p.given[n]}’s tree until Christmas.` : 'Give it to a friend.'}`.trim();
+      }
       case 'today': {
         // a different nudge every day: a hint at whoever is hiding behind the door
         const teaser = DOOR_TEASERS[ornament(n)] ?? 'Someone is waiting behind this door.';
