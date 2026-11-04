@@ -29,8 +29,9 @@ export default function MeProfile() {
           {me ? <span className="badge">Strava connected</span> : <span className="tiny muted">Demo account</span>}
           {me && <span className="tiny muted">/t/{me.nickname}</span>}
           {me && (
-            <a href="https://www.strava.com/dashboard" target="_blank" rel="noopener noreferrer" className="tiny textlink" style={{ marginLeft: 'auto' }}>
-              Open Strava
+            // Strava's brand guidelines: links back to Strava read "View on Strava", bold or in #FC5200
+            <a href="https://www.strava.com/dashboard" target="_blank" rel="noopener noreferrer" className="tiny" style={{ marginLeft: 'auto', color: '#FC5200', fontWeight: 800 }}>
+              View on Strava
             </a>
           )}
         </p>
