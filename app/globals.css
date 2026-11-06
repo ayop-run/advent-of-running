@@ -804,3 +804,8 @@ a.list-row:hover { color: var(--gold); }
 
 /* spacing utilities last, so they always win over a component's own `margin: 0` (grids, showcases) */
 .mt4 { margin-top: 4px; } .mt8 { margin-top: 8px; } .mt12 { margin-top: 12px; } .mt16 { margin-top: 16px; } .mt24 { margin-top: 24px; } .mt32 { margin-top: 32px; }
+
+/* a friend's row: the ornaments you swapped */
+.friend-swap { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 12px; margin-top: 2px; }
+.swap-item { display: inline-flex; align-items: center; gap: 4px; }
+.swap-tag { display: inline-block; padding: 1px 6px; font-size: 12px; background: var(--gold); color: var(--night); font-weight: 800; clip-path: var(--px4); }

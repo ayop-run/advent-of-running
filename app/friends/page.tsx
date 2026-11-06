@@ -6,11 +6,12 @@ import { Suspense, useEffect, useState } from 'react';
 import BottomNav from '@/components/BottomNav';
 import FollowButton from '@/components/FollowButton';
 import { SearchIcon } from '@/components/Icons';
+import FriendNote, { SwapTag } from '@/components/FriendNote';
 import PageHeader from '@/components/PageHeader';
 import { Avatar } from '@/components/PixelTree';
 import Sk from '@/components/Skeleton';
 import Sprite from '@/components/Sprite';
-import { canGiveTo, friendNote, getFriends, searchRunners, setFollowing, type Friend } from '@/lib/friends';
+import { canGiveTo, getFriends, searchRunners, setFollowing, type Friend } from '@/lib/friends';
 import { DEMO_NICKNAME, getMe, myNickname } from '@/lib/me';
 import { BY_ID } from '@/lib/ornaments';
 import { ask, getAsked, incomingRequests, type FriendRequest } from '@/lib/requests';
@@ -243,7 +244,6 @@ function FriendRow({ f, giving, canGive, asked, onAsk, onFollow }: {
   onAsk?: () => void;
   onFollow: () => void;
 }) {
-  const note = friendNote(f, { showGiven: !giving });
   return (
     <li className="panel quiet row item loaded">
       <Link href={`/t/${f.nickname}`} className="friend-link" aria-label={`${f.name}'s tree`}>
@@ -253,8 +253,9 @@ function FriendRow({ f, giving, canGive, asked, onAsk, onFollow }: {
         <div className="friend-title">
           <Link href={`/t/${f.nickname}`} className="friend-name">{f.name}</Link>
           {f.official && <span className="badge official">Official</span>}
+          {!giving && <SwapTag f={f} />}
         </div>
-        {note && <div className="tiny muted">{note}</div>}
+        <FriendNote f={f} showGiven={!giving} />
         {!giving && onAsk && f.following && f.hung === 0 && (asked ? (
           <span className="ask-done">Asked ✓</span>
         ) : (

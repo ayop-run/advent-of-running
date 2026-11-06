@@ -1,4 +1,4 @@
-import { DEMO_GIVEN } from '../calendar';
+import { DEMO_GIVEN, DEMO_ORNAMENTS } from '../calendar';
 import { getTree, myOrnamentOn } from './data';
 import { DEMO_NICKNAME } from './me';
 import { OFFICIAL, demoName, demoNick } from './names';
@@ -15,6 +15,10 @@ export type Friend = {
   name: string;
   /** ornaments they hung on your tree */
   hung: number;
+  /** which ornaments they hung on your tree */
+  theirs?: string[];
+  /** the ornament you hung on their tree */
+  mine?: string | null;
   /** ornaments you gave them */
   given: number;
   visited: boolean;
@@ -81,13 +85,25 @@ export function getFriends(me: string): Friend[] {
     if (!byNick.has(key)) byNick.set(key, { nickname: key, name: demoName(key), hung: 0, given: 0, visited: false, following: false, official: OFFICIAL.has(key) });
     return byNick.get(key)!;
   };
-  for (const h of getTree(DEMO_NICKNAME).ornaments) get(h.from).hung += 1;
-  for (const name of Object.values(DEMO_GIVEN)) get(name).given += 1;
+  for (const h of getTree(DEMO_NICKNAME).ornaments) {
+    const f = get(h.from);
+    f.hung += 1;
+    f.theirs = [...(f.theirs ?? []), h.ornamentId];
+  }
+  for (const [door, name] of Object.entries(DEMO_GIVEN)) {
+    const f = get(name);
+    f.given += 1;
+    f.mine = DEMO_ORNAMENTS[Number(door) - 1];
+  }
   for (const nick of getVisited()) {
     const f = get(nick);
     f.visited = true;
     // ornaments you hung while visiting (not from a door) count as given too
-    if (!f.given && myOrnamentOn(nick)) f.given = 1;
+    const hung = !f.given && myOrnamentOn(nick);
+    if (hung) {
+      f.given = 1;
+      f.mine = hung.ornamentId;
+    }
   }
   for (const nick of getFollowing()) get(nick).following = true;
   byNick.delete(me.toLowerCase());
