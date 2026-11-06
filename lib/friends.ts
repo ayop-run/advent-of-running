@@ -17,8 +17,6 @@ export type Friend = {
   avatarUrl?: string | null;
   /** ornaments they hung on your tree */
   hung: number;
-  /** which ornaments they hung on your tree */
-  theirs?: string[];
   /** the ornament you hung on their tree */
   mine?: string | null;
   /** ornaments you gave them (one per tree) */

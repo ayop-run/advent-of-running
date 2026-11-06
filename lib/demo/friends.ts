@@ -15,8 +15,6 @@ export type Friend = {
   name: string;
   /** ornaments they hung on your tree */
   hung: number;
-  /** which ornaments they hung on your tree */
-  theirs?: string[];
   /** the ornament you hung on their tree */
   mine?: string | null;
   /** ornaments you gave them */
@@ -86,9 +84,7 @@ export function getFriends(me: string): Friend[] {
     return byNick.get(key)!;
   };
   for (const h of getTree(DEMO_NICKNAME).ornaments) {
-    const f = get(h.from);
-    f.hung += 1;
-    f.theirs = [...(f.theirs ?? []), h.ornamentId];
+    get(h.from).hung += 1;
   }
   for (const [door, name] of Object.entries(DEMO_GIVEN)) {
     const f = get(name);
