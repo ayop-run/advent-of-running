@@ -131,6 +131,9 @@ export default function Calendar() {
   const running = p.today >= 1 && p.today <= DOORS;
   const left = Math.max(0, DAILY_GOAL_KM - p.todayKm);
   const ready = p.unwrapped.length > 0;
+  // today's card only offers today's gift; ones from earlier runs wait in their own row
+  const todayGift = p.unwrapped.some((u) => u.door === p.today);
+  const earlier = running ? p.unwrapped.filter((u) => u.door !== p.today) : [];
   const week = p.week;
 
   // distance stats: runs and walks together, rounded like the doors
@@ -209,7 +212,7 @@ export default function Calendar() {
                   : `${left.toFixed(1)} km to go, by 23:59. Then give its ornament to a friend.`
               }
             >
-              {ready && <Link href="/gift" className="btn block mt12">Unwrap your gift</Link>}
+              {todayGift && <Link href="/gift" className="btn block mt12">Unwrap your gift</Link>}
               {p.todayKm >= DAILY_GOAL_KM && <Link href="/tree/photo" className="btn ghost block mt8">Share today&apos;s run</Link>}
             </Goal>
             {week && (
@@ -248,6 +251,20 @@ export default function Calendar() {
             </p>
             {ready && <Link href="/gift" className="btn block mt12">Give your unwrapped ornaments</Link>}
           </section>
+        )}
+
+        {/* ornaments from earlier runs or weekly bonuses that are still waiting to be given */}
+        {earlier.length > 0 && (
+          <Link href="/gift" className="panel quiet row link-row mt8">
+            <Sprite id="gift-box" px={2} style={{ flexShrink: 0 }} />
+            <span className="grow small" style={{ fontWeight: 700 }}>
+              {earlier.length} {earlier.length === 1 ? 'gift' : 'gifts'} to unwrap
+              <span className="tiny muted" style={{ display: 'block', fontWeight: 400 }}>
+                From {earlier.map((u) => (u.door ? `Door ${u.door}` : 'a weekly bonus')).join(', ')}
+              </span>
+            </span>
+            <ChevronIcon />
+          </Link>
         )}
 
         {/* free starters you can give without running: pick a friend, then hang one */}
