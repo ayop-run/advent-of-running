@@ -17,18 +17,19 @@ export async function friendsOf(runnerId: string): Promise<Friend[]> {
   const [{ data: follows }, { data: toMe }, { data: fromMe }] = await Promise.all([
     db().from('follows').select('followee').eq('follower', runnerId),
     db().from('ornaments_hung').select('from_runner').eq('tree_owner', runnerId).not('from_runner', 'is', null),
-    db().from('ornaments_hung').select('tree_owner').eq('from_runner', runnerId),
+    db().from('ornaments_hung').select('tree_owner, ornament_id').eq('from_runner', runnerId),
   ]);
   const following = new Set((follows ?? []).map((f) => f.followee as string));
+  // how many ornaments each friend hung on your tree (which ones stay a surprise), and which one you hung on theirs
   const hung = new Map<string, number>();
   for (const r of toMe ?? []) hung.set(r.from_runner as string, (hung.get(r.from_runner as string) ?? 0) + 1);
-  const given = new Set((fromMe ?? []).map((r) => r.tree_owner as string));
+  const mine = new Map((fromMe ?? []).map((r) => [r.tree_owner as string, r.ornament_id as string]));
 
-  const ids = [...new Set([...following, ...hung.keys(), ...given])].filter((id) => id !== runnerId);
+  const ids = [...new Set([...following, ...hung.keys(), ...mine.keys()])].filter((id) => id !== runnerId);
   if (!ids.length) return [];
   const { data, error } = await runners().in('id', ids);
   if (error) throw error;
-  return ((data ?? []) as Row[]).filter(visible).map((r) => toFriend(r, { following: following.has(r.id), hung: hung.get(r.id) ?? 0, given: given.has(r.id) }));
+  return ((data ?? []) as Row[]).filter(visible).map((r) => toFriend(r, { following: following.has(r.id), hung: hung.get(r.id) ?? 0, mine: mine.get(r.id) ?? null }));
 }
 
 /** Runners whose name or tree name contains `query` (at least 2 characters), up to 20. */
@@ -48,7 +49,7 @@ export async function searchRunners(runnerId: string, query: string): Promise<Fr
   if (!list.length) return [];
   const { data: follows } = await db().from('follows').select('followee').eq('follower', runnerId).in('followee', list.map((r) => r.id));
   const following = new Set((follows ?? []).map((f) => f.followee as string));
-  return list.map((r) => toFriend(r, { following: following.has(r.id), hung: 0, given: false }));
+  return list.map((r) => toFriend(r, { following: following.has(r.id), hung: 0, mine: null }));
 }
 
 /** The runner behind a tree name, if they're a real runner or an official account. */
@@ -59,7 +60,7 @@ export async function runnerByNickname(nickname: string): Promise<string | null>
   return row && visible(row) ? row.id : null;
 }
 
-function toFriend(r: Row, c: { following: boolean; hung: number; given: boolean }): Friend {
+function toFriend(r: Row, c: { following: boolean; hung: number; mine: string | null }): Friend {
   // others' Strava photos are never shown (Strava API Policy 2.3); official logos are
-  return { nickname: r.nickname, name: r.display_name, avatarUrl: r.strava_athlete_id > 0 ? null : r.avatar_url, hung: c.hung, given: c.given ? 1 : 0, visited: false, following: c.following, official: r.official };
+  return { nickname: r.nickname, name: r.display_name, avatarUrl: r.strava_athlete_id > 0 ? null : r.avatar_url, hung: c.hung, given: c.mine ? 1 : 0, mine: c.mine, visited: false, following: c.following, official: r.official };
 }

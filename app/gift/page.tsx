@@ -3,12 +3,13 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { Avatar } from '@/components/PixelTree';
+import FriendNote from '@/components/FriendNote';
 import Sk from '@/components/Skeleton';
 import Sprite from '@/components/Sprite';
 import { DOORS, type Progress } from '@/lib/calendar';
 import { getProgress } from '@/lib/data';
 import { ChevronIcon } from '@/components/Icons';
-import { canGiveTo, friendNote, getFriends, type Friend } from '@/lib/friends';
+import { canGiveTo, getFriends, type Friend } from '@/lib/friends';
 import { BY_ID } from '@/lib/ornaments';
 
 type Phase = 'wrapped' | 'opening' | 'open';
@@ -125,7 +126,7 @@ export default function GiftOpened() {
                 <Avatar owner={{ name: f.name, avatarUrl: f.avatarUrl ?? undefined }} size={38} />
                 <div className="grow" style={{ minWidth: 0 }}>
                   <div style={{ fontWeight: 800 }}>{f.name}</div>
-                  <div className="tiny muted">{friendNote(f)}</div>
+                  <FriendNote f={f} />
                 </div>
                 <Link href={`/t/${f.nickname}/hang?o=${o.id}`} className="btn sm">Give</Link>
               </div>

@@ -277,7 +277,7 @@ select.input:disabled { cursor: not-allowed; opacity: .6; }
 /* the ask line sits where a friend's note would, same height; the button keeps a bigger tap area */
 .ask-link { display: flex; width: fit-content; align-items: center; margin: -6px 0; padding: 6px 0; border: 0; background: none; color: var(--gold); font-weight: 800; font-size: 13px; line-height: 1.5; }
 .ask-link:hover { color: #ffe08f; }
-.ask-done { display: flex; width: fit-content; align-items: center; color: #7fe0a6; font-weight: 800; font-size: 13px; line-height: 1.5; }
+.ask-done { display: inline-block; padding: 2px 8px; font-size: 12px; background: rgba(143,211,255,.16); color: var(--frost); font-weight: 800; clip-path: var(--px4); }
 
 /* ---------- christmas carousel ---------- */
 .carousel {
@@ -804,3 +804,8 @@ a.list-row:hover { color: var(--gold); }
 
 /* spacing utilities last, so they always win over a component's own `margin: 0` (grids, showcases) */
 .mt4 { margin-top: 4px; } .mt8 { margin-top: 8px; } .mt12 { margin-top: 12px; } .mt16 { margin-top: 16px; } .mt24 { margin-top: 24px; } .mt32 { margin-top: 32px; }
+
+/* a friend's row: the ornaments you swapped */
+.friend-swap { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 12px; margin-top: 2px; }
+.swap-item { display: inline-flex; align-items: center; gap: 4px; }
+.swap-tag { display: inline-block; padding: 2px 8px; font-size: 12px; background: rgba(232,84,106,.2); color: #ff9aa8; font-weight: 800; clip-path: var(--px4); }
