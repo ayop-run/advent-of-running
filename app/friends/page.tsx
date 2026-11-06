@@ -254,13 +254,12 @@ function FriendRow({ f, giving, canGive, asked, onAsk, onFollow }: {
           <Link href={`/t/${f.nickname}`} className="friend-name">{f.name}</Link>
           {f.official && <span className="badge official">Official</span>}
           {!giving && <SwapTag f={f} />}
+          {!giving && onAsk && f.following && f.hung === 0 && asked && <span className="ask-done">Asked to hang one</span>}
         </div>
         <FriendNote f={f} showGiven={!giving} />
-        {!giving && onAsk && f.following && f.hung === 0 && (asked ? (
-          <span className="ask-done">Asked ✓</span>
-        ) : (
+        {!giving && onAsk && f.following && f.hung === 0 && !asked && (
           <button type="button" className="ask-link" onClick={onAsk}>Ask to hang one</button>
-        ))}
+        )}
       </div>
       {giving ? (
         canGive ? <Link href={`/t/${f.nickname}/hang?o=${giving}`} className="btn sm">Give</Link> : <span className="tag">Has yours</span>

@@ -277,7 +277,7 @@ select.input:disabled { cursor: not-allowed; opacity: .6; }
 /* the ask line sits where a friend's note would, same height; the button keeps a bigger tap area */
 .ask-link { display: flex; width: fit-content; align-items: center; margin: -6px 0; padding: 6px 0; border: 0; background: none; color: var(--gold); font-weight: 800; font-size: 13px; line-height: 1.5; }
 .ask-link:hover { color: #ffe08f; }
-.ask-done { display: flex; width: fit-content; align-items: center; color: #7fe0a6; font-weight: 800; font-size: 13px; line-height: 1.5; }
+.ask-done { display: inline-block; padding: 2px 8px; font-size: 12px; background: rgba(143,211,255,.16); color: var(--frost); font-weight: 800; clip-path: var(--px4); }
 
 /* ---------- christmas carousel ---------- */
 .carousel {
