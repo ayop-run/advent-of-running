@@ -808,4 +808,4 @@ a.list-row:hover { color: var(--gold); }
 /* a friend's row: the ornaments you swapped */
 .friend-swap { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 12px; margin-top: 2px; }
 .swap-item { display: inline-flex; align-items: center; gap: 4px; }
-.swap-tag { display: inline-block; padding: 1px 6px; font-size: 12px; background: var(--gold); color: var(--night); font-weight: 800; clip-path: var(--px4); }
+.swap-tag { display: inline-block; padding: 2px 8px; font-size: 12px; background: rgba(232,84,106,.2); color: #ff9aa8; font-weight: 800; clip-path: var(--px4); }
