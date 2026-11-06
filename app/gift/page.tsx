@@ -41,9 +41,10 @@ export default function GiftOpened() {
 
   const open = phase === 'open';
   // the newest ornament you earned and haven't given yet
-  const gift = p?.unwrapped[0];
+  const gift = p?.unwrapped.find((u) => u.door === p.today) ?? p?.unwrapped[0];
   const o = gift ? BY_ID[gift.ornamentId] : null;
   const label = gift?.door ? `Door ${gift.door} of ${DOORS}` : 'Weekly prize';
+  const earned = gift?.door ? 'you ran it!' : 'you won it!';
 
   if (!p) {
     return (
@@ -137,9 +138,9 @@ export default function GiftOpened() {
         </div>
       ) : (
         <>
-          <p className="center eyebrow mt16" style={{ color: 'var(--gold)' }}>{label} · you ran it!</p>
+          <p className="center eyebrow mt16" style={{ color: 'var(--gold)' }}>{label} · {earned}</p>
           <h1 className="h1 center mt8">Your gift is ready</h1>
-          <p className="center soft mt8">Open today&apos;s door to see which ornament you get, then give it to a friend.</p>
+          <p className="center soft mt8">Unwrap it to see which ornament you got, then give it to a friend.</p>
           <button className="btn block mt24" onClick={unwrap} aria-busy={phase === 'opening'}>
             {phase === 'opening' ? 'Unwrapping…' : 'Unwrap'}
           </button>

@@ -246,8 +246,8 @@ export function demoProgress(): Progress {
     ...computeProgress(days, DEMO_TODAY, adventStart()),
     ornaments: DEMO_ORNAMENTS,
     given: DEMO_GIVEN,
-    // the demo lets you try unwrapping today's door before finishing the run
-    unwrapped: [{ ornamentId: DEMO_ORNAMENTS[DEMO_TODAY - 1], door: DEMO_TODAY }],
+    // today's run isn't done yet, so the gift to try unwrapping is the week 1 bonus
+    unwrapped: [{ ornamentId: WEEKLY[0].reward, door: null }],
     found: [...demoFound(BASIC.map((o) => o.id))],
     starters: freeStarters('demo'),
     syncedAt: null,
